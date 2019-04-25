@@ -44,8 +44,35 @@ class Platform(SimPlatform):
     def do_finalize(self, fragment):
         pass
 
+class VexRiscvIOs(Module):
+    def __init__(self, platform):
+        self.bus = bus = wishbone.Interface()
+
+        # # #
+
+        # serial
+        self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
+
+        self.comb += [
+            If(bus.stb & bus.cyc,
+                # uart
+                If(bus.adr == 0xfffffff8//4,
+                    If(bus.we,
+                        self.uart.sink.valid.eq(1),
+                        self.uart.sink.data.eq(bus.dat_w),
+                        bus.ack.eq(1)
+                    )
+                )
+            )
+        ]
+
 
 class SimSoC(SoCCore):
+    mem_map = {
+        "ios": 0x70000000,  # (shadow @0xf0000000)
+    }
+    mem_map.update(SoCCore.mem_map)
+
     def __init__(self, **kwargs):
         platform = Platform()
         sys_clk_freq = int(1e6)
@@ -57,9 +84,10 @@ class SimSoC(SoCCore):
         # crg
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
-        # serial
-        self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
-        self.submodules.uart = uart.UART(self.uart_phy)
+        # ios
+        self.submodules.ios = VexRiscvIOs(platform)
+        self.add_wb_slave(mem_decoder(self.mem_map["ios"]), self.ios.bus)
+        self.add_memory_region("ios", self.mem_map["ios"] | self.shadow_base, 0x10000000)
 
         # vexriscv
         ibus = wishbone.Interface()
@@ -126,6 +154,7 @@ def main():
 
     soc_kwargs["integrated_rom_size"] = 0x8000 # 32KB
     soc_kwargs["integrated_rom_init"] = get_mem_data("bootloader.bin", "little")
+    soc_kwargs["integrated_sram_size"] = 0x8000 # 32KB
     soc_kwargs["integrated_main_ram_size"] = 0x10000000 # 256 MB
     soc_kwargs["integrated_main_ram_init"] = get_mem_data("main_ram_init.json", "little")
 
