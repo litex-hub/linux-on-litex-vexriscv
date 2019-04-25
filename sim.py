@@ -4,6 +4,7 @@ import argparse
 
 from migen import *
 from migen.genlib.io import CRG
+from migen.genlib.misc import timeline
 
 from litex.build.generic_platform import *
 from litex.build.sim import SimPlatform
@@ -130,8 +131,7 @@ class VexRiscvPeriphs(Module):
                 )
             )
         ]
-        self.sync += If(finish, Finish())
-
+        self.sync += timeline(finish, [(100, [Finish()])])
 
 class SimSoC(SoCCore):
     mem_map = {
