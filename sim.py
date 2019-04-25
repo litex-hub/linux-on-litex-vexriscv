@@ -47,8 +47,60 @@ class Platform(SimPlatform):
 class VexRiscvPeriphs(Module):
     def __init__(self, platform):
         self.bus = bus = wishbone.Interface()
+        self.timer_interrupt = Signal()
 
         # # #
+
+        # timer
+        time = Signal(64)
+        time_cmp = Signal(64)
+        time_cmp_set_lsb = Signal()
+        time_cmp_set_msb = Signal()
+        self.sync += [
+            time.eq(time + 1),
+            If(time_cmp_set_lsb,
+                time_cmp[:32].eq(bus.dat_w)
+            ),
+            If(time_cmp_set_msb,
+                time_cmp[32:].eq(bus.dat_w)
+            )
+        ]
+        self.comb += [
+            If(bus.stb & bus.cyc,
+                If(bus.adr == 0xffffffe0//4,
+                    If(bus.we,
+                        bus.err.eq(1)
+                    ).Else(
+                        bus.dat_r.eq(time[:32]),
+                        bus.ack.eq(1)
+                    )
+                ).Elif(bus.adr == 0xffffffe4//4,
+                    If(bus.we,
+                        bus.err.eq(1)
+                    ).Else(
+                        bus.dat_r.eq(time[32:]),
+                        bus.ack.eq(1)
+                    )
+                ).Elif(bus.adr == 0xffffffe8//4,
+                    If(bus.we,
+                        time_cmp_set_lsb.eq(1),
+                        bus.ack.eq(1)
+                    ).Else(
+                        bus.dat_r.eq(time_cmp[:32]),
+                        bus.ack.eq(1)
+                    )
+                ).Elif(bus.adr == 0xffffffec//4,
+                    If(bus.we,
+                        time_cmp_set_msb.eq(1),
+                        bus.ack.eq(1)
+                    ).Else(
+                        bus.dat_r.eq(time_cmp[32:]),
+                        bus.ack.eq(1)
+                    )
+                )
+            )
+        ]
+        self.comb += self.timer_interrupt.eq(time >= time_cmp)
 
         # uart
         self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
@@ -112,7 +164,7 @@ class SimSoC(SoCCore):
 
             i_externalResetVector=0x80000000,
 
-            i_timerInterrupt=0,
+            i_timerInterrupt=self.periphs.timer_interrupt,
             i_externalInterrupt=0,
             i_softwareInterrupt=0,
             i_externalInterruptS=0,
