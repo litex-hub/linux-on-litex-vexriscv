@@ -134,17 +134,22 @@ class VexRiscvPeriphs(Module):
         self.sync += timeline(finish, [(100, [Finish()])])
 
 class SimSoC(SoCCore):
-    mem_map = {
-        "periphs": 0x70000000,  # (shadow @0xf0000000)
+    SoCCore.mem_map = {
+        "sram":     0x00000000,  # (shadow @0x80000000)
+        "main_ram": 0x40000000,  # (shadow @0xc0000000)
+        "periphs":  0x70000000,  # (shadow @0xf0000000)
+        "csr":      0x10000000,  # (shadow @0x90000000)
     }
-    mem_map.update(SoCCore.mem_map)
 
     def __init__(self, **kwargs):
         platform = Platform()
         sys_clk_freq = int(1e6)
         SoCCore.__init__(self, platform, cpu_type=None, clk_freq=sys_clk_freq,
-            ident="LiteX Linux VexRiscv Simulation", ident_version=True,
             with_timer=False, with_uart=False,
+            integrated_sram_size=0x10000,
+            integrated_sram_init=get_mem_data("emulator.bin", "little"),
+            integrated_main_ram_size=0x10000000,
+            integrated_main_ram_init=get_mem_data("main_ram_init.json", "little"),
             **kwargs)
 
         # crg
@@ -153,7 +158,7 @@ class SimSoC(SoCCore):
         # periphs
         self.submodules.periphs = VexRiscvPeriphs(platform)
         self.add_wb_slave(mem_decoder(self.mem_map["periphs"]), self.periphs.bus)
-        self.add_memory_region("periphs", self.mem_map["periphs"] | self.shadow_base, 0x10000000)
+        self.add_memory_region("periphs", self.mem_map["periphs"], 0x10000000)
 
         # vexriscv
         ibus = wishbone.Interface()
@@ -215,14 +220,6 @@ def main():
 
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
-
-    cpu_endianness = "little"
-
-    soc_kwargs["integrated_rom_size"] = 0x8000 # 32KB
-    soc_kwargs["integrated_rom_init"] = get_mem_data("bootloader.bin", "little")
-    soc_kwargs["integrated_sram_size"] = 0x8000 # 32KB
-    soc_kwargs["integrated_main_ram_size"] = 0x10000000 # 256 MB
-    soc_kwargs["integrated_main_ram_init"] = get_mem_data("main_ram_init.json", "little")
 
     builder_kwargs["output_dir"] = "build"
 
