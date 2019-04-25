@@ -53,6 +53,8 @@ class VexRiscvIOs(Module):
         # serial
         self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
 
+        # ios
+        finish = Signal()
         self.comb += [
             If(bus.stb & bus.cyc,
                 # uart
@@ -62,9 +64,17 @@ class VexRiscvIOs(Module):
                         self.uart.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
                     )
+                ),
+                # simulation end
+                If(bus.adr == 0xfffffffc//4,
+                    If(bus.we,
+                        finish.eq(1),
+                        bus.ack.eq(1),
+                    )
                 )
             )
         ]
+        self.sync += If(finish, Finish())
 
 
 class SimSoC(SoCCore):
