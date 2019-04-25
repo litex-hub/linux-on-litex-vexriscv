@@ -44,17 +44,14 @@ class Platform(SimPlatform):
     def do_finalize(self, fragment):
         pass
 
-class VexRiscvIOs(Module):
+class VexRiscvPeriphs(Module):
     def __init__(self, platform):
         self.bus = bus = wishbone.Interface()
 
         # # #
 
-        # serial
+        # uart
         self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
-
-        # ios
-        finish = Signal()
         self.comb += [
             If(bus.stb & bus.cyc,
                 # uart
@@ -64,7 +61,14 @@ class VexRiscvIOs(Module):
                         self.uart.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
                     )
-                ),
+                )
+            )
+        ]
+
+        # simulation end
+        finish = Signal()
+        self.comb += [
+            If(bus.stb & bus.cyc,
                 # simulation end
                 If(bus.adr == 0xfffffffc//4,
                     If(bus.we,
@@ -79,7 +83,7 @@ class VexRiscvIOs(Module):
 
 class SimSoC(SoCCore):
     mem_map = {
-        "ios": 0x70000000,  # (shadow @0xf0000000)
+        "periphs": 0x70000000,  # (shadow @0xf0000000)
     }
     mem_map.update(SoCCore.mem_map)
 
@@ -94,10 +98,10 @@ class SimSoC(SoCCore):
         # crg
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
-        # ios
-        self.submodules.ios = VexRiscvIOs(platform)
-        self.add_wb_slave(mem_decoder(self.mem_map["ios"]), self.ios.bus)
-        self.add_memory_region("ios", self.mem_map["ios"] | self.shadow_base, 0x10000000)
+        # periphs
+        self.submodules.periphs = VexRiscvPeriphs(platform)
+        self.add_wb_slave(mem_decoder(self.mem_map["periphs"]), self.periphs.bus)
+        self.add_memory_region("periphs", self.mem_map["periphs"] | self.shadow_base, 0x10000000)
 
         # vexriscv
         ibus = wishbone.Interface()
