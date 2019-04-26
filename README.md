@@ -97,3 +97,14 @@ $ cd buildroot
 $ make litex_vexriscv_defconfig
 $ make
 ```
+The binaries are located in *output/images/*.
+
+## Generating the VexRiscv Linux variant (optional)
+Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
+
+Clone VexRiscv repository and generate the Linux variant:
+```sh
+$ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
+$ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=false --csrPluginConfig=linux"
+```
+The Linux variant is the *VexRiscv.v* file.
