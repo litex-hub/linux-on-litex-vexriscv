@@ -52,21 +52,13 @@ class VexRiscvPeriphs(Module):
 
         # # #
 
+        self.sync += bus.ack.eq(0)
+
         # timer
         time = Signal(64)
-        time_cmp = Signal(64)
-        time_cmp_set_lsb = Signal()
-        time_cmp_set_msb = Signal()
+        time_cmp = Signal(64, reset=0xffffffffffffffff)
         self.sync += [
             time.eq(time + 1),
-            If(time_cmp_set_lsb,
-                time_cmp[:32].eq(bus.dat_w)
-            ),
-            If(time_cmp_set_msb,
-                time_cmp[32:].eq(bus.dat_w)
-            )
-        ]
-        self.comb += [
             If(bus.stb & bus.cyc,
                 If(bus.adr == 0xffffffe0//4,
                     If(~bus.we,
@@ -80,14 +72,14 @@ class VexRiscvPeriphs(Module):
                     )
                 ).Elif(bus.adr == 0xffffffe8//4,
                     If(bus.we,
-                        time_cmp_set_lsb.eq(1),
+                        time_cmp.eq(bus.dat_w[:32]),
                     ).Else(
-                        bus.dat_r.eq(time_cmp[:32]),
+                        bus.dat_r.eq(time_cmp[:32])
                     ),
                     bus.ack.eq(1)
                 ).Elif(bus.adr == 0xffffffec//4,
                     If(bus.we,
-                        time_cmp_set_msb.eq(1),
+                        time_cmp[32:].eq(bus.dat_w),
                     ).Else(
                         bus.dat_r.eq(time_cmp[32:]),
                     ),
@@ -99,18 +91,20 @@ class VexRiscvPeriphs(Module):
 
         # uart
         self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
-        self.comb += [
+        self.sync += [
+            self.uart.sink.valid.eq(0),
+            self.uart.source.ready.eq(0),
             If(bus.stb & bus.cyc,
                 # uart
                 If(bus.adr == 0xfffffff8//4,
                     If(bus.we,
-                        self.uart.sink.valid.eq(1),
+                        self.uart.sink.valid.eq(~bus.ack),
                         self.uart.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
                     ).Else(
                         If(self.uart.source.valid,
                             bus.dat_r.eq(self.uart.source.data),
-                            self.uart.source.ready.eq(1)
+                            self.uart.source.ready.eq(~bus.ack)
                         ).Else(
                             bus.dat_r.eq(0xffffffff),
                         ),
@@ -120,20 +114,37 @@ class VexRiscvPeriphs(Module):
             )
         ]
 
+        bus_stb_d = Signal()
+        bus_cyc_d = Signal()
+        self.sync += bus_stb_d.eq(bus.stb)
+        self.sync += bus_cyc_d.eq(bus.cyc)
+
         # simulation end
         finish = Signal()
-        self.comb += If(bus.stb & bus.cyc & ~bus.ack, finish.eq(1))
+        self.comb += If(bus.stb & bus_stb_d & bus.cyc & bus_cyc_d & ~bus.ack, finish.eq(1))
         self.sync += timeline(finish, [(100, [Finish()])])
 
         # debug
-        self.sync += \
-            If(debug & bus.stb & bus.cyc,
-                If(bus.we,
-                    Display("[%016x]: write: 0x%08x@0x%08x acked:%d", time, bus.dat_w, bus.adr, bus.ack)
-                ).Else(
-                    Display("[%016x]: read:  0x%08x@0x%08x acked:%d", time, bus.dat_r, bus.adr, bus.ack)
+        if debug:
+            timer_interrupt_d = Signal()
+            self.sync += [
+                timer_interrupt_d.eq(self.timer_interrupt),
+                If(self.timer_interrupt & ~timer_interrupt_d,
+                    Display("[%016x]: timer interrupt, time_cmp: %016x", time, time_cmp)
                 )
-            )
+            ]
+
+            bus_adr_bytes = Signal(32)
+            self.comb += bus_adr_bytes.eq(bus.adr << 2)
+            self.sync += [
+                If(bus_stb_d & bus_cyc_d & bus.ack,
+                    If(bus.we,
+                        Display("[%016x]: write: 0x%08x@0x%08x acked:%d", time, bus.dat_w, bus_adr_bytes, bus.ack)
+                    ).Else(
+                        Display("[%016x]: read:  0x%08x@0x%08x acked:%d", time, bus.dat_r, bus_adr_bytes, bus.ack)
+                    )
+                )
+            ]
 
 
 class SimSoC(SoCCore):
@@ -159,7 +170,7 @@ class SimSoC(SoCCore):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # periphs
-        self.submodules.periphs = VexRiscvPeriphs(platform, debug=True)
+        self.submodules.periphs = VexRiscvPeriphs(platform, debug=False)
         self.add_wb_slave(mem_decoder(self.mem_map["periphs"]), self.periphs.bus)
         self.add_memory_region("periphs", self.mem_map["periphs"], 0x10000000)
 
