@@ -12,6 +12,7 @@ from litex.build.sim.config import SimConfig
 
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
+from litex.soc.interconnect import stream
 from litex.soc.interconnect import wishbone
 from litex.soc.cores import uart
 
@@ -90,21 +91,26 @@ class VexRiscvPeriphs(Module):
         self.comb += self.timer_interrupt.eq(time >= time_cmp)
 
         # uart
-        self.submodules.uart = uart.RS232PHYModel(platform.request("serial"))
+        uart_phy = uart.RS232PHYModel(platform.request("serial"))
+        uart_tx_fifo = stream.SyncFIFO([("data", 8)], 64)
+        uart_rx_fifo = stream.SyncFIFO([("data", 8)], 64)
+        self.submodules += uart_phy, uart_tx_fifo, uart_rx_fifo
+        self.comb += uart_phy.source.connect(uart_rx_fifo.sink)
+        self.comb += uart_tx_fifo.source.connect(uart_phy.sink)
         self.sync += [
-            self.uart.sink.valid.eq(0),
-            self.uart.source.ready.eq(0),
+            uart_tx_fifo.sink.valid.eq(0),
+            uart_rx_fifo.source.ready.eq(0),
             If(bus.stb & bus.cyc,
                 # uart
                 If(bus.adr == 0xfffffff8//4,
                     If(bus.we,
-                        self.uart.sink.valid.eq(~bus.ack),
-                        self.uart.sink.data.eq(bus.dat_w),
+                        uart_tx_fifo.sink.valid.eq(~bus.ack),
+                        uart_tx_fifo.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
                     ).Else(
-                        If(self.uart.source.valid,
-                            bus.dat_r.eq(self.uart.source.data),
-                            self.uart.source.ready.eq(~bus.ack)
+                        If(uart_rx_fifo.source.valid,
+                            bus.dat_r.eq(uart_rx_fifo.source.data),
+                            uart_rx_fifo.source.ready.eq(~bus.ack)
                         ).Else(
                             bus.dat_r.eq(0xffffffff),
                         ),
