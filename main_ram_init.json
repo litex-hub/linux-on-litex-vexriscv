@@ -1,5 +1,0 @@
-{
-	"buildroot/Image":       "0x00000000",
-	"buildroot/rv32.dtb":    "0x03000000",
-	"buildroot/rootfs.cpio": "0x02000000"
-}

@@ -147,9 +147,9 @@ class SimSoC(SoCCore):
         SoCCore.__init__(self, platform, cpu_type=None, clk_freq=sys_clk_freq,
             with_timer=False, with_uart=False,
             integrated_sram_size=0x10000,
-            integrated_sram_init=get_mem_data("emulator.bin", "little"),
+            integrated_sram_init=get_mem_data("sram.json", "little"),
             integrated_main_ram_size=0x10000000,
-            integrated_main_ram_init=get_mem_data("main_ram_init.json", "little"),
+            integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
             **kwargs)
 
         # crg
