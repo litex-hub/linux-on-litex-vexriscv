@@ -107,7 +107,15 @@ class VexRiscvPeriphs(Module):
                         self.uart.sink.valid.eq(1),
                         self.uart.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
-                    ),
+                    ).Else(
+                        If(self.uart.source.valid,
+                            bus.dat_r.eq(self.uart.source.data),
+                            self.uart.source.ready.eq(1)
+                        ).Else(
+                            bus.dat_r.eq(0xffffffff),
+                        ),
+                        bus.ack.eq(1)
+                    )
                 )
             )
         ]
