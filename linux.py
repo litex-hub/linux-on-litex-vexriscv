@@ -16,6 +16,7 @@ from litex.soc.interconnect import stream
 from litex.soc.interconnect import wishbone
 from litex.soc.cores import uart
 
+
 class SimPins(Pins):
     def __init__(self, n=1):
         Pins.__init__(self, "s "*n)
@@ -45,6 +46,7 @@ class Platform(SimPlatform):
 
     def do_finalize(self, fragment):
         pass
+
 
 class VexRiscvPeriphs(Module):
     def __init__(self, platform, debug=False):
@@ -152,12 +154,12 @@ class VexRiscvPeriphs(Module):
             ]
 
 
-class SimSoC(SoCCore):
+class LinuxSoC(SoCCore):
     SoCCore.mem_map = {
-        "sram":     0x00000000,  # (shadow @0x80000000)
-        "main_ram": 0x40000000,  # (shadow @0xc0000000)
-        "periphs":  0x70000000,  # (shadow @0xf0000000)
-        "csr":      0x10000000,  # (shadow @0x90000000)
+        "sram":     0x80000000,
+        "main_ram": 0xc0000000,
+        "periphs":  0xf0000000,
+        "csr":      0x10000000, # not used
     }
 
     def __init__(self, **kwargs):
@@ -165,9 +167,9 @@ class SimSoC(SoCCore):
         sys_clk_freq = int(1e6)
         SoCCore.__init__(self, platform, cpu_type=None, clk_freq=sys_clk_freq,
             with_timer=False, with_uart=False,
-            integrated_sram_size=0x10000,
+            integrated_sram_size=0x10000, # 64KB
             integrated_sram_init=get_mem_data("sram.json", "little"),
-            integrated_main_ram_size=0x08000000,
+            integrated_main_ram_size=0x08000000, # 128MB
             integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
             **kwargs)
 
@@ -223,28 +225,16 @@ class SimSoC(SoCCore):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generic LiteX SoC Simulation")
-    builder_args(parser)
-    soc_core_args(parser)
-    parser.add_argument("--threads", default=1,
-                        help="set number of threads (default=1)")
-    parser.add_argument("--ram-init", default=None,
-                        help="ram_init file")
-    parser.add_argument("--trace", action="store_true",
-                        help="enable VCD tracing")
+    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
+    parser.add_argument("--trace", action="store_true", help="enable VCD tracing")
     args = parser.parse_args()
-
-    soc_kwargs = soc_core_argdict(args)
-    builder_kwargs = builder_argdict(args)
 
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
 
-    builder_kwargs["output_dir"] = "build"
-
-    soc = SimSoC(**soc_kwargs)
-    builder = Builder(soc, **builder_kwargs)
-    builder.build(threads=args.threads, sim_config=sim_config, trace=args.trace)
+    soc = LinuxSoC()
+    builder = Builder(soc, output_dir="build")
+    builder.build(sim_config=sim_config, trace=args.trace)
 
 
 if __name__ == "__main__":
