@@ -69,35 +69,29 @@ class VexRiscvPeriphs(Module):
         self.comb += [
             If(bus.stb & bus.cyc,
                 If(bus.adr == 0xffffffe0//4,
-                    If(bus.we,
-                        bus.err.eq(1)
-                    ).Else(
+                    If(~bus.we,
                         bus.dat_r.eq(time[:32]),
                         bus.ack.eq(1)
                     )
                 ).Elif(bus.adr == 0xffffffe4//4,
-                    If(bus.we,
-                        bus.err.eq(1)
-                    ).Else(
+                    If(~bus.we,
                         bus.dat_r.eq(time[32:]),
                         bus.ack.eq(1)
                     )
                 ).Elif(bus.adr == 0xffffffe8//4,
                     If(bus.we,
                         time_cmp_set_lsb.eq(1),
-                        bus.ack.eq(1)
                     ).Else(
                         bus.dat_r.eq(time_cmp[:32]),
-                        bus.ack.eq(1)
-                    )
+                    ),
+                    bus.ack.eq(1)
                 ).Elif(bus.adr == 0xffffffec//4,
                     If(bus.we,
                         time_cmp_set_msb.eq(1),
-                        bus.ack.eq(1)
                     ).Else(
                         bus.dat_r.eq(time_cmp[32:]),
-                        bus.ack.eq(1)
-                    )
+                    ),
+                    bus.ack.eq(1)
                 )
             )
         ]
@@ -120,18 +114,9 @@ class VexRiscvPeriphs(Module):
 
         # simulation end
         finish = Signal()
-        self.comb += [
-            If(bus.stb & bus.cyc,
-                # simulation end
-                If(bus.adr == 0xfffffffc//4,
-                    If(bus.we,
-                        finish.eq(1),
-                        bus.ack.eq(1),
-                    )
-                )
-            )
-        ]
+        self.comb += If(bus.stb & bus.cyc & ~bus.ack, finish.eq(1))
         self.sync += timeline(finish, [(100, [Finish()])])
+
 
 class SimSoC(SoCCore):
     SoCCore.mem_map = {
