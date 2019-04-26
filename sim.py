@@ -46,7 +46,7 @@ class Platform(SimPlatform):
         pass
 
 class VexRiscvPeriphs(Module):
-    def __init__(self, platform):
+    def __init__(self, platform, debug=False):
         self.bus = bus = wishbone.Interface()
         self.timer_interrupt = Signal()
 
@@ -107,7 +107,7 @@ class VexRiscvPeriphs(Module):
                         self.uart.sink.valid.eq(1),
                         self.uart.sink.data.eq(bus.dat_w),
                         bus.ack.eq(1)
-                    )
+                    ),
                 )
             )
         ]
@@ -116,6 +116,16 @@ class VexRiscvPeriphs(Module):
         finish = Signal()
         self.comb += If(bus.stb & bus.cyc & ~bus.ack, finish.eq(1))
         self.sync += timeline(finish, [(100, [Finish()])])
+
+        # debug
+        self.sync += \
+            If(debug & bus.stb & bus.cyc,
+                If(bus.we,
+                    Display("[%016x]: write: 0x%08x@0x%08x acked:%d", time, bus.dat_w, bus.adr, bus.ack)
+                ).Else(
+                    Display("[%016x]: read:  0x%08x@0x%08x acked:%d", time, bus.dat_r, bus.adr, bus.ack)
+                )
+            )
 
 
 class SimSoC(SoCCore):
@@ -141,7 +151,7 @@ class SimSoC(SoCCore):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # periphs
-        self.submodules.periphs = VexRiscvPeriphs(platform)
+        self.submodules.periphs = VexRiscvPeriphs(platform, debug=True)
         self.add_wb_slave(mem_decoder(self.mem_map["periphs"]), self.periphs.bus)
         self.add_memory_region("periphs", self.mem_map["periphs"], 0x10000000)
 
