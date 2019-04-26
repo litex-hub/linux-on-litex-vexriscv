@@ -92,8 +92,9 @@ Built-in commands:
 
 ## Generating the Linux binaries (optional)
 ```sh
-$ git clone http://github.com/enjoy-digital/buildroot
+$ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
+$ cp -r ../linux-litex-vexriscv/buildroot/* ./
 $ make litex_vexriscv_defconfig
 $ make
 ```
