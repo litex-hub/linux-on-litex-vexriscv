@@ -92,8 +92,8 @@ class VexRiscvPeriphs(Module):
 
         # uart
         uart_phy = uart.RS232PHYModel(platform.request("serial"))
-        uart_tx_fifo = stream.SyncFIFO([("data", 8)], 64)
-        uart_rx_fifo = stream.SyncFIFO([("data", 8)], 64)
+        uart_tx_fifo = stream.SyncFIFO([("data", 8)], 8)
+        uart_rx_fifo = stream.SyncFIFO([("data", 8)], 8)
         self.submodules += uart_phy, uart_tx_fifo, uart_rx_fifo
         self.comb += uart_phy.source.connect(uart_rx_fifo.sink)
         self.comb += uart_tx_fifo.source.connect(uart_phy.sink)
@@ -101,7 +101,6 @@ class VexRiscvPeriphs(Module):
             uart_tx_fifo.sink.valid.eq(0),
             uart_rx_fifo.source.ready.eq(0),
             If(bus.stb & bus.cyc,
-                # uart
                 If(bus.adr == 0xfffffff8//4,
                     If(bus.we,
                         uart_tx_fifo.sink.valid.eq(~bus.ack),
