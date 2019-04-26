@@ -148,7 +148,7 @@ class SimSoC(SoCCore):
             with_timer=False, with_uart=False,
             integrated_sram_size=0x10000,
             integrated_sram_init=get_mem_data("sram.json", "little"),
-            integrated_main_ram_size=0x10000000,
+            integrated_main_ram_size=0x08000000,
             integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
             **kwargs)
 
