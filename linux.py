@@ -10,6 +10,7 @@ from litex.build.generic_platform import *
 from litex.build.sim import SimPlatform
 from litex.build.sim.config import SimConfig
 
+from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 from litex.soc.interconnect import stream
@@ -48,118 +49,43 @@ class Platform(SimPlatform):
         pass
 
 
-class VexRiscvPeriphs(Module):
-    def __init__(self, platform, debug=False):
-        self.bus = bus = wishbone.Interface()
-        self.timer_interrupt = Signal()
+class Supervisor(Module, AutoCSR):
+    def __init__(self):
+        self._finish  = CSR()  # controlled from CPU
+        self.finish = Signal() # controlled from logic
+        self.sync += If(self._finish.re | self.finish, Finish())
+
+
+class Timer(Module, AutoCSR):
+    def __init__(self, debug=False):
+        self._latch = CSR()
+        self._time = CSRStatus(64)
+        self._time_cmp = CSRStorage(64, reset=0xffffffffffffffff)
+        self.interrupt = Signal()
 
         # # #
 
-        self.sync += bus.ack.eq(0)
-
-        # timer
         time = Signal(64)
+        self.sync += time.eq(time + 1)
+        self.sync += If(self._latch.re, self._time.status.eq(time))
+
         time_cmp = Signal(64, reset=0xffffffffffffffff)
-        self.sync += [
-            time.eq(time + 1),
-            If(bus.stb & bus.cyc,
-                If(bus.adr == 0xffffffe0//4,
-                    If(~bus.we,
-                        bus.dat_r.eq(time[:32]),
-                        bus.ack.eq(1)
-                    )
-                ).Elif(bus.adr == 0xffffffe4//4,
-                    If(~bus.we,
-                        bus.dat_r.eq(time[32:]),
-                        bus.ack.eq(1)
-                    )
-                ).Elif(bus.adr == 0xffffffe8//4,
-                    If(bus.we,
-                        time_cmp.eq(bus.dat_w[:32]),
-                    ).Else(
-                        bus.dat_r.eq(time_cmp[:32])
-                    ),
-                    bus.ack.eq(1)
-                ).Elif(bus.adr == 0xffffffec//4,
-                    If(bus.we,
-                        time_cmp[32:].eq(bus.dat_w),
-                    ).Else(
-                        bus.dat_r.eq(time_cmp[32:]),
-                    ),
-                    bus.ack.eq(1)
-                )
-            )
-        ]
-        self.comb += self.timer_interrupt.eq(time >= time_cmp)
+        self.sync += If(self._latch.re, time_cmp.eq(self._time_cmp.storage))
 
-        # uart
-        uart_phy = uart.RS232PHYModel(platform.request("serial"))
-        uart_tx_fifo = stream.SyncFIFO([("data", 8)], 8)
-        uart_rx_fifo = stream.SyncFIFO([("data", 8)], 8)
-        self.submodules += uart_phy, uart_tx_fifo, uart_rx_fifo
-        self.comb += uart_phy.source.connect(uart_rx_fifo.sink)
-        self.comb += uart_tx_fifo.source.connect(uart_phy.sink)
-        self.sync += [
-            uart_tx_fifo.sink.valid.eq(0),
-            uart_rx_fifo.source.ready.eq(0),
-            If(bus.stb & bus.cyc,
-                If(bus.adr == 0xfffffff8//4,
-                    If(bus.we,
-                        uart_tx_fifo.sink.valid.eq(~bus.ack),
-                        uart_tx_fifo.sink.data.eq(bus.dat_w),
-                        bus.ack.eq(1)
-                    ).Else(
-                        If(uart_rx_fifo.source.valid,
-                            bus.dat_r.eq(uart_rx_fifo.source.data),
-                            uart_rx_fifo.source.ready.eq(~bus.ack)
-                        ).Else(
-                            bus.dat_r.eq(0xffffffff),
-                        ),
-                        bus.ack.eq(1)
-                    )
-                )
-            )
-        ]
-
-        bus_stb_d = Signal()
-        bus_cyc_d = Signal()
-        self.sync += bus_stb_d.eq(bus.stb)
-        self.sync += bus_cyc_d.eq(bus.cyc)
-
-        # simulation end
-        finish = Signal()
-        self.comb += If(bus.stb & bus_stb_d & bus.cyc & bus_cyc_d & ~bus.ack, finish.eq(1))
-        self.sync += timeline(finish, [(100, [Finish()])])
-
-        # debug
-        if debug:
-            timer_interrupt_d = Signal()
-            self.sync += [
-                timer_interrupt_d.eq(self.timer_interrupt),
-                If(self.timer_interrupt & ~timer_interrupt_d,
-                    Display("[%016x]: timer interrupt, time_cmp: %016x", time, time_cmp)
-                )
-            ]
-
-            bus_adr_bytes = Signal(32)
-            self.comb += bus_adr_bytes.eq(bus.adr << 2)
-            self.sync += [
-                If(bus_stb_d & bus_cyc_d & bus.ack,
-                    If(bus.we,
-                        Display("[%016x]: write: 0x%08x@0x%08x acked:%d", time, bus.dat_w, bus_adr_bytes, bus.ack)
-                    ).Else(
-                        Display("[%016x]: read:  0x%08x@0x%08x acked:%d", time, bus.dat_r, bus_adr_bytes, bus.ack)
-                    )
-                )
-            ]
+        self.comb += self.interrupt.eq(time >= time_cmp)
 
 
 class LinuxSoC(SoCCore):
+    csr_map = {
+        "supervisor":    4,
+        "timer":         5
+    }
+    csr_map.update(SoCCore.csr_map)
+
     SoCCore.mem_map = {
         "sram":     0x80000000,
         "main_ram": 0xc0000000,
-        "periphs":  0xf0000000,
-        "csr":      0x10000000, # not used
+        "csr":      0xf0000000,
     }
 
     def __init__(self, **kwargs):
@@ -173,13 +99,20 @@ class LinuxSoC(SoCCore):
             integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
             **kwargs)
 
+        # supervisor
+        self.submodules.supervisor = Supervisor()
+
         # crg
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
-        # periphs
-        self.submodules.periphs = VexRiscvPeriphs(platform, debug=False)
-        self.add_wb_slave(mem_decoder(self.mem_map["periphs"]), self.periphs.bus)
-        self.add_memory_region("periphs", self.mem_map["periphs"], 0x10000000)
+        # serial
+        self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
+        self.submodules.uart = uart.UART(self.uart_phy)
+        counter = Signal(8)
+        self.sync += counter.eq(counter + 1)
+
+        # timer
+        self.submodules.timer = Timer()
 
         # vexriscv
         ibus = wishbone.Interface()
@@ -190,7 +123,7 @@ class LinuxSoC(SoCCore):
 
             i_externalResetVector=0x80000000,
 
-            i_timerInterrupt=self.periphs.timer_interrupt,
+            i_timerInterrupt=self.timer.interrupt,
             i_externalInterrupt=0,
             i_softwareInterrupt=0,
             i_externalInterruptS=0,
@@ -233,7 +166,7 @@ def main():
     sim_config.add_module("serial2console", "serial")
 
     soc = LinuxSoC()
-    builder = Builder(soc, output_dir="build")
+    builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
     builder.build(sim_config=sim_config, trace=args.trace)
 
 
