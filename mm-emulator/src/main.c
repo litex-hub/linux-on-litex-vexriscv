@@ -158,26 +158,7 @@ void trap(){
 		case CAUSE_ILLEGAL_INSTRUCTION:{
 			uint32_t mepc = csr_read(mepc);
 			uint32_t mstatus = csr_read(mstatus);
-#ifdef SIM
 			uint32_t instruction = csr_read(mbadaddr);
-#endif
-#ifdef QEMU
-			uint32_t instruction = 0;
-			uint32_t i;
-			if (mepc & 2) {
-				readWord(mepc - 2, &i);
-				i >>= 16;
-				if (i & 3 == 3) {
-					uint32_t u32Buf;
-					readWord(mepc+2, &u32Buf);
-					i |= u32Buf << 16;
-				}
-			} else {
-				readWord(mepc, &i);
-			}
-			instruction = i;
-			csr_write(mtvec, trapEntry); //Restore mtvec
-#endif
 
 			uint32_t opcode = instruction & 0x7F;
 			uint32_t funct3 = (instruction >> 12) & 0x7;
