@@ -1,6 +1,9 @@
 # Experiments with Linux on LiteX-VexRiscv
 
-> **Note:** Tested on Ubuntu 18.04.
+> **Note:** Tested on Ubuntu 18.04.*
+
+## Demo:
+https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
 
 ## Installing LiteX
 ```sh
@@ -18,9 +21,9 @@ $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6/b
 $ apt install verilator
 $ apt install libevent-dev libjson-c-dev
 ```
-## Running the simulation
+## Running the LiteX simulation
 ```sh
-$ ./linux.py
+$ ./sim.py
 ```
 You should see Linux booting and be able to interact with it:
 ```
@@ -88,6 +91,18 @@ Built-in commands:
 	trap true type ulimit umask unalias unset wait
 #
 #
+```
+
+## Running on hardware (Digilent Arty board)
+To build the target, you will need to install Vivado and run:
+```sh
+$ ./arty.py
+```
+ The bitstream used for the demo is also provided ( *build/gateware/top.bit*) if you don't want to rebuild it.
+
+The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/build/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
+```sh
+$ ./load.py
 ```
 
 ## Generating the Linux binaries (optional)
