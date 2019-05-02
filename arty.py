@@ -128,10 +128,6 @@ class LinuxSoC(SoCSDRAM):
             self.ethphy.crg.cd_eth_rx.clk,
             self.ethphy.crg.cd_eth_tx.clk)
 
-        self.add_constant("REMOTEIP1", 192)
-        self.add_constant("REMOTEIP2", 168)
-        self.add_constant("REMOTEIP3",   1)
-        self.add_constant("REMOTEIP4", 113)
         self.add_constant("NETBOOT_LINUX_VEXRISCV", None)
 
 # Build --------------------------------------------------------------------------------------------
