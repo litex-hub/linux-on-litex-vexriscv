@@ -77,13 +77,15 @@ class Timer(Module, AutoCSR):
 
 class LinuxSoC(SoCCore):
     csr_map = {
-        "supervisor":    4,
-        "timer":         5
+        "supervisor":    16,
+        "timer":         17
     }
     csr_map.update(SoCCore.csr_map)
 
     SoCCore.mem_map = {
-        "sram":     0x80000000,
+        "mm_ram":   0x80000000,
+        "sram":     0xa0000000,
+        "rom":      0x90000000,
         "main_ram": 0xc0000000,
         "csr":      0xf0000000,
     }
@@ -91,13 +93,14 @@ class LinuxSoC(SoCCore):
     def __init__(self, **kwargs):
         platform = Platform()
         sys_clk_freq = int(1e6)
-        SoCCore.__init__(self, platform, cpu_type=None, clk_freq=sys_clk_freq,
-            with_timer=False, with_uart=False,
-            integrated_sram_size=0x10000, # 64KB
-            integrated_sram_init=get_mem_data("sram.json", "little"),
+        SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
+            cpu_type="vexriscv",
+            with_uart=False,
+            integrated_rom_size=0x8000,
             integrated_main_ram_size=0x08000000, # 128MB
             integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
             **kwargs)
+        self.cpu.use_external_variant("VexRiscv.v")
 
         # supervisor
         self.submodules.supervisor = Supervisor()
@@ -105,56 +108,18 @@ class LinuxSoC(SoCCore):
         # crg
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
+        # machine mode emulator ram
+        self.submodules.mm_ram = wishbone.SRAM(0x10000, init=get_mem_data("mm_rom.json", "little"))
+        self.register_mem("mm_ram", self.mem_map["mm_ram"], self.mm_ram.bus, 0x10000)
+        self.add_constant("ROM_BOOT_ADDRESS", 0x80000000)
+
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
-        counter = Signal(8)
-        self.sync += counter.eq(counter + 1)
 
         # timer
         self.submodules.timer = Timer()
-
-        # vexriscv
-        ibus = wishbone.Interface()
-        dbus = wishbone.Interface()
-        self.specials += Instance("VexRiscv",
-            i_clk=ClockSignal(),
-            i_reset=ResetSignal(),
-
-            i_externalResetVector=0x80000000,
-
-            i_timerInterrupt=self.timer.interrupt,
-            i_softwareInterrupt=0,
-            i_externalInterruptS=0,
-            i_externalInterruptArray=0,
-
-            o_iBusWishbone_ADR=ibus.adr,
-            o_iBusWishbone_DAT_MOSI=ibus.dat_w,
-            o_iBusWishbone_SEL=ibus.sel,
-            o_iBusWishbone_CYC=ibus.cyc,
-            o_iBusWishbone_STB=ibus.stb,
-            o_iBusWishbone_WE=ibus.we,
-            o_iBusWishbone_CTI=ibus.cti,
-            o_iBusWishbone_BTE=ibus.bte,
-            i_iBusWishbone_DAT_MISO=ibus.dat_r,
-            i_iBusWishbone_ACK=ibus.ack,
-            i_iBusWishbone_ERR=ibus.err,
-
-            o_dBusWishbone_ADR=dbus.adr,
-            o_dBusWishbone_DAT_MOSI=dbus.dat_w,
-            o_dBusWishbone_SEL=dbus.sel,
-            o_dBusWishbone_CYC=dbus.cyc,
-            o_dBusWishbone_STB=dbus.stb,
-            o_dBusWishbone_WE=dbus.we,
-            o_dBusWishbone_CTI=dbus.cti,
-            o_dBusWishbone_BTE=dbus.bte,
-            i_dBusWishbone_DAT_MISO=dbus.dat_r,
-            i_dBusWishbone_ACK=dbus.ack,
-            i_dBusWishbone_ERR=dbus.err
-        )
-        self.add_wb_master(ibus)
-        self.add_wb_master(dbus)
-        platform.add_source("VexRiscv.v")
+        self.cpu.cpu_params.update(i_timerInterrupt=self.timer.interrupt)
 
 
 def main():

@@ -25,7 +25,7 @@ static inline uint32_t csr_readl(unsigned long addr)
 }
 
 void stopSim(){
-    csr_writeb(1, 0xf0002000);
+    csr_writeb(1, 0xf0008000);
 	while(1);
 }
 
@@ -48,11 +48,11 @@ int32_t getC(){
 uint32_t rdtime(){
     uint8_t i;
     uint32_t t;
-    csr_writeb(1, 0xf0002800);
+    csr_writeb(1, 0xf0008800);
     t = 0;
     for (i=0; i<4; i++) {
         t <<= 8;
-        t |= csr_readb(0xf0002804 + 4*(i + 4));
+        t |= csr_readb(0xf0008804 + 4*(i + 4));
     }
 	return t;
 }
@@ -60,11 +60,11 @@ uint32_t rdtime(){
 uint32_t rdtimeh(){
     uint8_t i;
     uint32_t t;
-    csr_writeb(1, 0xf0002800);
+    csr_writeb(1, 0xf0008800);
     t = 0;
     for (i=0; i<4; i++) {
         t <<= 8;
-        t |= csr_readb(0xf0002804 + 4*(i + 0));
+        t |= csr_readb(0xf0008804 + 4*(i + 0));
     }
     return t;
 }
@@ -72,12 +72,12 @@ uint32_t rdtimeh(){
 void setMachineTimerCmp(uint32_t low, uint32_t high){
     uint8_t i;
     for (i=0; i<4; i++) {
-        csr_writeb(low >> (8*(3-i)), 0xf0002824 + 4*(i + 4));
+        csr_writeb(low >> (8*(3-i)), 0xf0008824 + 4*(i + 4));
     }
     for (i=0; i<4; i++) {
-        csr_writeb(high >> (8*(3-i)), 0xf0002824 + 4*(i + 0));
+        csr_writeb(high >> (8*(3-i)), 0xf0008824 + 4*(i + 0));
     }
-    csr_writeb(1, 0xf0002800);
+    csr_writeb(1, 0xf0008800);
 }
 
 
