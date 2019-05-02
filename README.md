@@ -27,6 +27,32 @@ $ ./sim.py
 ```
 You should see Linux booting and be able to interact with it:
 ```
+        __   _ __      _  __
+       / /  (_) /____ | |/_/
+      / /__/ / __/ -_)>  <
+     /____/_/\__/\__/_/|_|
+
+ (c) Copyright 2012-2019 Enjoy-Digital
+ (c) Copyright 2012-2015 M-Labs Ltd
+
+ BIOS built on May  2 2019 18:58:54
+ BIOS CRC passed (97ea247b)
+
+--============ SoC info ================--
+CPU:       VexRiscv @ 1MHz
+ROM:       32KB
+SRAM:      4KB
+MAIN-RAM:  131072KB
+
+--========= Peripherals init ===========--
+
+--========== Boot sequence =============--
+Booting from serial...
+Press Q or ESC to abort boot completely.
+sL5DdSMmkekro
+Timeout
+Executing booted program at 0x20000000
+--============= Liftoff! ===============--
 *** VexRiscv BIOS ***
 *** Supervisor ***
 No DTB passed to the kernel
