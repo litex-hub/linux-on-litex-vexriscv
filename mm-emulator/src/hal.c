@@ -30,15 +30,20 @@ void stopSim(){
 }
 
 void putC(char c){
-    csr_writeb(c, 0xf0001800);
+    uint32_t full;
+    full = 1;
+    while ((full & 0x1) != 0)
+        full = csr_readl(0xf0001804);
+    if (c != '\r')
+        csr_writeb(c, 0xf0001800);
 }
 
 int32_t getC(){
     int32_t c;
-    uint8_t empty;
+    uint32_t empty;
     c = 0xffffffff;
     empty = csr_readl(0xf0001808);
-    if (empty == 0) {
+    if ((empty & 0x1) == 0) {
         c = csr_readb(0xf0001800);
         csr_writeb(UART_EV_RX, 0xf0001810);
     }
