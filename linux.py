@@ -83,10 +83,10 @@ class LinuxSoC(SoCCore):
     csr_map.update(SoCCore.csr_map)
 
     SoCCore.mem_map = {
-        "mm_ram":   0x80000000,
-        "sram":     0xa0000000,
-        "rom":      0x90000000,
-        "main_ram": 0xc0000000,
+        "rom":      0x00000000,
+        "sram":     0x10000000,
+        "mm_ram":   0x20000000,
+        "main_ram": 0xC0000000,
         "csr":      0xf0000000,
     }
 
@@ -111,7 +111,7 @@ class LinuxSoC(SoCCore):
         # machine mode emulator ram
         self.submodules.mm_ram = wishbone.SRAM(0x10000, init=get_mem_data("mm_rom.json", "little"))
         self.register_mem("mm_ram", self.mem_map["mm_ram"], self.mm_ram.bus, 0x10000)
-        self.add_constant("ROM_BOOT_ADDRESS", 0x80000000)
+        self.add_constant("ROM_BOOT_ADDRESS", 0x20000000)
 
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))

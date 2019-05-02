@@ -4,7 +4,7 @@ ENTRY( _start )
 
 MEMORY
 {
-  ram : ORIGIN = 0x80000000, LENGTH = 64k
+  ram : ORIGIN = 0x20000000, LENGTH = 64k
 }
 
 
