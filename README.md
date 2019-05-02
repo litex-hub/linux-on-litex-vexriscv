@@ -106,6 +106,6 @@ Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog
 Clone VexRiscv repository and generate the Linux variant:
 ```sh
 $ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
-$ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=false --csrPluginConfig=linux"
+$ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPluginConfig=linux"
 ```
 The Linux variant is the *VexRiscv.v* file.

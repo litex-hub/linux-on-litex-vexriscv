@@ -124,9 +124,9 @@ class LinuxSoC(SoCCore):
             i_externalResetVector=0x80000000,
 
             i_timerInterrupt=self.timer.interrupt,
-            i_externalInterrupt=0,
             i_softwareInterrupt=0,
             i_externalInterruptS=0,
+            i_externalInterruptArray=0,
 
             o_iBusWishbone_ADR=ibus.adr,
             o_iBusWishbone_DAT_MOSI=ibus.dat_w,
