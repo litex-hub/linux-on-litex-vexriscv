@@ -45,29 +45,10 @@ class _CRG(Module):
 
 # LinuxSoC -----------------------------------------------------------------------------------------
 
-class Timer(Module, AutoCSR):
-    def __init__(self, debug=False):
-        self._latch = CSR()
-        self._time = CSRStatus(64)
-        self._time_cmp = CSRStorage(64, reset=0xffffffffffffffff)
-        self.interrupt = Signal()
-
-        # # #
-
-        time = Signal(64)
-        self.sync += time.eq(time + 1)
-        self.sync += If(self._latch.re, self._time.status.eq(time))
-
-        time_cmp = Signal(64, reset=0xffffffffffffffff)
-        self.sync += If(self._latch.re, time_cmp.eq(self._time_cmp.storage))
-
-        self.comb += self.interrupt.eq(time >= time_cmp)
-
-
 class LinuxSoC(SoCSDRAM):
     csr_map = {
         "ddrphy": 16,
-        "timer":  17,
+        "cpu":    17,
         "ethphy": 18,
         "ethmac": 19
     }
@@ -86,7 +67,7 @@ class LinuxSoC(SoCSDRAM):
         platform = arty.Platform()
         sys_clk_freq = int(100e6)
         SoCSDRAM.__init__(self, platform, clk_freq=sys_clk_freq,
-                         cpu_type="vexriscv",
+                         cpu_type="vexriscv", cpu_variant="linux",
                          integrated_rom_size=0x8000,
                          integrated_sram_size=0x8000,
                          **kwargs)
@@ -96,10 +77,6 @@ class LinuxSoC(SoCSDRAM):
         self.submodules.crg = _CRG(platform, sys_clk_freq)
         self.crg.cd_sys.clk.attr.add("keep")
         self.platform.add_period_constraint(self.crg.cd_sys.clk, 1e9/100e6)
-
-        # timer
-        self.submodules.timer = Timer()
-        self.cpu.cpu_params.update(i_timerInterrupt=self.timer.interrupt)
 
         # machine mode emulator ram
         self.submodules.mm_ram = wishbone.SRAM(0x10000)

@@ -56,29 +56,10 @@ class Supervisor(Module, AutoCSR):
         self.sync += If(self._finish.re | self.finish, Finish())
 
 
-class Timer(Module, AutoCSR):
-    def __init__(self, debug=False):
-        self._latch = CSR()
-        self._time = CSRStatus(64)
-        self._time_cmp = CSRStorage(64, reset=0xffffffffffffffff)
-        self.interrupt = Signal()
-
-        # # #
-
-        time = Signal(64)
-        self.sync += time.eq(time + 1)
-        self.sync += If(self._latch.re, self._time.status.eq(time))
-
-        time_cmp = Signal(64, reset=0xffffffffffffffff)
-        self.sync += If(self._latch.re, time_cmp.eq(self._time_cmp.storage))
-
-        self.comb += self.interrupt.eq(time >= time_cmp)
-
-
 class LinuxSoC(SoCCore):
     csr_map = {
         "supervisor":    16,
-        "timer":         17
+        "cpu":           17
     }
     csr_map.update(SoCCore.csr_map)
 
@@ -94,7 +75,7 @@ class LinuxSoC(SoCCore):
         platform = Platform()
         sys_clk_freq = int(1e6)
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
-            cpu_type="vexriscv",
+            cpu_type="vexriscv", cpu_variant="linux",
             with_uart=False,
             integrated_rom_size=0x8000,
             integrated_main_ram_size=0x08000000, # 128MB
@@ -116,10 +97,6 @@ class LinuxSoC(SoCCore):
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
-
-        # timer
-        self.submodules.timer = Timer()
-        self.cpu.cpu_params.update(i_timerInterrupt=self.timer.interrupt)
 
 
 def main():
