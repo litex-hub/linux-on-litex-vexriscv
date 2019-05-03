@@ -53,8 +53,8 @@ sL5DdSMmkekro
 Timeout
 Executing booted program at 0x20000000
 --============= Liftoff! ===============--
-*** VexRiscv BIOS ***
-*** Supervisor ***
+VexRiscv Machine Mode software built May  3 2019 19:33:43
+--========== Booting Linux =============--
 [    0.000000] No DTB passed to the kernel
 [    0.000000] Linux version 5.0.9 (florent@lab) (gcc version 8.3.0 (Buildroot 2019.05-git-00938-g75f9fcd0c9)) #1 Thu May 2 17:43:30 CEST 2019
 [    0.000000] Initial ramdisk at: 0x(ptrval) (8388608 bytes)
@@ -127,7 +127,7 @@ $ ./arty.py
 ```
  The bitstream used for the demo is also provided ( *build/gateware/top.bit*) if you don't want to rebuild it.
 
-The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/build/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
+The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
 ```sh
 $ ./load.py
 ```

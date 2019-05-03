@@ -94,7 +94,7 @@ class LinuxSoC(SoCCore):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # machine mode emulator ram
-        emulator_rom = get_mem_data("emulator/build/emulator.bin", "little")
+        emulator_rom = get_mem_data("emulator/emulator.bin", "little")
         self.submodules.emulator_ram = wishbone.SRAM(0x10000, init=emulator_rom)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x10000)
         self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
