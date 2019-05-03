@@ -79,7 +79,11 @@ class LinuxSoC(SoCCore):
             with_uart=False,
             integrated_rom_size=0x8000,
             integrated_main_ram_size=0x08000000, # 128MB
-            integrated_main_ram_init=get_mem_data("main_ram.json", "little"),
+            integrated_main_ram_init=get_mem_data({
+                "binaries/Image":         "0x00000000",
+                "binaries/rootfs.cpio":   "0x02000000",
+                "binaries/rv32.dtb":      "0x03000000"
+                }, "little"),
             **kwargs)
         self.cpu.use_external_variant("VexRiscv.v")
 
@@ -90,7 +94,8 @@ class LinuxSoC(SoCCore):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # machine mode emulator ram
-        self.submodules.emulator_ram = wishbone.SRAM(0x10000, init=get_mem_data("emulator.json", "little"))
+        emulator_rom = get_mem_data("emulator/build/emulator.bin", "little")
+        self.submodules.emulator_ram = wishbone.SRAM(0x10000, init=emulator_rom)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x10000)
         self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
 
