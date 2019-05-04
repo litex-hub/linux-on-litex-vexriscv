@@ -16,11 +16,21 @@ $ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-20171231-
 $ tar -xvf riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6.tar.gz
 $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6/bin/
 ```
-## Installing Verilator
+## Installing Verilator (only needed for simulation)
 ```sh
 $ apt install verilator
 $ apt install libevent-dev libjson-c-dev
 ```
+## Installing OpenOCD (only needed for hardware test)
+```sh
+$ git clone https://github.com/ntfreak/openocd.git
+$ cd openocd
+$./bootstrap
+$./configure --enable-ftdi
+$make
+$sudo make install
+```
+
 ## Running the LiteX simulation
 ```sh
 $ ./sim.py
@@ -120,17 +130,26 @@ Built-in commands:
 #
 ```
 
-## Running on hardware (Digilent Arty board)
+## Running on hardware with  the Digilent Arty board
 To build the target, you will need to install Vivado and run:
 ```sh
-$ ./arty.py
+$ ./arty.py --build
 ```
- The bitstream used for the demo is also provided ( *build/gateware/top.bit*) if you don't want to rebuild it.
+**The bitstream used for the demo is also provided ( *build/gateware/top.bit/bin*) if you don't want to rebuild it.**
 
 The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
 ```sh
-$ ./load.py
+$ ./arty.py --load
 ```
+You can also flash the binaries to the SPI Flash of the board and directly boot from it with (**this is the recommended way if you don't want to set up a TFTP server**):
+```sh
+$ ./arty.py --flash
+```
+Open your prefered terminal or use lxterm:
+```sh
+$ lxterm /dev/ttyUSBX
+```
+And you should see the BIOS prompt and Linux booting :)
 
 ## Generating the Linux binaries (optional)
 ```sh
