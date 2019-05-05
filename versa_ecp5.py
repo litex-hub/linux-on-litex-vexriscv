@@ -32,7 +32,7 @@ class LinuxSoC(versa_ecp5.EthernetSoC):
         "csr":          0xf0000000,
     }
 
-    def __init__(self, toolchain="trellis", local_ip="192.168.1.100", remote_ip="192.168.1.100"):
+    def __init__(self, toolchain="trellis", local_ip="192.168.1.50", remote_ip="192.168.1.100"):
         versa_ecp5.EthernetSoC.__init__(self, cpu_type="vexriscv", cpu_variant="linux", toolchain=toolchain)
         self.cpu.use_external_variant("VexRiscv.v")
         self.add_constant("NETBOOT_LINUX_VEXRISCV", None)
@@ -62,8 +62,8 @@ def main():
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--diamond", action="store_true", help="use Diamond instead of Trellis")
-    parser.add_argument("--local-ip", default="192.168.1.100", help="local IP address")
-    parser.add_argument("--remote-ip", default="192.168.1.1", help="remote IP address of TFTP server")
+    parser.add_argument("--local-ip", default="192.168.1.50", help="local IP address")
+    parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
 
     args = parser.parse_args()
 

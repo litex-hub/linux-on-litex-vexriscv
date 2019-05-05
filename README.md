@@ -151,6 +151,26 @@ $ lxterm /dev/ttyUSBX
 ```
 And you should see the BIOS prompt and Linux booting :)
 
+## Running on hardware with the Versa ECP5-5G board
+
+To build the target, you will need to install the Yosys/nextpnr/Trellis toolchain and run:
+```sh
+$ ./versa_ecp5.py --build
+```
+
+**The bitstream used for the demo is also provided ( *build_versa5g/gateware/top.bit/svf*) if you don't want to rebuild it.**
+
+The board will load the kernel binaries over TFTP from 192.168.1.100 (you can override this with `--local-ip` and `--remote-ip`). You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
+```sh
+$ ./versa_ecp5.py --load
+```
+
+Open your prefered terminal or use lxterm:
+```sh
+$ lxterm /dev/ttyUSBX
+```
+And you should see the BIOS prompt and Linux booting :)
+
 ## Generating the Linux binaries (optional)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
