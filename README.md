@@ -1,6 +1,6 @@
 # Experiments with Linux on LiteX-VexRiscv
 
-> **Note:** Tested on Ubuntu 18.04.*
+> **Note:** Tested on Ubuntu 18.04.
 
 ## Demo:
 https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
@@ -25,10 +25,10 @@ $ apt install libevent-dev libjson-c-dev
 ```sh
 $ git clone https://github.com/ntfreak/openocd.git
 $ cd openocd
-$./bootstrap
-$./configure --enable-ftdi
-$make
-$sudo make install
+$ ./bootstrap
+$ ./configure --enable-ftdi
+$ make
+$ sudo make install
 ```
 
 ## Running the LiteX simulation
