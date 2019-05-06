@@ -82,7 +82,7 @@ def main():
 
     if args.load:
         from litex.build.openocd import OpenOCD
-        prog = OpenOCD("openocd/openocd_xilinx.cfg")
+        prog = OpenOCD("prog/openocd_xilinx.cfg")
         prog.load_bitstream("build/gateware/top.bit")
 
     if args.flash:
@@ -94,8 +94,8 @@ def main():
             "emulator/emulator.bin":  "0x00f80000", # MM Emulator: copied to 0x20000000 by bios
         }
         from litex.build.openocd import OpenOCD
-        prog = OpenOCD("openocd/openocd_xilinx.cfg",
-            flash_proxy_basename="openocd/bscan_spi_xc7a35t.bit")
+        prog = OpenOCD("prog/openocd_xilinx.cfg",
+            flash_proxy_basename="prog/bscan_spi_xc7a35t.bit")
         prog.set_flash_proxy_dir(".")
         for filename, base in flash_regions.items():
             base = int(base, 16)

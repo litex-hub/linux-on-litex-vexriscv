@@ -77,10 +77,10 @@ def main():
         builder = Builder(soc, output_dir="build_versa5g")
         builder.build(toolchain_path=toolchain_path)
         if args.diamond:
-            os.system("python3 bit_to_svf.py build_versa5g/gateware/top.bit build_versa5g/gateware/top.svf")
+            os.system("python3 prog/bit_to_svf.py build_versa5g/gateware/top.bit build_versa5g/gateware/top.svf")
 
     if args.load:
-        os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build_versa5g/gateware/top.svf; exit\"")
+        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build_versa5g/gateware/top.svf; exit\"")
 
 if __name__ == "__main__":
     main()
