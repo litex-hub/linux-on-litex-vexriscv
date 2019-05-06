@@ -55,10 +55,10 @@ class LinuxSoC(versa_ecp5.EthernetSoC):
         self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
 
-# Build --------------------------------------------------------------------------------------------
+# Build / Load -------------------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="LiteX SoC on Versa ECP5")
+    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv")
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--diamond", action="store_true", help="use Diamond instead of Trellis")

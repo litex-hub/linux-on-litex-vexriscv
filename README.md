@@ -135,7 +135,7 @@ To build the target, you will need to install Vivado and run:
 ```sh
 $ ./arty.py --build
 ```
-**The bitstream used for the demo is also provided ( *build/gateware/top.bit/bin*) if you don't want to rebuild it.**
+**The bitstream used for the demo is also provided ( *build_arty/gateware/top.bit/bin*) if you don't want to rebuild it.**
 
 The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
 ```sh

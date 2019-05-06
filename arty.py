@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+
 import argparse
+import os
 
 from migen import *
 
@@ -32,7 +34,7 @@ class LinuxSoC(arty.EthernetSoC):
         "csr":          0xf0000000,
     }
 
-    def __init__(self):
+    def __init__(self, local_ip="192.168.1.50", remote_ip="192.168.1.100"):
         arty.EthernetSoC.__init__(self, cpu_type="vexriscv", cpu_variant="linux")
         self.cpu.use_external_variant("VexRiscv.v")
         self.add_constant("NETBOOT_LINUX_VEXRISCV", None)
@@ -40,6 +42,19 @@ class LinuxSoC(arty.EthernetSoC):
         # machine mode emulator ram
         self.submodules.emulator_ram = wishbone.SRAM(0x4000)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
+
+        local_ip = local_ip.split(".")
+        remote_ip = remote_ip.split(".")
+
+        self.add_constant("LOCALIP1", int(local_ip[0]))
+        self.add_constant("LOCALIP2", int(local_ip[1]))
+        self.add_constant("LOCALIP3", int(local_ip[2]))
+        self.add_constant("LOCALIP4", int(local_ip[3]))
+
+        self.add_constant("REMOTEIP1", int(remote_ip[0]))
+        self.add_constant("REMOTEIP2", int(remote_ip[1]))
+        self.add_constant("REMOTEIP3", int(remote_ip[2]))
+        self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
           # spiflash
         spiflash_pads = self.platform.request("spiflash4x")
@@ -73,11 +88,14 @@ def main():
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--flash", action="store_true", help="flash bitstream (SPI Flash)")
+    parser.add_argument("--local-ip", default="192.168.1.50", help="local IP address")
+    parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
+
     args = parser.parse_args()
 
     if args.build:
-        soc = LinuxSoC()
-        builder = Builder(soc, output_dir="build")
+        soc = LinuxSoC(local_ip=args.local_ip, remote_ip=args.remote_ip)
+        builder = Builder(soc, output_dir="build_arty")
         builder.build()
 
     if args.load:
