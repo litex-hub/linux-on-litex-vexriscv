@@ -30,3 +30,4 @@ BR2_LINUX_KERNEL_LATEST_VERSION=y
 BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
 BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="board/litex_vexriscv/linux.config"
 BR2_LINUX_KERNEL_IMAGE=y
+BR2_LINUX_KERNEL_PATCH="board/litex_vexriscv/linux_add_liteeth_driver.patch"
