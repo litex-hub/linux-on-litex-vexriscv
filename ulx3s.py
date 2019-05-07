@@ -52,9 +52,9 @@ def main():
     else:
         toolchain_path = "/usr/share/trellis"
 
-    if args.load or args.flash:
+    if args.load:
         print("Compile board device tree...")
-        os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv_arty.dts")
+        os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv_ulx3s.dts")
 
     if args.build:
         soc = LinuxSoC(toolchain="diamond" if args.diamond else "trellis")
