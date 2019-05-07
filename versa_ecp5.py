@@ -58,7 +58,7 @@ class LinuxSoC(versa_ecp5.EthernetSoC):
 # Build / Load -------------------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv")
+    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv with Versa ECP5 board")
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--diamond", action="store_true", help="use Diamond instead of Trellis")

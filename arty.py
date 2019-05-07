@@ -56,7 +56,7 @@ class LinuxSoC(arty.EthernetSoC):
         self.add_constant("REMOTEIP3", int(remote_ip[2]))
         self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
-          # spiflash
+        # spiflash
         spiflash_pads = self.platform.request("spiflash4x")
         spiflash_pads.clk = Signal()
         self.specials += Instance("STARTUPE2",
@@ -84,7 +84,7 @@ class LinuxSoC(arty.EthernetSoC):
 # Build / Load / Flash -----------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv")
+    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv with Arty board")
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--flash", action="store_true", help="flash bitstream (SPI Flash)")

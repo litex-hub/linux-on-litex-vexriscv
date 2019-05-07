@@ -37,35 +37,10 @@ class LinuxSoC(ulx3s.BaseSoC):
         self.submodules.emulator_ram = wishbone.SRAM(0x4000)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
 
-        # spiflash
-        # spiflash_pads = self.platform.request("spiflash4x")
-        # spiflash_pads.clk = Signal()
-        # self.specials += Instance("STARTUPE2",
-        #    i_CLK=0,
-        #    i_GSR=0,
-        #    i_GTS=0,
-        #    i_KEYCLEARB=0,
-        #    i_PACK=0,
-        #    i_USRCCLKO=spiflash_pads.clk,
-        #    i_USRCCLKTS=0,
-        #    i_USRDONEO=1,
-        #    i_USRDONETS=1)
-
-        # self.submodules.spiflash = SpiFlash(
-        #        spiflash_pads,
-        #        dummy=11,
-        #        div=2,
-        #        endianness=self.cpu.endianness)
-        # self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
-        # self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
-
-        # self.add_constant("FLASHBOOT_LINUX_VEXRISCV", None)
-        # self.add_constant("FLASH_BOOT_ADDRESS", None)
-
 # Build --------------------------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="LiteX SoC on Versa ECP5")
+    parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv with ULX3S board")
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--load", action="store_true", help="load bitstream (SRAM)")
     parser.add_argument("--diamond", action="store_true", help="use Diamond instead of Trellis")
