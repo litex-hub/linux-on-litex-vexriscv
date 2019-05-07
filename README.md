@@ -171,6 +171,30 @@ $ lxterm /dev/ttyUSBX
 ```
 And you should see the BIOS prompt and Linux booting :)
 
+## Running on hardware with the ULX3S board
+
+To build the target, you will need to install the Yosys/nextpnr/Trellis toolchain and run:
+```sh
+$ ./ulx3s.py --build
+```
+
+**The bitstream used for the demo is also provided ( *build_ulx3s/gateware/top.bit/svf*) if you don't want to rebuild it.**
+
+You can load the bitstream with:
+```sh
+$ ./versa_ecp5.py --load
+```
+
+The kernel binaries needs to be loaded over serial with using LXTerm:
+```sh
+$ lxterm --images=serialboot.json --speed=3e6 /dev/ttyUSBX
+```
+
+> **Note:** since JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timeout.
+You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
+
+And you should see the BIOS prompt and Linux booting :)
+
 ## Generating the Linux binaries (optional)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
