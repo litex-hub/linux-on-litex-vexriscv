@@ -30,7 +30,7 @@ class LinuxSoC(ulx3s.BaseSoC):
     }
 
     def __init__(self, toolchain="trellis"):
-        ulx3s.BaseSoC.__init__(self, cpu_type="vexriscv", cpu_variant="linux", toolchain=toolchain)
+        ulx3s.BaseSoC.__init__(self, cpu_type="vexriscv", cpu_variant="linux", toolchain=toolchain, uart_baudrate=3e6)
         self.cpu.use_external_variant("VexRiscv.v")
 
         # machine mode emulator ram
@@ -60,7 +60,8 @@ def main():
             os.system("python3 bit_to_svf.py build_ulx3s/gateware/top.bit build_ulx3s/gateware/top.svf")
 
     if args.load:
-        os.system("openocd -f openocd/ulx3s.cfg -c \"transport select jtag; init; svf build_ulx3s/gateware/top.svf; exit\"")
+        os.system("ujprog build_ulx3s/gateware/top.svf")
+        #os.system("openocd -f openocd/ulx3s.cfg -c \"transport select jtag; init; svf build_ulx3s/gateware/top.svf; exit\"")
 
 if __name__ == "__main__":
     main()
