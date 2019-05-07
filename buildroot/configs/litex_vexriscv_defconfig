@@ -31,3 +31,10 @@ BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
 BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="board/litex_vexriscv/linux.config"
 BR2_LINUX_KERNEL_IMAGE=y
 BR2_LINUX_KERNEL_PATCH="board/litex_vexriscv/linux_add_liteeth_driver.patch"
+
+# rootfs customisation
+BR2_ROOTFS_OVERLAY="board/litex_vexriscv/rootfs_overlay"
+
+# Extra packages
+BR2_PACKAGE_DHRYSTONE=y
+BR2_PACKAGE_MICROPYTHON=y
