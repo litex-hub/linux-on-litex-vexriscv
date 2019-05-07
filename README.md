@@ -5,6 +5,15 @@
 ## Demo:
 https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
 
+## Supported boards/provided bitstreams:
+| Name       |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
+|------------|-------------------|------------|-----------------|----------|--------|
+| Arty       | Artix7 XC7A35T    | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
+| Versa ECP5 | ECP5 LFE5UM5G-45F | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps  |   No   |
+| ULX3S      | ECP5 LFE5U-45F    | 32MB/SDRAM |   4MB/QSPI*     |    No    |   Yes* |
+
+> **Note:** \*=present on the board but not yet supported.
+
 ## Installing LiteX
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
