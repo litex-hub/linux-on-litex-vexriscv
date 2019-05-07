@@ -98,6 +98,10 @@ def main():
         builder = Builder(soc, output_dir="build_arty")
         builder.build()
 
+    if args.load or args.flash:
+        print("Compile board device tree...")
+        os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv_arty.dts")
+
     if args.load:
         from litex.build.openocd import OpenOCD
         prog = OpenOCD("prog/openocd_xilinx.cfg")

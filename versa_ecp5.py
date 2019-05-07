@@ -72,6 +72,10 @@ def main():
     else:
         toolchain_path = "/usr/share/trellis"
 
+    if args.load or args.flash:
+        print("Compile board device tree...")
+        os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv_versa_ecp5.dts")
+
     if args.build:
         soc = LinuxSoC(toolchain="diamond" if args.diamond else "trellis", local_ip=args.local_ip, remote_ip=args.remote_ip)
         builder = Builder(soc, output_dir="build_versa5g")
