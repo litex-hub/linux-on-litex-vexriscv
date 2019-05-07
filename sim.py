@@ -78,11 +78,11 @@ class LinuxSoC(SoCCore):
             cpu_type="vexriscv", cpu_variant="linux",
             with_uart=False,
             integrated_rom_size=0x8000,
-            integrated_main_ram_size=0x08000000, # 128MB
+            integrated_main_ram_size=0x02000000, # 32MB
             integrated_main_ram_init=get_mem_data({
                 "binaries/Image":         "0x00000000",
-                "binaries/rootfs.cpio":   "0x02000000",
-                "binaries/rv32.dtb":      "0x03000000"
+                "binaries/rootfs.cpio":   "0x00800000",
+                "binaries/rv32.dtb":      "0x01000000"
                 }, "little"),
             **kwargs)
         self.cpu.use_external_variant("VexRiscv.v")
