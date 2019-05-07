@@ -19,7 +19,7 @@
 
 		cpu@0 {
 			clock-frequency = <0x0>;
-			compatible = "sifive,rocket0", "riscv";
+			compatible = "spinalhdl,vexriscv", "sifive,rocket0", "riscv";
 			d-cache-block-size = <0x40>;
 			d-cache-sets = <0x40>;
 			d-cache-size = <0x8000>;
@@ -33,7 +33,7 @@
 			i-tlb-size = <0x20>;
 			mmu-type = "riscv,sv32";
 			reg = <0x0>;
-			riscv,isa = "rv32im";
+			riscv,isa = "rv32ima";
 			sifive,itim = <0x1>;
 			status = "okay";
 			tlb-split;
