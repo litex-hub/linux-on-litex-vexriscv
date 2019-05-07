@@ -6,11 +6,12 @@
 https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
 
 ## Supported boards/provided bitstreams:
-| Name       |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
-|------------|-------------------|------------|-----------------|----------|--------|
-| Arty       | Artix7 XC7A35T    | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
-| Versa ECP5 | ECP5 LFE5UM5G-45F | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps  |   No   |
-| ULX3S      | ECP5 LFE5U-45F    | 32MB/SDRAM |   4MB/QSPI*     |    No    |   Yes* |
+| Name         |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
+|--------------|-------------------|------------|-----------------|----------|--------|
+| Arty         | Artix7 XC7A35T    | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
+| Versa ECP5   | ECP5 LFE5UM5G-45F | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps  |   No   |
+| ULX3S        | ECP5 LFE5U-45F    | 32MB/SDRAM |   4MB/QSPI*     |    No    |   Yes* |
+| miniSpartan6+| Spartan6 XC6SLX25 | 32MB/SDRAM |   8MB/QSPI*     |    No    |   Yes* |
 
 > **Note:** \*=present on the board but not yet supported.
 
@@ -192,6 +193,30 @@ $ ./ulx3s.py --build
 You can load the bitstream with:
 ```sh
 $ ./versa_ecp5.py --load
+```
+
+The kernel binaries needs to be loaded over serial with using LXTerm:
+```sh
+$ lxterm --images=serialboot.json --speed=3e6 /dev/ttyUSBX
+```
+
+> **Note:** since JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timeout.
+You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
+
+And you should see the BIOS prompt and Linux booting :)
+
+## Running on hardware with the miniSpartan6+ board
+
+To build the target, you will need to install ISE and run:
+```sh
+$ ./minispartan6.py --build
+```
+
+**The bitstream used for the demo is also provided ( *build_minispartan6/gateware/top.bit*) if you don't want to rebuild it.**
+
+You can load the bitstream with:
+```sh
+$ ./minispartan6.py --load
 ```
 
 The kernel binaries needs to be loaded over serial with using LXTerm:
