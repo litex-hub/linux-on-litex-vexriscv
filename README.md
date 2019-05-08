@@ -155,7 +155,7 @@ You can also flash the binaries to the SPI Flash of the board and directly boot 
 ```sh
 $ ./arty.py --flash
 ```
-Open your prefered terminal or use lxterm:
+Open your prefered terminal or use [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py):
 ```sh
 $ lxterm /dev/ttyUSBX
 ```
@@ -192,7 +192,7 @@ $ ./ulx3s.py --build
 
 You can load the bitstream with:
 ```sh
-$ ./versa_ecp5.py --load
+$ ./ulx3s.py --load
 ```
 
 The kernel binaries needs to be loaded over serial with using LXTerm:
