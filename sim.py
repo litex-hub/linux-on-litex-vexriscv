@@ -102,6 +102,7 @@ class LinuxSoC(SoCCore):
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
+        self.add_interrupt("uart")
 
 
 def main():
