@@ -57,12 +57,6 @@ class Supervisor(Module, AutoCSR):
 
 
 class LinuxSoC(SoCCore):
-    csr_map = {
-        "supervisor":    16,
-        "cpu":           17
-    }
-    csr_map.update(SoCCore.csr_map)
-
     SoCCore.mem_map = {
         "rom":          0x00000000,
         "sram":         0x10000000,
@@ -89,6 +83,7 @@ class LinuxSoC(SoCCore):
 
         # supervisor
         self.submodules.supervisor = Supervisor()
+        self.add_csr("supervisor")
 
         # crg
         self.submodules.crg = CRG(platform.request("sys_clk"))
@@ -102,6 +97,7 @@ class LinuxSoC(SoCCore):
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
+        self.add_csr("uart")
         self.add_interrupt("uart")
 
 
