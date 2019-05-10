@@ -9,7 +9,7 @@ from litex.soc.integration.soc_core import mem_decoder
 
 from litex.soc.cores.spi_flash import SpiFlash
 
-# LinuxSoC -----------------------------------------------------------------------------------------
+# SoCLinux -----------------------------------------------------------------------------------------
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
