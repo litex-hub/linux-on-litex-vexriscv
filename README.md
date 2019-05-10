@@ -3,7 +3,7 @@
 > **Note:** Tested on Ubuntu 18.04.
 
 ## Demo:
-https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
+[![asciicast](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF.svg)](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF)
 
 ## Supported boards:
 | Name         |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
