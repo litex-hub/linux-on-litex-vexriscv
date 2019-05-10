@@ -158,6 +158,7 @@ Built-in commands:
 ## Running on hardware
 ### Build the FPGA bitstream (optional)
 **The prebuilt bitstreams for the supported boards are provided**, so you can just use them for quick testing, if you want to rebuild the bitstreams you will need to install the toolchain for your FPGA:
+
 | Board        |       Toolchain       |
 |--------------|-----------------------|
 | Arty         |       Vivado          |
