@@ -140,94 +140,58 @@ Built-in commands:
 #
 ```
 
-## Running on hardware with  the Digilent Arty board
-To build the target, you will need to install Vivado and run:
-```sh
-$ ./arty.py --build
-```
-**The bitstream used for the demo is also provided ( *build/arty/gateware/top.bit/bin*) if you don't want to rebuild it.**
+## Running on hardware
+### Build the FPGA bitstream (optional)
+**The prebuilt bitstreams for the supported boards are provided**, so you can just use them for quick testing, if you want to rebuild the bitstreams you will need to install the toolchain for your FPGA:
+| Board        |       Toolchain       |
+|--------------|-----------------------|
+| Arty         |       Vivado          |
+| Versa ECP5   | Yosys/Trellis/Nextpnr |
+| ULX3S        | Yosys/Trellis/Nextpnr |
+| miniSpartan6+|         ISE           |
 
-The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
+Once installed, build the bitstream with:
 ```sh
-$ ./arty.py --load
-```
-You can also flash the binaries to the SPI Flash of the board and directly boot from it with (**this is the recommended way if you don't want to set up a TFTP server**):
-```sh
-$ ./arty.py --flash
-```
-Open your prefered terminal or use [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py):
-```sh
-$ lxterm /dev/ttyUSBX
-```
-And you should see the BIOS prompt and Linux booting :)
-
-## Running on hardware with the Versa ECP5-5G board
-
-To build the target, you will need to install the Yosys/nextpnr/Trellis toolchain and run:
-```sh
-$ ./versa_ecp5.py --build
+$ ./make.py --board=XXYY --build
 ```
 
-**The bitstream used for the demo is also provided ( *build/versa_ecp5/gateware/top.bit/svf*) if you don't want to rebuild it.**
-
-The board will load the kernel binaries over TFTP from 192.168.1.100 (you can override this with `--local-ip` and `--remote-ip`). You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
+### Load the FPGA bitstream
+To load the bitstream to you board, run:
 ```sh
-$ ./versa_ecp5.py --load
+$ ./make.py --board=XXYY --load
+```
+### Load the Linux images over Serial
+All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
+
+To load the Linux images over Serial, use the [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
+```sh
+$ lxterm --images=serialboot.json /dev/ttyUSBX
+```
+The images should load and you should see Linux booting :)
+
+> **Note**: lxterm is automatically installed with LiteX.
+> **Note:** since on some boards JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
+
+Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
+
+### Load the Linux images over TFTP
+For boards that have Ethernet,  the Linux images can be loaded over TFTP. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
+
+Once the bistream is loaded, the board you try to retrieve the files on the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
+
+The images should load and you should see Linux booting :)
+
+### Load the Linux images to SPI-Flash
+For boards that have SPI Flash (and enough space on it to store the images), the Linux images can be written to
+SPI Flash and directly loaded during boot.
+
+To flash the bitstream and linux images to you board, run:
+```sh
+$ ./make.py --board=XXYY --flash
 ```
 
-Open your prefered terminal or use lxterm:
-```sh
-$ lxterm /dev/ttyUSBX
-```
-And you should see the BIOS prompt and Linux booting :)
-
-## Running on hardware with the ULX3S board
-
-To build the target, you will need to install the Yosys/nextpnr/Trellis toolchain and run:
-```sh
-$ ./ulx3s.py --build
-```
-
-**The bitstream used for the demo is also provided ( *build/ulx3s/gateware/top.bit/svf*) if you don't want to rebuild it.**
-
-You can load the bitstream with:
-```sh
-$ ./ulx3s.py --load
-```
-
-The kernel binaries needs to be loaded over serial with using LXTerm:
-```sh
-$ lxterm --images=serialboot.json --speed=3e6 /dev/ttyUSBX
-```
-
-> **Note:** since JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timeout.
-You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
-
-And you should see the BIOS prompt and Linux booting :)
-
-## Running on hardware with the miniSpartan6+ board
-
-To build the target, you will need to install ISE and run:
-```sh
-$ ./minispartan6.py --build
-```
-
-**The bitstream used for the demo is also provided ( *build/minispartan6/gateware/top.bit*) if you don't want to rebuild it.**
-
-You can load the bitstream with:
-```sh
-$ ./minispartan6.py --load
-```
-
-The kernel binaries needs to be loaded over serial with using LXTerm:
-```sh
-$ lxterm --images=serialboot.json --speed=3e6 /dev/ttyUSBX
-```
-
-> **Note:** since JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timeout.
-You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
-
-And you should see the BIOS prompt and Linux booting :)
+When done, the FPGA of the board should automatically reload itself from the SPI-Flash, start the BIOS, copy
+the Linux images to RAM and boot :)
 
 ## Generating the Linux binaries (optional)
 ```sh
