@@ -87,6 +87,6 @@ def SoCLinux(soc_cls, **kwargs):
             if name != "":
                 name = "_" + name
             print(name)
-            os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv{}.dts".format(name))
+            os.system("dtc -O dtb -o buildroot/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv{}.dts".format(name))
 
     return _SoCLinux(**kwargs)
