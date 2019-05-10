@@ -145,7 +145,7 @@ To build the target, you will need to install Vivado and run:
 ```sh
 $ ./arty.py --build
 ```
-**The bitstream used for the demo is also provided ( *build_arty/gateware/top.bit/bin*) if you don't want to rebuild it.**
+**The bitstream used for the demo is also provided ( *build/arty/gateware/top.bit/bin*) if you don't want to rebuild it.**
 
 The board will load the kernel binaries over TFTP from 192.168.1.100. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
 ```sh
@@ -168,7 +168,7 @@ To build the target, you will need to install the Yosys/nextpnr/Trellis toolchai
 $ ./versa_ecp5.py --build
 ```
 
-**The bitstream used for the demo is also provided ( *build_versa5g/gateware/top.bit/svf*) if you don't want to rebuild it.**
+**The bitstream used for the demo is also provided ( *build/versa_ecp5/gateware/top.bit/svf*) if you don't want to rebuild it.**
 
 The board will load the kernel binaries over TFTP from 192.168.1.100 (you can override this with `--local-ip` and `--remote-ip`). You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. Once done, you can load the bitstream with:
 ```sh
@@ -188,7 +188,7 @@ To build the target, you will need to install the Yosys/nextpnr/Trellis toolchai
 $ ./ulx3s.py --build
 ```
 
-**The bitstream used for the demo is also provided ( *build_ulx3s/gateware/top.bit/svf*) if you don't want to rebuild it.**
+**The bitstream used for the demo is also provided ( *build/ulx3s/gateware/top.bit/svf*) if you don't want to rebuild it.**
 
 You can load the bitstream with:
 ```sh
@@ -212,7 +212,7 @@ To build the target, you will need to install ISE and run:
 $ ./minispartan6.py --build
 ```
 
-**The bitstream used for the demo is also provided ( *build_minispartan6/gateware/top.bit*) if you don't want to rebuild it.**
+**The bitstream used for the demo is also provided ( *build/minispartan6/gateware/top.bit*) if you don't want to rebuild it.**
 
 You can load the bitstream with:
 ```sh

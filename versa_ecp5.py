@@ -37,13 +37,13 @@ def main():
         os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv_versa_ecp5.dts")
 
     if args.build:
-        builder = Builder(soc, output_dir="build_versa5g")
+        builder = Builder(soc, output_dir="build/versa_ecp5")
         builder.build(toolchain_path=toolchain_path)
         if args.diamond:
-            os.system("python3 prog/bit_to_svf.py build_versa5g/gateware/top.bit build_versa5g/gateware/top.svf")
+            os.system("python3 prog/bit_to_svf.py build/versa_ecp5/gateware/top.bit build/versa_ecp5/gateware/top.svf")
 
     if args.load:
-        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build_versa5g/gateware/top.svf; exit\"")
+        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
 
 if __name__ == "__main__":
     main()

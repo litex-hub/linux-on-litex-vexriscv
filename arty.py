@@ -27,17 +27,17 @@ def main():
     soc.compile_device_tree("arty")
 
     if args.build:
-        builder = Builder(soc, output_dir="build_arty")
+        builder = Builder(soc, output_dir="build/arty")
         builder.build()
 
     if args.load:
         from litex.build.openocd import OpenOCD
         prog = OpenOCD("prog/openocd_xilinx.cfg")
-        prog.load_bitstream("build_arty/gateware/top.bit")
+        prog.load_bitstream("build/arty/gateware/top.bit")
 
     if args.flash:
         flash_regions = {
-            "build_arty/gateware/top.bin": "0x00000000", # FPGA image: automatically loaded at startup
+            "build/arty/gateware/top.bin": "0x00000000", # FPGA image: automatically loaded at startup
             "binaries/Image":              "0x00400000", # Linux Image: copied to 0xc0000000 by bios
             "binaries/rootfs.cpio":        "0x00800000", # File System: copied to 0xc0800000 by bios
             "binaries/rv32.dtb":           "0x00f00000", # Device tree: copied to 0xc1000000 by bios

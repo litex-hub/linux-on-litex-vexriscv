@@ -21,11 +21,11 @@ def main():
     soc.compile_device_tree("minispartan6")
 
     if args.build:
-        builder = Builder(soc, output_dir="build_minispartan6")
+        builder = Builder(soc, output_dir="build/minispartan6")
         builder.build()
 
     if args.load:
-        os.system("xc3sprog -c ftdi build_minispartan6/gateware/top.bit")
+        os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
 
 if __name__ == "__main__":
     main()

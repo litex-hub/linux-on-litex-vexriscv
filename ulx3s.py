@@ -28,14 +28,14 @@ def main():
         toolchain_path = "/usr/share/trellis"
 
     if args.build:
-        builder = Builder(soc, output_dir="build_ulx3s")
+        builder = Builder(soc, output_dir="build/ulx3s")
         builder.build(toolchain_path=toolchain_path)
         if args.diamond:
-            os.system("python3 bit_to_svf.py build_ulx3s/gateware/top.bit build_ulx3s/gateware/top.svf")
+            os.system("python3 bit_to_svf.py build/ulx3s/gateware/top.bit build/ulx3s/gateware/top.svf")
 
     if args.load:
-        os.system("ujprog build_ulx3s/gateware/top.svf")
-        #os.system("openocd -f openocd/ulx3s.cfg -c \"transport select jtag; init; svf build_ulx3s/gateware/top.svf; exit\"")
+        os.system("ujprog build/ulx3s/gateware/top.svf")
+        #os.system("openocd -f openocd/ulx3s.cfg -c \"transport select jtag; init; svf build/ulx3s/gateware/top.svf; exit\"")
 
 if __name__ == "__main__":
     main()
