@@ -10,12 +10,18 @@ from soc_linux import SoCLinux
 # Targets Import -----------------------------------------------------------------------------------
 
 from litex.boards.targets import arty
+from litex.boards.targets import genesys2
+from litex.boards.targets import kcu105
+from litex.boards.targets import nexys4ddr
 from litex.boards.targets import minispartan6
 from litex.boards.targets import versa_ecp5
 from litex.boards.targets import ulx3s
 
 socs = {
     "arty":         arty.EthernetSoC,
+    "genesys2":     genesys2.BaseSoC,
+    "kcu105":       kcu105.EthernetSoC,
+    "nexys4ddr":    nexys4ddr.BaseSoC,
     "minispartan6": minispartan6.BaseSoC,
     "versa_ecp5":   versa_ecp5.EthernetSoC,
     "ulx3s":        ulx3s.BaseSoC
@@ -23,6 +29,9 @@ socs = {
 
 socs_capabilities = {
     "arty":         "serial+ethernet+spiflash",
+    "genesys2":     "serial",
+    "kcu105":       "serial+ethernet",
+    "nexys4ddr":    "serial",
     "minispartan6": "serial",
     "versa_ecp5":   "serial+ethernet",
     "ulx3s":        "serial"
@@ -34,6 +43,21 @@ def arty_load():
     from litex.build.openocd import OpenOCD
     prog = OpenOCD("prog/openocd_xilinx.cfg")
     prog.load_bitstream("build/arty/gateware/top.bit")
+
+def genesys2_load():
+    from litex.build.xilinx import VivadoProgrammer
+    prog = VivadoProgrammer()
+    prog.load_bitstream("build/genesys2/gateware/top.bit")
+
+def kcu105_load():
+    from litex.build.xilinx import VivadoProgrammer
+    prog = VivadoProgrammer()
+    prog.load_bitstream("build/kcu105/gateware/top.bit")
+
+def nexys4ddr_load():
+    from litex.build.xilinx import VivadoProgrammer
+    prog = VivadoProgrammer()
+    prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
 
 def minispartan6_load():
     os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
@@ -47,6 +71,9 @@ def ulx3s_load():
 
 boards_load_functions = {
     "arty":         arty_load,
+    "genesys2":     genesys2_load,
+    "kcu105":       kcu105_load,
+    "nexys4ddr":    nexys4ddr_load,
     "minispartan6": minispartan6_load,
     "versa_ecp5":   versa_ecp5_load,
     "ulx3s":        ulx3s_load,
@@ -71,6 +98,15 @@ def arty_flash():
         print("Flashing {} at 0x{:08x}".format(filename, base))
         prog.flash(base, filename)
 
+def genesys2_flash():
+    raise NotImplementedError
+
+def kcu105_flash():
+    raise NotImplementedError
+
+def nexys4ddr_flash():
+    raise NotImplementedError
+
 def minispartan6_flash():
     raise NotImplementedError
 
@@ -82,6 +118,9 @@ def ulx3s_flash():
 
 boards_flash_functions = {
     "arty":         arty_flash,
+    "genesys2":     genesys2_flash,
+    "kcu105":       kcu105_flash,
+    "nexys4ddr":    nexys4ddr_flash,
     "minispartan6": minispartan6_flash,
     "versa_ecp5":   versa_ecp5_flash,
     "ulx3s":        ulx3s_flash,

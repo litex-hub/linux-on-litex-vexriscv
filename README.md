@@ -6,12 +6,15 @@
 [![asciicast](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF.svg)](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF)
 
 ## Supported boards:
-| Name         |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
-|--------------|-------------------|------------|-----------------|----------|--------|
-| Arty         | Artix7 XC7A35T    | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
-| Versa ECP5   | ECP5 LFE5UM5G-45F | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps  |   No   |
-| ULX3S        | ECP5 LFE5U-45F    | 32MB/SDRAM |   4MB/QSPI*     |    No    |   Yes* |
-| miniSpartan6+| Spartan6 XC6SLX25 | 32MB/SDRAM |   8MB/QSPI*     |    No    |   Yes* |
+| Name         |       FPGA               |     RAM    |    Flash        | Ethernet | SDCard |
+|--------------|--------------------------|------------|-----------------|----------|--------|
+| Arty         | Artix7 XC7A35T           | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
+| Genesys2     | Kintex7 XC7K325T         |  1GB/DDR3  |   32MB/QSPI     |   1Gbps* |   Yes* |
+| KCU105       | Kintex Ultrascale XCKU40 |  1GB/DDR4  |   64MB/QSPI     |   1Gbps  |   Yes* |
+| Nexys4DDR    | Artix7 XC7A100T          | 128MB/DDR2 |   16MB/QSPI     | 100Mbps* |   Yes* |
+| Versa ECP5   | ECP5 LFE5UM5G-45F        | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps  |   No   |
+| ULX3S        | ECP5 LFE5U-45F           | 32MB/SDRAM |   4MB/QSPI*     |    No    |   Yes* |
+| miniSpartan6+| Spartan6 XC6SLX25        | 32MB/SDRAM |   8MB/QSPI*     |    No    |   Yes* |
 
 > **Note:** \*=present on the board but not yet supported.
 
