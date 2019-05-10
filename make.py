@@ -103,27 +103,32 @@ def main():
     parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
     args = parser.parse_args()
 
-    soc_capabilities = socs_capabilities[args.board]
-    soc_kwargs = {}
-    if args.board in ["versa_ecp5", "ulx3s"]:
-        soc_kwargs["toolchain"] = "trellis"
-    soc = SoCLinux(socs[args.board], **soc_kwargs)
-    if "spiflash" in soc_capabilities:
-        soc.add_spi_flash()
-    if "ethernet" in soc_capabilities:
-        soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
-    soc.configure_boot()
-    soc.compile_device_tree("arty")
+    if args.board == "all":
+        boards = list(socs.keys())
+    else:
+        boards = [args.board]
+    for board in boards:
+        soc_capabilities = socs_capabilities[board]
+        soc_kwargs = {}
+        if board in ["versa_ecp5", "ulx3s"]:
+            soc_kwargs["toolchain"] = "trellis"
+        soc = SoCLinux(socs[board], **soc_kwargs)
+        if "spiflash" in soc_capabilities:
+            soc.add_spi_flash()
+        if "ethernet" in soc_capabilities:
+            soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
+        soc.configure_boot()
+        soc.compile_device_tree("arty")
 
-    if args.build:
-        builder = Builder(soc, output_dir="build/" + args.board)
-        builder.build()
+        if args.build:
+            builder = Builder(soc, output_dir="build/" + board)
+            builder.build()
 
-    if args.load:
-        boards_load_functions[args.board]()
+        if args.load:
+            boards_load_functions[board]()
 
-    if args.flash:
-        boards_flash_functions[args.board]()
+        if args.flash:
+            boards_flash_functions[board]()
 
 if __name__ == "__main__":
     main()
