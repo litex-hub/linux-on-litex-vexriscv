@@ -10,6 +10,7 @@ from soc_linux import SoCLinux
 # Targets Import -----------------------------------------------------------------------------------
 
 from litex.boards.targets import arty
+from litex.boards.targets import netv2
 from litex.boards.targets import genesys2
 from litex.boards.targets import kcu105
 from litex.boards.targets import nexys4ddr
@@ -19,6 +20,7 @@ from litex.boards.targets import ulx3s
 
 socs = {
     "arty":         arty.EthernetSoC,
+    "netv2":        netv2.EthernetSoC,
     "genesys2":     genesys2.BaseSoC,
     "kcu105":       kcu105.EthernetSoC,
     "nexys4ddr":    nexys4ddr.BaseSoC,
@@ -29,6 +31,7 @@ socs = {
 
 socs_capabilities = {
     "arty":         "serial+ethernet+spiflash",
+    "netv2":        "serial+ethernet",
     "genesys2":     "serial",
     "kcu105":       "serial+ethernet",
     "nexys4ddr":    "serial",
@@ -43,6 +46,11 @@ def arty_load():
     from litex.build.openocd import OpenOCD
     prog = OpenOCD("prog/openocd_xilinx.cfg")
     prog.load_bitstream("build/arty/gateware/top.bit")
+
+def netv2_load():
+    from litex.build.xilinx import VivadoProgrammer
+    prog = VivadoProgrammer()
+    prog.load_bitstream("build/netv2/gateware/top.bit")
 
 def genesys2_load():
     from litex.build.xilinx import VivadoProgrammer
@@ -71,6 +79,7 @@ def ulx3s_load():
 
 boards_load_functions = {
     "arty":         arty_load,
+    "netv2":        netv2_load,
     "genesys2":     genesys2_load,
     "kcu105":       kcu105_load,
     "nexys4ddr":    nexys4ddr_load,
@@ -98,6 +107,9 @@ def arty_flash():
         print("Flashing {} at 0x{:08x}".format(filename, base))
         prog.flash(base, filename)
 
+def netv2_flash():
+    raise NotImplementedError
+
 def genesys2_flash():
     raise NotImplementedError
 
@@ -118,6 +130,7 @@ def ulx3s_flash():
 
 boards_flash_functions = {
     "arty":         arty_flash,
+    "netv2":        netv2_flash,
     "genesys2":     genesys2_flash,
     "kcu105":       kcu105_flash,
     "nexys4ddr":    nexys4ddr_flash,

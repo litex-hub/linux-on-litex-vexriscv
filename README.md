@@ -9,6 +9,7 @@
 | Name         |       FPGA               |     RAM    |    Flash        | Ethernet | SDCard |
 |--------------|--------------------------|------------|-----------------|----------|--------|
 | Arty         | Artix7 XC7A35T           | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
+| NeTV2        | Artix7 XC7A35T           | 512MB/DDR3 |   16MB/QSPI     |  100Mbps |   Yes* |
 | Genesys2     | Kintex7 XC7K325T         |  1GB/DDR3  |   32MB/QSPI     |   1Gbps* |   Yes* |
 | KCU105       | Kintex Ultrascale XCKU40 |  1GB/DDR4  |   64MB/QSPI     |   1Gbps  |   Yes* |
 | Nexys4DDR    | Artix7 XC7A100T          | 128MB/DDR2 |   16MB/QSPI     | 100Mbps* |   Yes* |
@@ -160,6 +161,10 @@ Built-in commands:
 | Board        |       Toolchain       |
 |--------------|-----------------------|
 | Arty         |       Vivado          |
+| NeTV2        |       Vivado          |
+| Genesys2     |       Vivado          |
+| Nexys4DDR    |       Vivado          |
+| KCU105       |       Vivado          |
 | Versa ECP5   | Yosys/Trellis/Nextpnr |
 | ULX3S        | Yosys/Trellis/Nextpnr |
 | miniSpartan6+|         ISE           |
