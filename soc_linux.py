@@ -13,6 +13,15 @@ from litex.soc.cores.spi_flash import SpiFlash
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
+        soc_cls.csr_map.update({
+            "ctrl":       0,
+            "uart":       2,
+            "timer0":     3,
+        })
+        soc_cls.interrupt_map.update({
+            "uart":       0,
+            "timer0":     1,
+        })
         soc_cls.mem_map = {
             "rom":          0x00000000,
             "sram":         0x10000000,

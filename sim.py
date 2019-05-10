@@ -57,6 +57,15 @@ class Supervisor(Module, AutoCSR):
 
 
 class LinuxSoC(SoCCore):
+    SoCCore.csr_map.update({
+        "ctrl":       0,
+        "uart":       2,
+        "timer0":     3,
+    })
+    SoCCore.interrupt_map.update({
+        "uart":       0,
+        "timer0":     1,
+    })
     SoCCore.mem_map = {
         "rom":          0x00000000,
         "sram":         0x10000000,
@@ -97,8 +106,8 @@ class LinuxSoC(SoCCore):
         # serial
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
-        self.add_csr("uart")
-        self.add_interrupt("uart")
+        self.add_csr("uart", allow_user_defined=True)
+        self.add_interrupt("uart", allow_user_defined=True)
 
 
 def main():
