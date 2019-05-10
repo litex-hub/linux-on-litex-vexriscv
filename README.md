@@ -5,7 +5,7 @@
 ## Demo:
 https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
 
-## Supported boards/provided bitstreams:
+## Supported boards:
 | Name         |       FPGA        |     RAM    |    Flash        | Ethernet | SDCard |
 |--------------|-------------------|------------|-----------------|----------|--------|
 | Arty         | Artix7 XC7A35T    | 256MB/DDR3 |   16MB/QSPI     |  100Mbps |   No   |
@@ -14,6 +14,17 @@ https://asciinema.org/a/WfNA99RCdVi8kTPfzNTeoMTtY :)
 | miniSpartan6+| Spartan6 XC6SLX25 | 32MB/SDRAM |   8MB/QSPI*     |    No    |   Yes* |
 
 > **Note:** \*=present on the board but not yet supported.
+
+## Pre-built Bitstreams/Linux images
+Pre-built bistreams for the supported board and pre-built Linux images can be found in the [linux-on-litex-vexriscv-prebuilt](https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt) repository and allow doing
+tests without the need to compile anything.
+
+To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
+and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
+```sh
+$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
+$ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
+```
 
 ## Installing LiteX
 ```sh
@@ -175,7 +186,7 @@ The images should load and you should see Linux booting :)
 Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
 
 ### Load the Linux images over TFTP
-For boards that have Ethernet,  the Linux images can be loaded over TFTP. You need to copy the files in *binaries* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
+For boards that have Ethernet,  the Linux images can be loaded over TFTP. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
 
 Once the bistream is loaded, the board you try to retrieve the files on the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
 
