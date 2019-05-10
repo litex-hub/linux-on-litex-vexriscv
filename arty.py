@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
     args = parser.parse_args()
 
-    soc = SoCLinux(arty.BaseSoC)
+    soc = SoCLinux(arty.EthernetSoC)
     soc.add_spi_flash()
     soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
     soc.configure_boot()
