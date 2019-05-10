@@ -1,6 +1,6 @@
 {
-	"binaries/Image":         "0xc0000000",
-	"binaries/rootfs.cpio":   "0xc0800000",
-	"binaries/rv32.dtb":      "0xc1000000",
+	"buildroot/Image":        "0xc0000000",
+	"buildroot/rootfs.cpio":  "0xc0800000",
+	"buildroot/rv32.dtb":     "0xc1000000",
 	"emulator/emulator.bin":  "0x20000000"
 }
