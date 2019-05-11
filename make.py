@@ -7,144 +7,145 @@ from litex.soc.integration.builder import Builder
 
 from soc_linux import SoCLinux
 
-# Targets Import -----------------------------------------------------------------------------------
+# Board definition----------------------------------------------------------------------------------
 
-from litex.boards.targets import arty
-from litex.boards.targets import netv2
-from litex.boards.targets import genesys2
-from litex.boards.targets import kcu105
-from litex.boards.targets import nexys4ddr
-from litex.boards.targets import minispartan6
-from litex.boards.targets import versa_ecp5
-from litex.boards.targets import ulx3s
+class Board:
+    def __init__(self, soc_cls, soc_capabilities):
+        self.soc_cls = soc_cls
+        self.soc_capabilities = soc_capabilities
 
-socs = {
-    "arty":         arty.EthernetSoC,
-    "netv2":        netv2.EthernetSoC,
-    "genesys2":     genesys2.BaseSoC,
-    "kcu105":       kcu105.EthernetSoC,
-    "nexys4ddr":    nexys4ddr.BaseSoC,
-    "minispartan6": minispartan6.BaseSoC,
-    "versa_ecp5":   versa_ecp5.EthernetSoC,
-    "ulx3s":        ulx3s.BaseSoC
+    def load(self):
+        raise NotImplementedError
+
+    def flash(self):
+        raise NotImplementedError
+
+# Arty support -------------------------------------------------------------------------------------
+
+class Arty(Board):
+    def __init__(self):
+        from litex.boards.targets import arty
+        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash")
+
+    def load(self):
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog.load_bitstream("build/arty/gateware/top.bit")
+
+    def flash(self):
+        flash_regions = {
+            "build/arty/gateware/top.bin": "0x00000000", # FPGA image:  loaded at startup
+            "buildroot/Image":             "0x00400000", # Linux Image: copied to 0xc0000000 by bios
+            "buildroot/rootfs.cpio":       "0x00800000", # File System: copied to 0xc0800000 by bios
+            "buildroot/rv32.dtb":          "0x00f00000", # Device tree: copied to 0xc1000000 by bios
+            "emulator/emulator.bin":       "0x00f80000", # MM Emulator: copied to 0x20000000 by bios
+        }
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_xilinx.cfg",
+            flash_proxy_basename="prog/bscan_spi_xc7a35t.bit")
+        prog.set_flash_proxy_dir(".")
+        for filename, base in flash_regions.items():
+            base = int(base, 16)
+            print("Flashing {} at 0x{:08x}".format(filename, base))
+            prog.flash(base, filename)
+
+# NeTV2 support ------------------------------------------------------------------------------------
+
+class NeTV2(Board):
+    def __init__(self):
+        from litex.boards.targets import netv2
+        Board.__init__(self, netv2.EthernetSoC, "serial+ethernet")
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/netv2/gateware/top.bit")
+
+# Genesys2 support ---------------------------------------------------------------------------------
+
+class Genesys2(Board):
+    def __init__(self):
+        from litex.boards.targets import genesys2
+        Board.__init__(self, genesys2.BaseSoC, "serial")
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/genesys2/gateware/top.bit")
+
+# KCU105 support -----------------------------------------------------------------------------------
+
+class KCU105(Board):
+    def __init__(self):
+        from litex.boards.targets import kcu105
+        Board.__init__(self, kcu105.EthernetSoC, "serial+ethernet")
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/kcu105/gateware/top.bit")
+
+
+# Nexys4DDR support --------------------------------------------------------------------------------
+
+class Nexys4DDR(Board):
+    def __init__(self):
+        from litex.boards.targets import nexys4ddr
+        Board.__init__(self, nexys4ddr.BaseSoC, "serial")
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
+
+# MiniSpartan6 support -----------------------------------------------------------------------------
+
+class MiniSpartan6(Board):
+    def __init__(self):
+        from litex.boards.targets import minispartan6
+        Board.__init__(self, minispartan6.BaseSoC, "serial")
+
+    def load(self):
+        os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
+
+
+# Versa ECP5 support -------------------------------------------------------------------------------
+
+class VersaECP5(Board):
+    def __init__(self):
+        from litex.boards.targets import versa_ecp5
+        Board.__init__(self, versa_ecp5.EthernetSoC, "serial+ethernet")
+
+    def load(self):
+        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
+
+# ULX3S support ------------------------------------------------------------------------------------
+
+class ULX3S(Board):
+    def __init__(self):
+        from litex.boards.targets import ulx3s
+        Board.__init__(self, ulx3s.BaseSoC, "serial")
+
+    def load(self):
+        os.system("ujprog build/ulx3s/gateware/top.svf")
+
+# Main ---------------------------------------------------------------------------------------------
+
+supported_boards = {
+    "arty":         Arty,
+    "netv2":        NeTV2,
+    "genesys2":     Genesys2,
+    "kcu105":       KCU105,
+    "nexys4ddr":    Nexys4DDR,
+    "minispartan6": MiniSpartan6,
+    "versa_ecp5":   VersaECP5,
+    "ulx3s":        ULX3S,
 }
-
-socs_capabilities = {
-    "arty":         "serial+ethernet+spiflash",
-    "netv2":        "serial+ethernet",
-    "genesys2":     "serial",
-    "kcu105":       "serial+ethernet",
-    "nexys4ddr":    "serial",
-    "minispartan6": "serial",
-    "versa_ecp5":   "serial+ethernet",
-    "ulx3s":        "serial"
-}
-
-# Load Bistream ------------------------------------------------------------------------------------
-
-def arty_load():
-    from litex.build.openocd import OpenOCD
-    prog = OpenOCD("prog/openocd_xilinx.cfg")
-    prog.load_bitstream("build/arty/gateware/top.bit")
-
-def netv2_load():
-    from litex.build.xilinx import VivadoProgrammer
-    prog = VivadoProgrammer()
-    prog.load_bitstream("build/netv2/gateware/top.bit")
-
-def genesys2_load():
-    from litex.build.xilinx import VivadoProgrammer
-    prog = VivadoProgrammer()
-    prog.load_bitstream("build/genesys2/gateware/top.bit")
-
-def kcu105_load():
-    from litex.build.xilinx import VivadoProgrammer
-    prog = VivadoProgrammer()
-    prog.load_bitstream("build/kcu105/gateware/top.bit")
-
-def nexys4ddr_load():
-    from litex.build.xilinx import VivadoProgrammer
-    prog = VivadoProgrammer()
-    prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
-
-def minispartan6_load():
-    os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
-
-def versa_ecp5_load():
-    os.system("python3 prog/bit_to_svf.py build/versa_ecp5/gateware/top.bit build/versa_ecp5/gateware/top.svf")
-    os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
-
-def ulx3s_load():
-    os.system("ujprog build/ulx3s/gateware/top.svf")
-
-boards_load_functions = {
-    "arty":         arty_load,
-    "netv2":        netv2_load,
-    "genesys2":     genesys2_load,
-    "kcu105":       kcu105_load,
-    "nexys4ddr":    nexys4ddr_load,
-    "minispartan6": minispartan6_load,
-    "versa_ecp5":   versa_ecp5_load,
-    "ulx3s":        ulx3s_load,
-}
-
-# Flash Bistream/Images ----------------------------------------------------------------------------
-
-def arty_flash():
-    flash_regions = {
-       "build/arty/gateware/top.bin": "0x00000000", # FPGA image:  loaded at startup
-       "buildroot/Image":             "0x00400000", # Linux Image: copied to 0xc0000000 by bios
-       "buildroot/rootfs.cpio":       "0x00800000", # File System: copied to 0xc0800000 by bios
-       "buildroot/rv32.dtb":          "0x00f00000", # Device tree: copied to 0xc1000000 by bios
-       "emulator/emulator.bin":       "0x00f80000", # MM Emulator: copied to 0x20000000 by bios
-    }
-    from litex.build.openocd import OpenOCD
-    prog = OpenOCD("prog/openocd_xilinx.cfg",
-        flash_proxy_basename="prog/bscan_spi_xc7a35t.bit")
-    prog.set_flash_proxy_dir(".")
-    for filename, base in flash_regions.items():
-        base = int(base, 16)
-        print("Flashing {} at 0x{:08x}".format(filename, base))
-        prog.flash(base, filename)
-
-def netv2_flash():
-    raise NotImplementedError
-
-def genesys2_flash():
-    raise NotImplementedError
-
-def kcu105_flash():
-    raise NotImplementedError
-
-def nexys4ddr_flash():
-    raise NotImplementedError
-
-def minispartan6_flash():
-    raise NotImplementedError
-
-def versa_ecp5_flash():
-    raise NotImplementedError
-
-def ulx3s_flash():
-    raise NotImplementedError
-
-boards_flash_functions = {
-    "arty":         arty_flash,
-    "netv2":        netv2_flash,
-    "genesys2":     genesys2_flash,
-    "kcu105":       kcu105_flash,
-    "nexys4ddr":    nexys4ddr_flash,
-    "minispartan6": minispartan6_flash,
-    "versa_ecp5":   versa_ecp5_flash,
-    "ulx3s":        ulx3s_flash,
-}
-
-# Build / Load / Flash -----------------------------------------------------------------------------
 
 def main():
     description = "Linux on LiteX-VexRiscv\n\n"
     description += "Available boards:\n"
-    for name in socs.keys():
+    for name in supported_boards.keys():
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--board", required=True, help="FPGA board")
@@ -156,31 +157,31 @@ def main():
     args = parser.parse_args()
 
     if args.board == "all":
-        boards = list(socs.keys())
+        board_names = list(supported_boards.keys())
     else:
-        boards = [args.board]
-    for board in boards:
-        soc_capabilities = socs_capabilities[board]
+        board_names = [args.board]
+    for board_name in board_names:
+        board = supported_boards[board_name]()
         soc_kwargs = {}
-        if board in ["versa_ecp5", "ulx3s"]:
+        if board_name in ["versa_ecp5", "ulx3s"]:
             soc_kwargs["toolchain"] = "trellis"
-        soc = SoCLinux(socs[board], **soc_kwargs)
-        if "spiflash" in soc_capabilities:
+        soc = SoCLinux(board.soc_cls, **soc_kwargs)
+        if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash()
-        if "ethernet" in soc_capabilities:
+        if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         soc.configure_boot()
         soc.compile_device_tree("arty")
 
         if args.build:
-            builder = Builder(soc, output_dir="build/" + board)
+            builder = Builder(soc, output_dir="build/" + board_name)
             builder.build()
 
         if args.load:
-            boards_load_functions[board]()
+            board.load()
 
         if args.flash:
-            boards_flash_functions[board]()
+            board.flash()
 
 if __name__ == "__main__":
     main()
