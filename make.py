@@ -98,6 +98,18 @@ class Nexys4DDR(Board):
         prog = VivadoProgrammer()
         prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
 
+# NexysVideo support --------------------------------------------------------------------------------
+
+class NexysVideo(Board):
+    def __init__(self):
+        from litex.boards.targets import nexys_video
+        Board.__init__(self, nexys_video.EthernetSoC, "serial")
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer(vivado_path=vivado_path)
+        prog.load_bitstream("build/nexys_video/gateware/top.bit")
+
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
 class MiniSpartan6(Board):
@@ -137,6 +149,7 @@ supported_boards = {
     "genesys2":     Genesys2,
     "kcu105":       KCU105,
     "nexys4ddr":    Nexys4DDR,
+    "nexys_video":  NexysVideo,
     "minispartan6": MiniSpartan6,
     "versa_ecp5":   VersaECP5,
     "ulx3s":        ULX3S,
