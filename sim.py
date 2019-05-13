@@ -119,7 +119,7 @@ def main():
     sim_config.add_module("serial2console", "serial")
 
     print("Compile board device tree...")
-    os.system("dtc -O dtb -o binaries/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv.dts")
+    os.system("dtc -O dtb -o buildroot/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv.dts")
 
     soc = LinuxSoC()
     builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
