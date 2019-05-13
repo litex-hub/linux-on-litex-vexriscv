@@ -91,7 +91,7 @@ class KCU105(Board):
 class Nexys4DDR(Board):
     def __init__(self):
         from litex.boards.targets import nexys4ddr
-        Board.__init__(self, nexys4ddr.BaseSoC, "serial")
+        Board.__init__(self, nexys4ddr.EthernetSoC, "serial+ethernet")
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
