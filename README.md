@@ -167,16 +167,12 @@ Built-in commands:
 ### Build the FPGA bitstream (optional)
 **The prebuilt bitstreams for the supported boards are provided**, so you can just use them for quick testing, if you want to rebuild the bitstreams you will need to install the toolchain for your FPGA:
 
-| Board        |       Toolchain       |
-|--------------|-----------------------|
-| Arty         |       Vivado          |
-| NeTV2        |       Vivado          |
-| Genesys2     |       Vivado          |
-| Nexys4DDR    |       Vivado          |
-| KCU105       |       Vivado          |
-| Versa ECP5   | Yosys/Trellis/Nextpnr |
-| ULX3S        | Yosys/Trellis/Nextpnr |
-| miniSpartan6+|         ISE           |
+| FPGA family       |      Toolchain        |
+|-------------------|-----------------------|
+| Xilinx Ultrascale |      Vivado           |
+| Xilinx 7-Series   |      Vivado           |
+| Xilinx Spartan6   |        ISE            |
+| Lattice ECP5      | Yosys/Trellis/Nextpnr |
 
 Once installed, build the bitstream with:
 ```sh
