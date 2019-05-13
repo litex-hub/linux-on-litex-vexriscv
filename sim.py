@@ -88,7 +88,6 @@ class LinuxSoC(SoCCore):
                 "buildroot/rv32.dtb":      "0x01000000"
                 }, "little"),
             **kwargs)
-        self.cpu.use_external_variant("VexRiscv.v")
 
         # supervisor
         self.submodules.supervisor = Supervisor()
