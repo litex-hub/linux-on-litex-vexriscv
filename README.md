@@ -12,17 +12,18 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 [![asciicast](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF.svg)](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF)
 
 ## Supported boards:
-| Name         |       FPGA               |     RAM    |    Flash        |       Ethernet     | SDCard |
-|--------------|--------------------------|------------|-----------------|--------------------|--------|
-| Arty         | Artix7 XC7A35T           | 256MB/DDR3 |   16MB/QSPI     |  100Mbps/MII       |   No   |
-| NeTV2        | Artix7 XC7A35T           | 512MB/DDR3 |   16MB/QSPI     |  100Mbps/RMII      |   Yes* |
-| Genesys2     | Kintex7 XC7K325T         |  1GB/DDR3  |   32MB/QSPI     |   1Gbps/RGMII*     |   Yes* |
-| KCU105       | Kintex Ultrascale XCKU40 |  1GB/DDR4  |   64MB/QSPI     |   1Gbps/1000BASE-X |   Yes* |
-| Nexys4DDR    | Artix7 XC7A100T          | 128MB/DDR2 |   16MB/QSPI     | 100Mbps/RMII*      |   Yes* |
-| Nexys Video  | Artix7 XC7A200T          | 512MB/DDR3 |   32MB/QSPI     |   1Gbps/RMII*      |   Yes* |
-| Versa ECP5   | ECP5 LFE5UM5G-45F        | 128MB/DDR3 |   16MB/QSPI*    |   1Gbps/RGMII      |   No   |
-| ULX3S        | ECP5 LFE5U-45F           | 32MB/SDRAM |   4MB/QSPI*     |    No              |   Yes* |
-| miniSpartan6+| Spartan6 XC6SLX25        | 32MB/SDRAM |   8MB/QSPI*     |    No              |   Yes* |
+
+| Name         |       FPGA               |            RAM         |    Flash        |       Ethernet       | SDCard |
+|--------------|--------------------------|------------------------|-----------------|----------------------|--------|
+| Arty         | Artix7 XC7A35T           | 16-bits / 256MB / DDR3 |  16MB / QSPI  	 | 100Mbps / MII        |   No   |
+| NeTV2        | Artix7 XC7A35T           | 32-bits / 512MB / DDR3 |  16MB / QSPI* 	 | 100Mbps / RMII       |   Yes* |
+| Genesys2     | Kintex7 XC7K325T         | 32-bits /   1GB / DDR3 |  32MB / QSPI* 	 |   1Gbps / RGMII*     |   Yes* |
+| KCU105       | Kintex Ultrascale XCKU40 | 64-bits /   1GB / DDR4 |  64MB / QSPI* 	 |   1Gbps / 1000BASE-X |   Yes* |
+| Nexys4DDR    | Artix7 XC7A100T          | 16-bits / 128MB / DDR2 |  16MB / QSPI* 	 | 100Mbps / RMII*      |   Yes* |
+| Nexys Video  | Artix7 XC7A200T          | 16-bits / 512MB / DDR3 |  32MB / QSPI* 	 |   1Gbps / RMII*      |   Yes* |
+| Versa ECP5   | ECP5 LFE5UM5G-45F        | 16-bits / 128MB / DDR3 |  16MB / QSPI* 	 |   1Gbps / RGMII      |   No   |
+| ULX3S        | ECP5 LFE5U-45F           | 16-bits /  32MB / SDR  |   4MB / QSPI* 	 |         No           |   Yes* |
+| miniSpartan6+| Spartan6 XC6SLX25        | 16-bits /  32MB / SDR  |   8MB / QSPI* 	 |         No           |   Yes* |
 
 > **Note:** \*=present on the board but not yet supported.
 
