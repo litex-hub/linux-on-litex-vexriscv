@@ -24,6 +24,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | Versa ECP5   | ECP5 LFE5UM5G-45F        | 16-bits / 128MB / DDR3 |  16MB / QSPI* 	 |   1Gbps / RGMII      |   No   |
 | ULX3S        | ECP5 LFE5U-45F           | 16-bits /  32MB / SDR  |   4MB / QSPI* 	 |         No           |   Yes* |
 | miniSpartan6+| Spartan6 XC6SLX25        | 16-bits /  32MB / SDR  |   8MB / QSPI* 	 |         No           |   Yes* |
+| De0Nano      | Altera Cyclone4 EP4CE22F | 16-bits /  32MB / SDR  |      No         |         No           |   No   |
 
 > **Note:** \*=present on the board but not yet supported.
 
@@ -173,6 +174,7 @@ Built-in commands:
 | Xilinx 7-Series   |      Vivado           |
 | Xilinx Spartan6   |        ISE            |
 | Lattice ECP5      | Yosys/Trellis/Nextpnr |
+| Altera Cyclone4   |    Quartus Prime      |
 
 Once installed, build the bitstream with:
 ```sh

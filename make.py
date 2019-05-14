@@ -141,9 +141,22 @@ class ULX3S(Board):
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
 
+# De0Nano support ------------------------------------------------------------------------------------
+
+class De0Nano(Board):
+    def __init__(self):
+        from litex.boards.targets import de0nano
+        Board.__init__(self, de0nano.BaseSoC, "serial")
+
+    def load(self):
+        from litex.build.altera import USBBlaster
+        prog = USBBlaster()
+        prog.load_bitstream("build/de0nano/gateware/top.sof")
+
 # Main ---------------------------------------------------------------------------------------------
 
 supported_boards = {
+    # Xilinx
     "arty":         Arty,
     "netv2":        NeTV2,
     "genesys2":     Genesys2,
@@ -151,8 +164,11 @@ supported_boards = {
     "nexys4ddr":    Nexys4DDR,
     "nexys_video":  NexysVideo,
     "minispartan6": MiniSpartan6,
+    # Lattice
     "versa_ecp5":   VersaECP5,
     "ulx3s":        ULX3S,
+    # Altera/Intel
+    "de0nano":      De0Nano,
 }
 
 def main():
@@ -184,7 +200,7 @@ def main():
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         soc.configure_boot()
-        soc.compile_device_tree("arty")
+        soc.compile_device_tree(board_name)
 
         if args.build:
             builder = Builder(soc, output_dir="build/" + board_name)
