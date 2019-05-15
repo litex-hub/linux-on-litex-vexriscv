@@ -13,20 +13,23 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 ## Supported boards:
 
-| Name         |       FPGA               |            RAM         |    Flash        |       Ethernet       | SDCard |
-|--------------|--------------------------|------------------------|-----------------|----------------------|--------|
-| Arty         | Artix7 XC7A35T           | 16-bits / 256MB / DDR3 |  16MB / QSPI  	 | 100Mbps / MII        |   No   |
-| NeTV2        | Artix7 XC7A35T           | 32-bits / 512MB / DDR3 |  16MB / QSPI* 	 | 100Mbps / RMII       |   Yes* |
-| Genesys2     | Kintex7 XC7K325T         | 32-bits /   1GB / DDR3 |  32MB / QSPI* 	 |   1Gbps / RGMII*     |   Yes* |
-| KCU105       | Kintex Ultrascale XCKU40 | 64-bits /   1GB / DDR4 |  64MB / QSPI* 	 |   1Gbps / 1000BASE-X |   Yes* |
-| Nexys4DDR    | Artix7 XC7A100T          | 16-bits / 128MB / DDR2 |  16MB / QSPI* 	 | 100Mbps / RMII       |   Yes* |
-| Nexys Video  | Artix7 XC7A200T          | 16-bits / 512MB / DDR3 |  32MB / QSPI* 	 |   1Gbps / RMII*      |   Yes* |
-| Versa ECP5   | ECP5 LFE5UM5G-45F        | 16-bits / 128MB / DDR3 |  16MB / QSPI* 	 |   1Gbps / RGMII      |   No   |
-| ULX3S        | ECP5 LFE5U-45F           | 16-bits /  32MB / SDR  |   4MB / QSPI* 	 |         No           |   Yes* |
-| miniSpartan6+| Spartan6 XC6SLX25        | 16-bits /  32MB / SDR  |   8MB / QSPI* 	 |         No           |   Yes* |
-| De0Nano      | Altera Cyclone4 EP4CE22F | 16-bits /  32MB / SDR  |      No         |         No           |   No   |
+| Name         | FPGA Family         | FPGA device   | CPU Frequency |        RAM         |    Flash      |       Ethernet     | SDCard |
+|--------------|---------------------|---------------|---------------|--------------------|---------------|--------------------|--------|
+| Arty         | Xilinx Artix7       | XC7A35T       |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    | 100Mbps MII        |   No   |
+| NeTV2        | Xilinx Artix7       | XC7A35T       |    100MHz     | 32-bits 512MB DDR3 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
+| Genesys2     | Xilinx Kintex7      | XC7K325T      |    125MHz     | 32-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps RGMII*     |   Yes* |
+| KCU105       | Xilinx KintexU      | XCKU40        |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps 1000BASE-X |   Yes* |
+| Nexys4DDR    | Xilinx Artix7       | XC7A100T      |    100MHz     | 16-bits 128MB DDR2 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
+| Nexys Video  | Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits 512MB DDR3 |  32MB QSPI*   |   1Gbps RMII*      |   Yes* |
+| miniSpartan6+| Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes* |
+| Versa ECP5   | Lattice ECP5        | LFE5UM5G 45F  |     75MHz     | 16-bits 128MB DDR3 |  16MB QSPI*   |   1Gbps RGMII      |   No   |
+| ULX3S        | Lattice ECP5        | LFE5U 45F     |     50MHz     | 16-bits  32MB SDR  |   4MB QSPI*   |         No         |   Yes* |
+| De0Nano      | Intel Cyclone4      | EP4CE22F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
+| Avalanche    | Microsemi PolarFire | MPF300TS      |    100MHz     | 16-bits 256MB DDR3 |   8MB QSPI*   |   1Gbps RGMII*     |   No   |
 
 > **Note:** \*=present on the board but not yet supported.
+
+> **Note:** Avalanche support can be found in [RISC-V - Getting Started Guide](https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-avalanche.html) thanks to [Antmicro](https://antmicro.com).
 
 ## Pre-built Bitstreams/Linux images
 Pre-built bistreams for the supported board and pre-built Linux images can be found in the [linux-on-litex-vexriscv-prebuilt](https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt) repository and allow doing
