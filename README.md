@@ -45,6 +45,7 @@ $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ## Installing LiteX
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
+$ chmod +x litex_setup.py
 $ ./litex_setup.py init install --user
 ```
 ## Installing a RISC-V toolchain
@@ -60,6 +61,7 @@ $ apt install libevent-dev libjson-c-dev
 ```
 ## Installing OpenOCD (only needed for hardware test)
 ```sh
+$ sudo apt install libtool automake pkg-config libusb-1.0-0-dev
 $ git clone https://github.com/ntfreak/openocd.git
 $ cd openocd
 $ ./bootstrap
