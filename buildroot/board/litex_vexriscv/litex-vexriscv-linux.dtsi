@@ -39,10 +39,10 @@
 		compatible = "SiFive,FU540G-soc", "fu500-soc", "sifive-soc", "simple-bus";
 		ranges;
 
-		mac0: mac@f0009800 {
+		mac0: mac@f0003800 {
 			compatible = "litex,liteeth";
-			reg = <0x0 0xf0009800 0x0 0x7c
-				0x0 0xf0009000 0x0 0x0a
+			reg = <0x0 0xf0003800 0x0 0x7c
+				0x0 0xf0003000 0x0 0x0a
 				0x0 0xb0000000 0x0 0x2000>;
 			tx-fifo-depth = <2>;
 			rx-fifo-depth = <2>;
