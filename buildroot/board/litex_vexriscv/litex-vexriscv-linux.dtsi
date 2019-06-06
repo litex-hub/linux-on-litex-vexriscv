@@ -3,8 +3,8 @@
 / {
 	#address-cells = <0x2>;
 	#size-cells = <0x2>;
-	compatible = "sifive,fu540g", "sifive,fu500";
-	model = "sifive,hifive-unleashed-a00";
+	compatible = "enjoy-digital,litex-vexriscv-soclinux";
+	model = "VexRiscv SoCLinux";
 
 	cpus {
 		#address-cells = <0x1>;
@@ -36,7 +36,6 @@
 	soc {
 		#address-cells = <0x2>;
 		#size-cells = <0x2>;
-		compatible = "SiFive,FU540G-soc", "fu500-soc", "sifive-soc", "simple-bus";
 		ranges;
 
 		mac0: mac@f0003800 {

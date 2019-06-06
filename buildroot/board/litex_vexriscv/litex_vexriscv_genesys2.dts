@@ -1,8 +1,8 @@
 /include/ "litex-vexriscv-linux.dtsi"
 
 / {
-	compatible = "sifive,fu540g", "sifive,fu500";
-	model = "sifive,hifive-unleashed-a00";
+	compatible = "enjoy-digital,litex-vexriscv-soclinux-genesys2", "enjoy-digital,litex-vexriscv-soclinux";
+	model = "VexRiscv SoCLinux on Digilent Genesys 2 Board";
 
 	chosen {
 		bootargs = "mem=128M@0x40000000 rootwait console=hvc0 root=/dev/ram0 init=/sbin/init swiotlb=32";
