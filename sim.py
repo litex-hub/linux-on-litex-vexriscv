@@ -116,6 +116,8 @@ def main():
                         help="cycle to start VCD tracing")
     parser.add_argument("--trace-end", default=-1,
                         help="cycle to end VCD tracing")
+    parser.add_argument("--opt-level", default="O3",
+                        help="compilation optimization level")
     args = parser.parse_args()
 
     sim_config = SimConfig(default_clk="sys_clk")
@@ -126,8 +128,8 @@ def main():
 
     soc = LinuxSoC()
     builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
-    builder.build(sim_config=sim_config, trace=args.trace,
-        trace_start=int(args.trace_start), trace_end=int(args.trace_end))
+    builder.build(sim_config=sim_config, opt_level=args.opt_level,
+        trace=args.trace, trace_start=int(args.trace_start), trace_end=int(args.trace_end))
 
 
 if __name__ == "__main__":
