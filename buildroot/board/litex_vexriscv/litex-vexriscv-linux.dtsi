@@ -36,6 +36,7 @@
 	soc {
 		#address-cells = <0x2>;
 		#size-cells = <0x2>;
+		compatible = "simple-bus";
 		ranges;
 
 		mac0: mac@f0003800 {
