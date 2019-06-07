@@ -17,6 +17,10 @@ from litex.soc.interconnect import stream
 from litex.soc.interconnect import wishbone
 from litex.soc.cores import uart
 
+from liteeth.common import convert_ip
+from liteeth.phy.model import LiteEthPHYModel
+from liteeth.core.mac import LiteEthMAC
+
 
 class SimPins(Pins):
     def __init__(self, n=1):
@@ -27,6 +31,18 @@ _io = [
     ("sys_clk", 0, SimPins(1)),
     ("sys_rst", 0, SimPins(1)),
     ("serial", 0,
+        Subsignal("source_valid", SimPins()),
+        Subsignal("source_ready", SimPins()),
+        Subsignal("source_data", SimPins(8)),
+
+        Subsignal("sink_valid", SimPins()),
+        Subsignal("sink_ready", SimPins()),
+        Subsignal("sink_data", SimPins(8)),
+    ),
+    ("eth_clocks", 0,
+        Subsignal("none", SimPins()),
+    ),
+    ("eth", 0,
         Subsignal("source_valid", SimPins()),
         Subsignal("source_ready", SimPins()),
         Subsignal("source_data", SimPins(8)),
@@ -70,11 +86,12 @@ class LinuxSoC(SoCCore):
         "rom":          0x00000000,
         "sram":         0x10000000,
         "emulator_ram": 0x20000000,
+        "ethmac":       0x30000000,
         "main_ram":     0xC0000000,
         "csr":          0xf0000000,
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, with_ethernet=False):
         platform = Platform()
         sys_clk_freq = int(1e6)
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
@@ -86,8 +103,7 @@ class LinuxSoC(SoCCore):
                 "buildroot/Image":         "0x00000000",
                 "buildroot/rootfs.cpio":   "0x00800000",
                 "buildroot/rv32.dtb":      "0x01000000"
-                }, "little"),
-            **kwargs)
+                }, "little"))
 
         # supervisor
         self.submodules.supervisor = Supervisor()
@@ -108,9 +124,25 @@ class LinuxSoC(SoCCore):
         self.add_csr("uart", allow_user_defined=True)
         self.add_interrupt("uart", allow_user_defined=True)
 
+        # ethernet
+        if with_ethernet:
+            # eth phy
+            self.submodules.ethphy = LiteEthPHYModel(self.platform.request("eth", 0))
+            self.add_csr("ethphy")
+            # eth mac
+            ethmac = LiteEthMAC(phy=self.ethphy, dw=32,
+                interface="wishbone", endianness=self.cpu.endianness)
+            self.submodules.ethmac = ethmac
+            self.add_wb_slave(mem_decoder(self.mem_map["ethmac"]), self.ethmac.bus)
+            self.add_memory_region("ethmac", self.mem_map["ethmac"] | self.shadow_base, 0x2000)
+            self.add_csr("ethmac")
+            self.add_interrupt("ethmac")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
+    parser.add_argument("--with-ethernet", action="store_true",
+                        help="enable Ethernet support")
     parser.add_argument("--trace", action="store_true", help="enable VCD tracing")
     parser.add_argument("--trace-start", default=0,
                         help="cycle to start VCD tracing")
@@ -126,7 +158,7 @@ def main():
     print("Compile board device tree...")
     os.system("dtc -O dtb -o buildroot/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv.dts")
 
-    soc = LinuxSoC()
+    soc = LinuxSoC(args.with_ethernet)
     builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
     builder.build(sim_config=sim_config, opt_level=args.opt_level,
         trace=args.trace, trace_start=int(args.trace_start), trace_end=int(args.trace_end))
