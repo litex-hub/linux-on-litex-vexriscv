@@ -1,4 +1,4 @@
-# Experiments with Linux on LiteX-VexRiscv
+# Linux on LiteX-VexRiscv
 
 > **Note:** Tested on Ubuntu 18.04.
 
@@ -191,6 +191,7 @@ To load the bitstream to you board, run:
 ```sh
 $ ./make.py --board=XXYY --load
 ```
+> **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
 ### Load the Linux images over Serial
 All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
 
@@ -228,7 +229,7 @@ the Linux images to RAM and boot :)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
-$ cp -r ../linux-litex-vexriscv/buildroot/* ./
+$ cp -r ../linux-on-litex-vexriscv/buildroot/* ./
 $ make litex_vexriscv_defconfig
 $ make
 ```

@@ -1,8 +1,8 @@
 /include/ "litex-vexriscv-linux.dtsi"
 
 / {
-	compatible = "enjoy-digital,litex-vexriscv-soclinux-minispartan6", "enjoy-digital,litex-vexriscv-soclinux";
-	model = "VexRiscv SoCLinux on Scarab Hardware miniSpartan6 Board";
+	compatible = "enjoy-digital,litex-vexriscv-soclinux-de0nano", "enjoy-digital,litex-vexriscv-soclinux";
+	model = "VexRiscv SoCLinux on Terasic DE0-Nano Board";
 
 	chosen {
 		bootargs = "mem=32M@0x40000000 rootwait console=hvc0 root=/dev/ram0 init=/sbin/init swiotlb=32";
@@ -11,7 +11,7 @@
 	};
 
 	cpus {
-		timebase-frequency = <80000000>;
+		timebase-frequency = <50000000>;
 	};
 
 	memory@c0000000 {
