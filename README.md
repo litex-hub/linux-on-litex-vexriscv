@@ -1,4 +1,4 @@
-# Experiments with Linux on LiteX-VexRiscv
+# Linux on LiteX-VexRiscv
 
 > **Note:** Tested on Ubuntu 18.04.
 
