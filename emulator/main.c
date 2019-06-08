@@ -67,6 +67,7 @@ static uint32_t litex_read_cpu_timer_msb(void){
 
 static void litex_write_cpu_timer_cmp(uint32_t low, uint32_t high){
     cpu_timer_time_cmp_write(((uint64_t) high << 32) | low);
+    cpu_timer_latch_write(1);
 }
 
 static void litex_stop(void){
