@@ -228,6 +228,7 @@ the Linux images to RAM and boot :)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
+$ git checkout 982a61b6adabbcd68a0eb9ad1e348a732915e9e4
 $ cp -r ../linux-on-litex-vexriscv/buildroot/* ./
 $ make litex_vexriscv_defconfig
 $ make
