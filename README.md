@@ -229,8 +229,7 @@ the Linux images to RAM and boot :)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
-$ cp -r ../linux-on-litex-vexriscv/buildroot/* ./
-$ make litex_vexriscv_defconfig
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_defconfig
 $ make
 ```
 The binaries are located in *output/images/*.
