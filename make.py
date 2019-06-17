@@ -194,6 +194,7 @@ def main():
         soc_kwargs = {}
         if board_name in ["versa_ecp5", "ulx3s"]:
             soc_kwargs["toolchain"] = "trellis"
+            soc_kwargs["cpu_variant"] = "linux+no-dsp"
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash()

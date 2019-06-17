@@ -32,8 +32,8 @@ def SoCLinux(soc_cls, **kwargs):
             "csr":          0xf0000000,
         }
 
-        def __init__(self, **kwargs):
-            soc_cls.__init__(self, cpu_type="vexriscv", cpu_variant="linux", **kwargs)
+        def __init__(self, cpu_variant="linux", **kwargs):
+            soc_cls.__init__(self, cpu_type="vexriscv", cpu_variant=cpu_variant, **kwargs)
 
             # machine mode emulator ram
             self.submodules.emulator_ram = wishbone.SRAM(0x4000)
