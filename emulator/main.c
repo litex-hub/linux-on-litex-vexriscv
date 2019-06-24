@@ -88,49 +88,135 @@ static void vexriscv_write_register(uint32_t id, int value){
 	((uint32_t*) sp)[id-32] = value;
 }
 
+
+
+#define trapReadyStart \
+		"  	li       %[tmp],  0x00020000\n" \
+		"	csrs     mstatus,  %[tmp]\n" \
+		"  	la       %[tmp],  1f\n" \
+		"	csrw     mtvec,  %[tmp]\n" \
+		"	li       %[fail], 1\n" \
+
+#define trapReadyEnd \
+		"	li       %[fail], 0\n" \
+		"1:\n" \
+		"  	li       %[tmp],  0x00020000\n" \
+		"	csrc     mstatus,  %[tmp]\n" \
+
 static int32_t vexriscv_read_word(uint32_t address, int32_t *data){
 	int32_t result, tmp;
-	int32_t failed;
+	int32_t fail;
 	__asm__ __volatile__ (
-		"  	li       %[tmp],  0x00020000\n"
-		"	csrs     mstatus,  %[tmp]\n"
-		"  	la       %[tmp],  1f\n"
-		"	csrw     mtvec,  %[tmp]\n"
-		"	li       %[failed], 1\n"
+		trapReadyStart
 		"	lw       %[result], 0(%[address])\n"
-		"	li       %[failed], 0\n"
-		"1:\n"
-		"  	li       %[tmp],  0x00020000\n"
-		"	csrc     mstatus,  %[tmp]\n"
-		: [result]"=&r" (result), [failed]"=&r" (failed), [tmp]"=&r" (tmp)
+		trapReadyEnd
+		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address)
 		: "memory"
 	);
 
 	*data = result;
-	return failed;
+	return fail;
+}
+
+static int32_t vexriscv_read_word_unaligned(uint32_t address, int32_t *data){
+	int32_t result, tmp;
+	int32_t fail;
+	__asm__ __volatile__ (
+			trapReadyStart
+		"	lbu      %[result], 0(%[address])\n"
+		"	lbu      %[tmp],    1(%[address])\n"
+		"	slli     %[tmp],  %[tmp], 8\n"
+		"	or       %[result], %[result], %[tmp]\n"
+		"	lbu      %[tmp],    2(%[address])\n"
+		"	slli     %[tmp],  %[tmp], 16\n"
+		"	or       %[result], %[result], %[tmp]\n"
+		"	lbu      %[tmp],    3(%[address])\n"
+		"	slli     %[tmp],  %[tmp], 24\n"
+		"	or       %[result], %[result], %[tmp]\n"
+		trapReadyEnd
+		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
+		: [address]"r" (address)
+		: "memory"
+	);
+
+	*data = result;
+	return fail;
+}
+
+static int32_t vexriscv_read_half_unaligned(uint32_t address, int32_t *data){
+	int32_t result, tmp;
+	int32_t fail;
+	__asm__ __volatile__ (
+		trapReadyStart
+		"	lb       %[result], 1(%[address])\n"
+		"	slli     %[result],  %[result], 8\n"
+		"	lbu      %[tmp],    0(%[address])\n"
+		"	or       %[result], %[result], %[tmp]\n"
+		trapReadyEnd
+		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
+		: [address]"r" (address)
+		: "memory"
+	);
+
+	*data = result;
+	return fail;
 }
 
 static int32_t vexriscv_write_word(uint32_t address, int32_t data){
 	int32_t tmp;
-	int32_t failed;
+	int32_t fail;
 	__asm__ __volatile__ (
-		"  	li       %[tmp],  0x00020000\n"
-		"	csrs     mstatus,  %[tmp]\n"
-		"  	la       %[tmp],  1f\n"
-		"	csrw     mtvec,  %[tmp]\n"
-		"	li       %[failed], 1\n"
+		trapReadyStart
 		"	sw       %[data], 0(%[address])\n"
-		"	li       %[failed], 0\n"
-		"1:\n"
-		"  	li       %[tmp],  0x00020000\n"
-		"	csrc     mstatus,  %[tmp]\n"
-		: [failed]"=&r" (failed), [tmp]"=&r" (tmp)
+		trapReadyEnd
+		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address), [data]"r" (data)
 		: "memory"
 	);
 
-	return failed;
+	return fail;
+}
+
+
+static int32_t vexriscv_write_word_unaligned(uint32_t address, int32_t data){
+	int32_t tmp;
+	int32_t fail;
+	__asm__ __volatile__ (
+		trapReadyStart
+		"	sb       %[data], 0(%[address])\n"
+		"	srl      %[data], %[data], 8\n"
+		"	sb       %[data], 1(%[address])\n"
+		"	srl      %[data], %[data], 8\n"
+		"	sb       %[data], 2(%[address])\n"
+		"	srl      %[data], %[data], 8\n"
+		"	sb       %[data], 3(%[address])\n"
+		trapReadyEnd
+		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
+		: [address]"r" (address), [data]"r" (data)
+		: "memory"
+	);
+
+	return fail;
+}
+
+
+
+static int32_t vexriscv_write_short_unaligned(uint32_t address, int32_t data){
+	int32_t tmp;
+	int32_t fail;
+	__asm__ __volatile__ (
+		trapReadyStart
+		"	sb       %[data], 0(%[address])\n"
+		"	srl      %[data], %[data], 8\n"
+		"	sb       %[data], 1(%[address])\n"
+		trapReadyEnd
+		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
+		: [address]"r" (address), [data]"r" (data)
+		: "memory"
+	);
+
+	return fail;
 }
 
 /* VexRiscv Machine Mode Emulator */
@@ -248,6 +334,23 @@ static void vexriscv_machine_mode_trap_to_supervisor_trap(uint32_t sepc, uint32_
 }
 
 
+static uint32_t vexriscv_read_instruction(uint32_t pc){
+	uint32_t i;
+	if (pc & 2) {
+		vexriscv_read_word(pc - 2, (int32_t*)&i);
+		i >>= 16;
+		if ((i & 3) == 3) {
+			uint32_t u32Buf;
+			vexriscv_read_word(pc+2, (int32_t*)&u32Buf);
+			i |= u32Buf << 16;
+		}
+	} else {
+		vexriscv_read_word(pc, (int32_t*)&i);
+	}
+	return i;
+}
+
+
 void vexriscv_machine_mode_trap(void) {
 	int32_t cause = csr_read(mcause);
 
@@ -263,6 +366,53 @@ void vexriscv_machine_mode_trap(void) {
 	/* Exception */
 	} else {
 		switch(cause){
+		    case CAUSE_UNALIGNED_LOAD:{
+			    uint32_t mepc = csr_read(mepc);
+			    uint32_t mstatus = csr_read(mstatus);
+			    uint32_t instruction = vexriscv_read_instruction(mepc);
+			    uint32_t address = csr_read(mbadaddr);
+			    uint32_t func3 =(instruction >> 12) & 0x7;
+			    uint32_t rd = (instruction >> 7) & 0x1F;
+			    int32_t readValue;
+			    int32_t fail = 1;
+
+			    switch(func3){
+			    case 1: fail = vexriscv_read_half_unaligned(address, &readValue); break;  //LH
+			    case 2: fail = vexriscv_read_word_unaligned(address, &readValue); break; //LW
+			    case 5: fail = vexriscv_read_half_unaligned(address, &readValue) & 0xFFFF; break; //LHU
+			    }
+
+			    if(fail){
+				    vexriscv_machine_mode_trap_to_supervisor_trap(mepc, mstatus);
+				    return;
+			    }
+
+			    vexriscv_write_register(rd, readValue);
+			    csr_write(mepc, mepc + 4);
+			    csr_write(mtvec, vexriscv_machine_mode_trap_entry); //Restore mtvec
+		    }break;
+		    case CAUSE_UNALIGNED_STORE:{
+			    uint32_t mepc = csr_read(mepc);
+			    uint32_t mstatus = csr_read(mstatus);
+			    uint32_t instruction = vexriscv_read_instruction(mepc);
+			    uint32_t address = csr_read(mbadaddr);
+			    uint32_t func3 =(instruction >> 12) & 0x7;
+			    int32_t writeValue = vexriscv_read_register((instruction >> 20) & 0x1F);
+			    int32_t fail = 1;
+
+			    switch(func3){
+			    case 1: fail = vexriscv_write_short_unaligned(address, writeValue); break; //SH
+			    case 2: fail = vexriscv_write_word_unaligned(address, writeValue); break; //SW
+			    }
+
+			    if(fail){
+				    vexriscv_machine_mode_trap_to_supervisor_trap(mepc, mstatus);
+				    return;
+			    }
+
+			    csr_write(mepc, mepc + 4);
+			    csr_write(mtvec, vexriscv_machine_mode_trap_entry); //Restore mtvec
+		    }break;
 			/* Illegal instruction */
 			case CAUSE_ILLEGAL_INSTRUCTION:{
 				uint32_t mepc = csr_read(mepc);
@@ -393,7 +543,7 @@ int main(void)
 	irq_setie(1);
 	uart_init();
 	puts("VexRiscv Machine Mode software built "__DATE__" "__TIME__"");
-	printf("--========== \e[1mBooting Linux\e[0m =============--\n");
+	printf("--========== \e[1mBooting Linux Rawrrr\e[0m =============--\n");
 	uart_sync();
 	vexriscv_machine_mode_init();
 	vexriscv_machine_mode_boot();

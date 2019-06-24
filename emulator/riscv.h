@@ -2,6 +2,8 @@
 #define RISCV_H
 
 #define CAUSE_ILLEGAL_INSTRUCTION 2
+#define CAUSE_UNALIGNED_LOAD      4
+#define CAUSE_UNALIGNED_STORE     6
 #define CAUSE_MACHINE_TIMER       7
 #define CAUSE_SCALL               9
 
