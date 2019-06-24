@@ -90,14 +90,14 @@ static void vexriscv_write_register(uint32_t id, int value){
 
 
 
-#define trapReadyStart \
+#define vexriscv_trap_barrier_start \
 		"  	li       %[tmp],  0x00020000\n" \
 		"	csrs     mstatus,  %[tmp]\n" \
 		"  	la       %[tmp],  1f\n" \
 		"	csrw     mtvec,  %[tmp]\n" \
 		"	li       %[fail], 1\n" \
 
-#define trapReadyEnd \
+#define vexriscv_trap_barrier_end \
 		"	li       %[fail], 0\n" \
 		"1:\n" \
 		"  	li       %[tmp],  0x00020000\n" \
@@ -107,9 +107,9 @@ static int32_t vexriscv_read_word(uint32_t address, int32_t *data){
 	int32_t result, tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-		trapReadyStart
+		vexriscv_trap_barrier_start
 		"	lw       %[result], 0(%[address])\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address)
 		: "memory"
@@ -123,7 +123,7 @@ static int32_t vexriscv_read_word_unaligned(uint32_t address, int32_t *data){
 	int32_t result, tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-			trapReadyStart
+			vexriscv_trap_barrier_start
 		"	lbu      %[result], 0(%[address])\n"
 		"	lbu      %[tmp],    1(%[address])\n"
 		"	slli     %[tmp],  %[tmp], 8\n"
@@ -134,7 +134,7 @@ static int32_t vexriscv_read_word_unaligned(uint32_t address, int32_t *data){
 		"	lbu      %[tmp],    3(%[address])\n"
 		"	slli     %[tmp],  %[tmp], 24\n"
 		"	or       %[result], %[result], %[tmp]\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address)
 		: "memory"
@@ -148,12 +148,12 @@ static int32_t vexriscv_read_half_unaligned(uint32_t address, int32_t *data){
 	int32_t result, tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-		trapReadyStart
+		vexriscv_trap_barrier_start
 		"	lb       %[result], 1(%[address])\n"
 		"	slli     %[result],  %[result], 8\n"
 		"	lbu      %[tmp],    0(%[address])\n"
 		"	or       %[result], %[result], %[tmp]\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [result]"=&r" (result), [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address)
 		: "memory"
@@ -167,9 +167,9 @@ static int32_t vexriscv_write_word(uint32_t address, int32_t data){
 	int32_t tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-		trapReadyStart
+		vexriscv_trap_barrier_start
 		"	sw       %[data], 0(%[address])\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address), [data]"r" (data)
 		: "memory"
@@ -183,7 +183,7 @@ static int32_t vexriscv_write_word_unaligned(uint32_t address, int32_t data){
 	int32_t tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-		trapReadyStart
+		vexriscv_trap_barrier_start
 		"	sb       %[data], 0(%[address])\n"
 		"	srl      %[data], %[data], 8\n"
 		"	sb       %[data], 1(%[address])\n"
@@ -191,7 +191,7 @@ static int32_t vexriscv_write_word_unaligned(uint32_t address, int32_t data){
 		"	sb       %[data], 2(%[address])\n"
 		"	srl      %[data], %[data], 8\n"
 		"	sb       %[data], 3(%[address])\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address), [data]"r" (data)
 		: "memory"
@@ -206,11 +206,11 @@ static int32_t vexriscv_write_short_unaligned(uint32_t address, int32_t data){
 	int32_t tmp;
 	int32_t fail;
 	__asm__ __volatile__ (
-		trapReadyStart
+		vexriscv_trap_barrier_start
 		"	sb       %[data], 0(%[address])\n"
 		"	srl      %[data], %[data], 8\n"
 		"	sb       %[data], 1(%[address])\n"
-		trapReadyEnd
+		vexriscv_trap_barrier_end
 		: [fail]"=&r" (fail), [tmp]"=&r" (tmp)
 		: [address]"r" (address), [data]"r" (data)
 		: "memory"
@@ -543,7 +543,7 @@ int main(void)
 	irq_setie(1);
 	uart_init();
 	puts("VexRiscv Machine Mode software built "__DATE__" "__TIME__"");
-	printf("--========== \e[1mBooting Linux Rawrrr\e[0m =============--\n");
+	printf("--========== \e[1mBooting Linux\e[0m =============--\n");
 	uart_sync();
 	vexriscv_machine_mode_init();
 	vexriscv_machine_mode_boot();
