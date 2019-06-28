@@ -61,6 +61,7 @@ def SoCLinux(soc_cls, **kwargs):
                 endianness=self.cpu.endianness)
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
+            self.add_csr("spiflash")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
