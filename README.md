@@ -248,3 +248,12 @@ $ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
 $ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPluginConfig=linux-minimal"
 ```
 The Linux variant is the *VexRiscv.v* file.
+
+## Udev rules (optional)
+Don't needed but can make loading/flashing bistreams easier:
+```sh
+$ git clone https://github.com/litex-hub/litex-buildenv-udev
+$ cd litex-buildenv-udev
+$ make install
+$ make reload
+```
