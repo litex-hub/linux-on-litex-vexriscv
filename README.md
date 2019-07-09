@@ -42,6 +42,11 @@ $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
 $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```
 
+## Prerequisites
+```sh
+$ sudo apt install build-essential device-tree-compiler
+```
+
 ## Installing LiteX
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
