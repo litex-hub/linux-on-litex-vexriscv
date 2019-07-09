@@ -207,6 +207,7 @@ $ lxterm --images=images.json /dev/ttyUSBX
 The images should load and you should see Linux booting :)
 
 > **Note**: lxterm is automatically installed with LiteX.
+
 > **Note:** since on some boards JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
 
 Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
