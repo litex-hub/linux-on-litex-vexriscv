@@ -61,8 +61,8 @@ $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ub
 ```
 ## Installing Verilator (only needed for simulation)
 ```sh
-$ apt install verilator
-$ apt install libevent-dev libjson-c-dev
+$ sudo apt install verilator
+$ sudo apt install libevent-dev libjson-c-dev
 ```
 ## Installing OpenOCD (only needed for hardware test)
 ```sh
