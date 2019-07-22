@@ -40,25 +40,15 @@ def SoCLinux(soc_cls, **kwargs):
             self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
 
         def add_spi_flash(self):
-            # FIXME: only support 7-series for now
+            # TODO: add spiflash1x support
             spiflash_pads = self.platform.request("spiflash4x")
-            spiflash_pads.clk = Signal()
-            self.specials += Instance("STARTUPE2",
-                i_CLK=0,
-                i_GSR=0,
-                i_GTS=0,
-                i_KEYCLEARB=0,
-                i_PACK=0,
-                i_USRCCLKO=spiflash_pads.clk,
-                i_USRCCLKTS=0,
-                i_USRDONEO=1,
-                i_USRDONETS=1)
-
             self.submodules.spiflash = SpiFlash(
                 spiflash_pads,
                 dummy=11,
                 div=2,
+                with_bitbang=True,
                 endianness=self.cpu.endianness)
+            self.spiflash.add_clk_primitive(self.platform.device)
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
