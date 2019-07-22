@@ -68,10 +68,8 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
         def configure_boot(self):
-            self.add_constant("NETBOOT_LINUX_VEXRISCV", None)
             if hasattr(self, "spiflash"):
-                self.add_constant("FLASHBOOT_LINUX_VEXRISCV", None)
-                self.add_constant("FLASH_BOOT_ADDRESS", None)
+                self.add_constant("FLASH_BOOT_ADDRESS", 0x00400000)
 
         def compile_device_tree(self, name=""):
             if name != "":
