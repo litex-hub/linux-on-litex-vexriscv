@@ -51,7 +51,7 @@ $ sudo apt install build-essential device-tree-compiler
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
 $ chmod +x litex_setup.py
-$ ./litex_setup.py init install --user
+$ sudo ./litex_setup.py init install
 ```
 ## Installing a RISC-V toolchain
 ```sh
