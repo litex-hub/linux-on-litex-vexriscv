@@ -7,6 +7,8 @@ from litex.soc.integration.builder import Builder
 
 from soc_linux import SoCLinux
 
+kB = 1024
+
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
@@ -23,6 +25,8 @@ class Board:
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
+    SPIFLASH_PAGE_SIZE = 256
+    SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex.boards.targets import arty
         Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash")
@@ -124,9 +128,11 @@ class MiniSpartan6(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
+    SPIFLASH_PAGE_SIZE = 256
+    SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex.boards.targets import versa_ecp5
-        Board.__init__(self, versa_ecp5.EthernetSoC, "serial+ethernet")
+        Board.__init__(self, versa_ecp5.EthernetSoC, "serial+ethernet+spiflash")
 
     def load(self):
         os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
@@ -198,6 +204,8 @@ def main():
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash()
+            soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
+            soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         soc.configure_boot()
