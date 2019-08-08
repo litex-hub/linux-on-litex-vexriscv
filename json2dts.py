@@ -123,6 +123,32 @@ if "switches" in d["csr_bases"]:
 			status = "disabled";
 		}};
 	""".format(switches_csr_base=d["csr_bases"]["switches"])
+
+if "spi" in d["csr_bases"]:
+    aliases["spi0"] = "litespi0"
+
+    dts += """
+	    litespi0: spi@{spi_csr_base:x} {{
+		    compatible = "litex,litespi";
+		    reg = <0x0 0x{spi_csr_base:x} 0x0 0x100>;
+		    status = "okay";
+
+		    litespi,max-bpw = <8>;
+		    litespi,sck-frequency = <1000000>;
+		    litespi,num-cs = <1>;
+
+		    #address-cells = <0x1>;
+		    #size-cells = <0x1>;
+
+		    spidev0: spidev@0 {{
+			compatible = "linux,spidev";
+			reg = <0 0>;
+			spi-max-frequency = <1000000>;
+			status = "okay";
+		    }};
+	    }};
+    """.format(spi_csr_base=d["csr_bases"]["spi"])
+
 dts += """
 	};
 """
