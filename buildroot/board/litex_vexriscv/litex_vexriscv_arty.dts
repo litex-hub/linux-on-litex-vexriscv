@@ -19,3 +19,13 @@
 		reg = <0x0 0xc0000000 0x1 0x08000000>;
 	};
 };
+
+&leds {
+	litex,ngpio = <4>;
+	status = "okay";
+};
+
+&switches {
+	litex,ngpio = <4>;
+	status = "okay";
+};
