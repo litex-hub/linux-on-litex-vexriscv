@@ -5,9 +5,13 @@
 	model = "VexRiscv SoCLinux on Digilent Nexys 4 DDR Board";
 
 	chosen {
-		bootargs = "mem=128M@0x40000000 rootwait console=hvc0 root=/dev/ram0 init=/sbin/init swiotlb=32";
+		bootargs = "mem=128M@0x40000000 rootwait console=liteuart root=/dev/ram0 init=/sbin/init swiotlb=32";
 		linux,initrd-start = <0xC0800000>;
 		linux,initrd-end   = <0xC1000000>; // max 8MB ramdisk image
+	};
+
+	aliases {
+		serial0 = &liteuart0;
 	};
 
 	cpus {
