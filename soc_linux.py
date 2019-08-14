@@ -9,7 +9,6 @@ from litex.soc.integration.soc_core import mem_decoder
 
 from litex.soc.cores.spi_flash import SpiFlash
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
-from litex.build.generic_platform import ConstraintError
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -56,25 +55,21 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_csr("spiflash")
 
         def add_gpio(self):
-            led_port = []
-            while True:
-                try:
-                    led_port += [self.platform.request("user_led", len(led_port))]
-                except ConstraintError:
-                    break
+            def platform_request_all(name):
+                from litex.build.generic_platform import ConstraintError
+                r = []
+                while True:
+                    try:
+                        r += [self.platform.request(name, len(r))]
+                    except ConstraintError:
+                        break
+                return r
 
-            self.submodules.led_port = GPIOOut(Cat(led_port))
-            self.add_csr("led_port")
+            self.submodules.leds = GPIOOut(Cat(platform_request_all("user_led")))
+            self.add_csr("leds")
 
-            sw_port = []
-            while True:
-                try:
-                    sw_port += [self.platform.request("user_sw", len(sw_port))]
-                except ConstraintError:
-                    break
-
-            self.submodules.sw_port = GPIOIn(Cat(sw_port))
-            self.add_csr("sw_port")
+            self.submodules.switches = GPIOOut(Cat(platform_request_all("user_sw")))
+            self.add_csr("switches")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
