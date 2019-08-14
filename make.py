@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex.boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash")
+        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash+gpio")
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -208,6 +208,8 @@ def main():
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
+        if "gpio" in board.soc_capabilities:
+            soc.add_gpio()
         soc.configure_boot()
         soc.compile_device_tree(board_name)
 

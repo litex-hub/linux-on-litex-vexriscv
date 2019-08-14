@@ -53,6 +53,20 @@
 			compatible = "litex,liteuart";
 			reg = <0x0 0xf0001000 0x0 0x100>;
 			status = "okay";
-	   	};
+		};
+
+		leds: gpio@f0005800 {
+			compatible = "litex,gpio";
+			reg = <0x0 0xf0005800 0x0 0x4>;
+			litex,direction = "out";
+			status = "disabled";
+		};
+
+		switches: gpio@f0003800 {
+			compatible = "litex,gpio";
+			reg = <0x0 0xf0006000 0x0 0x4>;
+			litex,direction = "in";
+			status = "disabled";
+		};
 	};
 };

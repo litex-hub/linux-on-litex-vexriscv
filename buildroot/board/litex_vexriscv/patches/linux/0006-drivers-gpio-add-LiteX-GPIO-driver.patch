@@ -1,0 +1,340 @@
+diff --git a/Documentation/devicetree/bindings/gpio/litex,gpio.txt b/Documentation/devicetree/bindings/gpio/litex,gpio.txt
+new file mode 100644
+index 000000000..ab9aef6c6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/gpio/litex,gpio.txt
+@@ -0,0 +1,23 @@
++LiteX GPIO controller
++
++Required properties:
++- compatible: should be "litex,gpio"
++- reg: base address and length of the register
++- litex,ngpio: number of gpio pins in port
++- litex,direction: direction of gpio port, should be "in" or "out"
++
++Examples:
++
++gpio@f0003000 {
++	compatible = "litex,gpio";
++	reg = <0x0 0xf0003800 0x0 0x1>;
++	litex,ngpio = <4>;
++	litex,direction = "in";
++};
++
++gpio@f0003800 {
++	compatible = "litex,gpio";
++	reg = <0x0 0xf0003800 0x0 0x1>;
++	litex,ngpio = <4>;
++	litex,direction = "out";
++};
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index b5a284534..66ec4401e 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -286,6 +286,12 @@ config GPIO_IOP
+ 
+ 	  If unsure, say N.
+ 
++config GPIO_LITEX
++	tristate "LiteX GPIO support"
++	depends on OF && HAS_IOMEM
++	help
++	  driver for GPIO functionality on LiteX
++
+ config GPIO_LOONGSON
+ 	bool "Loongson-2/3 GPIO support"
+ 	depends on CPU_LOONGSON2 || CPU_LOONGSON3
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index 37628f8db..55d725214 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -64,6 +64,7 @@ obj-$(CONFIG_GPIO_JANZ_TTL)	+= gpio-janz-ttl.o
+ obj-$(CONFIG_GPIO_KEMPLD)	+= gpio-kempld.o
+ obj-$(CONFIG_ARCH_KS8695)	+= gpio-ks8695.o
+ obj-$(CONFIG_GPIO_INTEL_MID)	+= gpio-intel-mid.o
++obj-$(CONFIG_GPIO_LITEX)        += gpio-litex.o
+ obj-$(CONFIG_GPIO_LOONGSON)	+= gpio-loongson.o
+ obj-$(CONFIG_GPIO_LP3943)	+= gpio-lp3943.o
+ obj-$(CONFIG_GPIO_LPC18XX)	+= gpio-lpc18xx.o
+diff --git a/drivers/gpio/gpio-litex.c b/drivers/gpio/gpio-litex.c
+new file mode 100644
+index 000000000..127c5b97f
+--- /dev/null
++++ b/drivers/gpio/gpio-litex.c
+@@ -0,0 +1,218 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/gpio/driver.h>
++#include <linux/gpio.h>
++#include <linux/types.h>
++#include <linux/string.h>
++#include <linux/bits.h>
++#include <linux/errno.h>
++#include <linux/litex.h>
++
++#define GPIO_PINS_MAX   32
++
++struct litex_gpio {
++	void __iomem *membase;
++	int port_direction;
++	int reg_span;
++	struct gpio_chip chip;
++};
++
++/* API functions */
++
++static int litex_gpio_get_value(struct gpio_chip *chip, unsigned int offset)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++	u32 regv;
++
++	if (offset >= chip->ngpio)
++		return -EINVAL;
++
++	regv = litex_get_reg(gpio_s->membase, gpio_s->reg_span);
++	return !!(regv & BIT(offset));
++}
++
++static int litex_gpio_get_multiple(struct gpio_chip *chip, unsigned long *mask,
++				   unsigned long *bits)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++	u32 regv;
++
++	if (*mask >= (1 << chip->ngpio))
++		return -EINVAL;
++
++	regv = litex_get_reg(gpio_s->membase, gpio_s->reg_span);
++	*bits = (regv & *mask);
++	return 0;
++}
++
++static void litex_gpio_set_value(struct gpio_chip *chip, unsigned int offset,
++				 int val)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++	u32 regv, new_regv;
++
++	if (offset >= chip->ngpio)
++		return;
++
++	regv = litex_get_reg(gpio_s->membase, gpio_s->reg_span);
++	new_regv = (regv & ~BIT(offset)) | (!!val << offset);
++	litex_set_reg(gpio_s->membase, gpio_s->reg_span, new_regv);
++}
++
++static void litex_gpio_set_multiple(struct gpio_chip *chip, unsigned long *mask,
++				    unsigned long *bits)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++	u32 regv, new_regv;
++
++	if (*mask >= (1 << chip->ngpio))
++		return;
++
++	regv = litex_get_reg(gpio_s->membase, gpio_s->reg_span);
++	new_regv = (regv & ~(*mask)) | (*bits);
++	litex_set_reg(gpio_s->membase, gpio_s->reg_span, new_regv);
++}
++
++static int litex_gpio_get_direction(struct gpio_chip *chip, unsigned int offset)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++
++	return gpio_s->port_direction;
++}
++
++static int litex_gpio_direction_input(struct gpio_chip *chip,
++				      unsigned int offset)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++
++	if (gpio_s->port_direction != GPIOF_DIR_IN)
++		return -ENOTSUPP;
++	else
++		return 0;
++}
++
++static int litex_gpio_direction_output(struct gpio_chip *chip,
++				       unsigned int offset, int value)
++{
++	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
++
++	if (gpio_s->port_direction != GPIOF_DIR_OUT)
++		return -ENOTSUPP;
++	else
++		return 0;
++}
++
++/* Driver functions */
++
++static int litex_gpio_probe(struct platform_device *pdev)
++{
++	struct device_node *node = pdev->dev.of_node;
++	struct litex_gpio *gpio_s;
++	struct resource *res;
++	int ret_i;
++
++	int dt_ngpio;
++	const char *dt_direction;
++
++	if (!node)
++		return -ENODEV;
++
++	gpio_s = devm_kzalloc(&pdev->dev, sizeof(*gpio_s), GFP_KERNEL);
++	if (!gpio_s)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EBUSY;
++
++	gpio_s->membase = devm_of_iomap(&pdev->dev, node, 0, &res->end);
++	if (IS_ERR_OR_NULL(gpio_s->membase))
++		return -EIO;
++
++	ret_i = of_property_read_u32(node, "litex,ngpio", &dt_ngpio);
++	if (ret_i < 0) {
++		dev_err(&pdev->dev, "No litex,ngpio entry in the dts file\n");
++		return -ENODEV;
++	}
++	if (dt_ngpio >= GPIO_PINS_MAX) {
++		dev_err(&pdev->dev,
++			"LiteX GPIO driver cannot use more than %d pins\n",
++			GPIO_PINS_MAX);
++		return -EINVAL;
++	}
++
++	ret_i = of_property_read_string(node, "litex,direction",
++					      &dt_direction);
++	if (ret_i < 0) {
++		dev_err(&pdev->dev, "No litex,direction entry in the dts file\n");
++		return -ENODEV;
++	}
++
++	if (!strcmp(dt_direction, "in"))
++		gpio_s->port_direction = GPIOF_DIR_IN;
++	else if (!strcmp(dt_direction, "out"))
++		gpio_s->port_direction = GPIOF_DIR_OUT;
++	else
++		return -ENODEV;
++
++	/* Assign API functions */
++
++	gpio_s->chip.label             = "litex_gpio";
++	gpio_s->chip.owner             = THIS_MODULE;
++	gpio_s->chip.get               = litex_gpio_get_value;
++	gpio_s->chip.get_multiple      = litex_gpio_get_multiple;
++	gpio_s->chip.set               = litex_gpio_set_value;
++	gpio_s->chip.set_multiple      = litex_gpio_set_multiple;
++	gpio_s->chip.get_direction     = litex_gpio_get_direction;
++	gpio_s->chip.direction_input   = litex_gpio_direction_input;
++	gpio_s->chip.direction_output  = litex_gpio_direction_output;
++	gpio_s->chip.parent            = &pdev->dev;
++	gpio_s->chip.base              = -1;
++	gpio_s->chip.ngpio             = dt_ngpio;
++	gpio_s->chip.can_sleep         = false;
++
++	gpio_s->reg_span = (dt_ngpio + LITEX_SUBREG_SIZE_BIT - 1) /
++			   LITEX_SUBREG_SIZE_BIT;
++
++	platform_set_drvdata(pdev, gpio_s);
++	return devm_gpiochip_add_data(&pdev->dev, &gpio_s->chip, gpio_s);
++}
++
++static const struct of_device_id litex_of_match[] = {
++	{.compatible = "litex,gpio"},
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, litex_of_match);
++
++static struct platform_driver litex_gpio_driver = {
++	.driver = {
++		.name             = "litex-gpio",
++		.of_match_table   = of_match_ptr(litex_of_match)
++	},
++	.probe  = litex_gpio_probe,
++};
++
++module_platform_driver(litex_gpio_driver);
++
++MODULE_DESCRIPTION("LiteX gpio driver");
++MODULE_AUTHOR("Antmicro <www.antmicro.com>");
++MODULE_LICENSE("GPL v2");
+diff --git a/include/linux/litex.h b/include/linux/litex.h
+new file mode 100644
+index 000000000..315845523
+--- /dev/null
++++ b/include/linux/litex.h
+@@ -0,0 +1,52 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _LINUX_LITEX_H
++#define _LINUX_LITEX_H
++
++#include <linux/io.h>
++#include <linux/types.h>
++#include <linux/compiler_types.h>
++
++#define LITEX_REG_SIZE             0x4
++#define LITEX_SUBREG_SIZE          0x1
++#define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
++
++#ifdef __LITTLE_ENDIAN
++# define LITEX_READ_REG(addr)                  ioread32(addr)
++# define LITEX_READ_REG_OFF(addr, off)         ioread32(addr + off)
++# define LITEX_WRITE_REG(val, addr)            iowrite32(val, addr)
++# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32(val, addr + off)
++#else
++# define LITEX_READ_REG(addr)                  ioread32be(addr)
++# define LITEX_READ_REG_OFF(addr, off)         ioread32be(addr + off)
++# define LITEX_WRITE_REG(val, addr)            iowrite32be(val, addr)
++# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32be(val, addr + off)
++#endif
++
++/* Helper functions for manipulating LiteX registers */
++
++static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
++{
++	u32 shifted_data, shift, i;
++
++	for (i = 0; i < reg_size; ++i) {
++		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
++		shifted_data = val >> shift;
++		LITEX_WRITE_REG(shifted_data, reg + (LITEX_REG_SIZE * i));
++	}
++}
++
++static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
++{
++	u32 shifted_data, shift, i;
++	u32 result = 0;
++
++	for (i = 0; i < reg_size; ++i) {
++		shifted_data = LITEX_READ_REG(reg + (LITEX_REG_SIZE * i));
++		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
++		result |= (shifted_data << shift);
++	}
++
++	return result;
++}
++
++#endif /* _LINUX_LITEX_H */

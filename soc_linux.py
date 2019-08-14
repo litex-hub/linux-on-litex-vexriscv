@@ -8,6 +8,8 @@ from litex.soc.interconnect import wishbone
 from litex.soc.integration.soc_core import mem_decoder
 
 from litex.soc.cores.spi_flash import SpiFlash
+from litex.soc.cores.gpio import GPIOOut, GPIOIn
+from litex.build.generic_platform import ConstraintError
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -52,6 +54,27 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
+
+        def add_gpio(self):
+            led_port = []
+            while True:
+                try:
+                    led_port += [self.platform.request("user_led", len(led_port))]
+                except ConstraintError:
+                    break
+
+            self.submodules.led_port = GPIOOut(Cat(led_port))
+            self.add_csr("led_port")
+
+            sw_port = []
+            while True:
+                try:
+                    sw_port += [self.platform.request("user_sw", len(sw_port))]
+                except ConstraintError:
+                    break
+
+            self.submodules.sw_port = GPIOIn(Cat(sw_port))
+            self.add_csr("sw_port")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
