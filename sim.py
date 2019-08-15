@@ -56,7 +56,7 @@ _io = [
 
 class Platform(SimPlatform):
     default_clk_name = "sys_clk"
-    default_clk_period = 1000 # ~ 1MHz
+    default_clk_period = 1e9/1e9 # ~ 1MHz
 
     def __init__(self):
         SimPlatform.__init__(self, "SIM", _io)
@@ -72,7 +72,7 @@ class Supervisor(Module, AutoCSR):
         self.sync += If(self._finish.re | self.finish, Finish())
 
 
-class LinuxSoC(SoCCore):
+class SoCLinux(SoCCore):
     SoCCore.csr_map.update({
         "ctrl":       0,
         "uart":       2,
@@ -104,6 +104,7 @@ class LinuxSoC(SoCCore):
                 "buildroot/rootfs.cpio":   "0x00800000",
                 "buildroot/rv32.dtb":      "0x01000000"
                 }, "little"))
+        self.add_constant("SIM", None)
 
         # supervisor
         self.submodules.supervisor = Supervisor()
@@ -138,6 +139,16 @@ class LinuxSoC(SoCCore):
             self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
+    def generate_dts(self, board_name):
+        json = os.path.join("build", board_name, "csr.json")
+        dts = os.path.join("build", board_name, "{}.dts".format(board_name))
+        os.system("./json2dts.py {} > {}".format(json, dts))
+
+    def compile_dts(self, board_name):
+        dts = os.path.join("build", board_name, "{}.dts".format(board_name))
+        dtb = os.path.join("buildroot", "rv32.dtb")
+        os.system("dtc -O dtb -o {} {}".format(dtb, dts))
+
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
@@ -157,13 +168,23 @@ def main():
     if args.with_ethernet:
         sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": "192.168.1.100"})
 
-    print("Compile board device tree...")
-    os.system("dtc -O dtb -o buildroot/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv.dts")
-
-    soc = LinuxSoC(args.with_ethernet)
-    builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
-    builder.build(sim_config=sim_config, opt_level=args.opt_level,
-        trace=args.trace, trace_start=int(args.trace_start), trace_end=int(args.trace_end))
+    for i in range(2):
+        soc = SoCLinux(args.with_ethernet)
+        board_name = "sim"
+        build_dir = os.path.join("build", board_name)
+        builder = Builder(soc, output_dir=build_dir,
+            compile_software=i!=0, compile_gateware=i!=0,
+            csr_json=os.path.join(build_dir, "csr.json"))
+        builder.build(sim_config=sim_config,
+            run=i!=0,
+            opt_level=args.opt_level,
+            trace=args.trace,
+            trace_start=int(args.trace_start),
+            trace_end=int(args.trace_end))
+        if i == 0:
+            os.chdir("..")
+            soc.generate_dts(board_name)
+            soc.compile_dts(board_name)
 
 
 if __name__ == "__main__":

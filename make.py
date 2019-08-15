@@ -211,11 +211,19 @@ def main():
         if "gpio" in board.soc_capabilities:
             soc.add_gpio()
         soc.configure_boot()
-        soc.compile_device_tree(board_name)
 
+        build_dir = os.path.join("build", board_name)
         if args.build:
-            builder = Builder(soc, output_dir="build/" + board_name)
-            builder.build()
+            builder = Builder(soc, output_dir=build_dir,
+                csr_json=os.path.join(build_dir, "csr.json"))
+        else:
+            builder = Builder(soc, output_dir="build/" + board_name,
+                compile_software=False, compile_gateware=False,
+                csr_json=os.path.join(build_dir, "csr.json"))
+        builder.build()
+
+        soc.generate_dts(board_name)
+        soc.compile_dts(board_name)
 
         if args.load:
             board.load()

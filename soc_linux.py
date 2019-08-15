@@ -89,10 +89,14 @@ def SoCLinux(soc_cls, **kwargs):
             if hasattr(self, "spiflash"):
                 self.add_constant("FLASH_BOOT_ADDRESS", 0x00400000)
 
-        def compile_device_tree(self, name=""):
-            if name != "":
-                name = "_" + name
-            print(name)
-            os.system("dtc -O dtb -o buildroot/rv32.dtb buildroot/board/litex_vexriscv/litex_vexriscv{}.dts".format(name))
+        def generate_dts(self, board_name):
+            json = os.path.join("build", board_name, "csr.json")
+            dts = os.path.join("build", board_name, "{}.dts".format(board_name))
+            os.system("./json2dts.py {} > {}".format(json, dts))
+
+        def compile_dts(self, board_name):
+            dts = os.path.join("build", board_name, "{}.dts".format(board_name))
+            dtb = os.path.join("buildroot", "rv32.dtb")
+            os.system("dtc -O dtb -o {} {}".format(dtb, dts))
 
     return _SoCLinux(**kwargs)
