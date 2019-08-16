@@ -14,6 +14,8 @@ f = open(csr_json, "r")
 d = json.load(f)
 f.close()
 
+aliases = {}
+
 dts = """
 /dts-v1/;
 
@@ -76,6 +78,7 @@ dts = """
 		   linux_initrd_end=d["memories"]["main_ram"]["base"] + 16*mB)
 
 if "uart" in d["csr_bases"]:
+	aliases["serial0"] = "liteuart0"
 	dts += """
 		liteuart0: serial@{uart_csr_base:x} {{
 			device_type = "serial";
@@ -124,10 +127,19 @@ dts += """
 	};
 """
 
-dts += """
+if aliases:
+    dts += """
 	aliases {
-		serial0 = &liteuart0;
+"""
+    for alias in aliases:
+    	dts += """
+	   {} = &{};
+""".format(alias, aliases[alias])
+    dts += """
 	};
+"""
+
+dts += """
 };
 """
 
