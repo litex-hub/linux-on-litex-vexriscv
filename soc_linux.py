@@ -9,6 +9,7 @@ from litex.soc.integration.soc_core import mem_decoder
 
 from litex.soc.cores.spi_flash import SpiFlash
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
+from litex.soc.cores.spi import SPIMaster
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -70,6 +71,12 @@ def SoCLinux(soc_cls, **kwargs):
 
             self.submodules.switches = GPIOOut(Cat(platform_request_all("user_sw")))
             self.add_csr("switches")
+
+        def add_spi(self, data_width, spi_clk_freq):
+            spi_pads = self.platform.request("spi")
+            self.add_csr("spi")
+            self.submodules.spi = SPIMaster(spi_pads, data_width,
+                                            self.clk_freq, spi_clk_freq)
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")

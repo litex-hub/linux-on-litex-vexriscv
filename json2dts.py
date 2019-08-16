@@ -14,6 +14,8 @@ f = open(csr_json, "r")
 d = json.load(f)
 f.close()
 
+aliases = {}
+
 dts = """
 /dts-v1/;
 
@@ -76,6 +78,7 @@ dts = """
 		   linux_initrd_end=d["memories"]["main_ram"]["base"] + 16*mB)
 
 if "uart" in d["csr_bases"]:
+	aliases["serial0"] = "liteuart0"
 	dts += """
 		liteuart0: serial@{uart_csr_base:x} {{
 			device_type = "serial";
@@ -120,14 +123,49 @@ if "switches" in d["csr_bases"]:
 			status = "disabled";
 		}};
 	""".format(switches_csr_base=d["csr_bases"]["switches"])
+
+if "spi" in d["csr_bases"]:
+    aliases["spi0"] = "litespi0"
+
+    dts += """
+	    litespi0: spi@{spi_csr_base:x} {{
+		    compatible = "litex,litespi";
+		    reg = <0x0 0x{spi_csr_base:x} 0x0 0x100>;
+		    status = "okay";
+
+		    litespi,max-bpw = <8>;
+		    litespi,sck-frequency = <1000000>;
+		    litespi,num-cs = <1>;
+
+		    #address-cells = <0x1>;
+		    #size-cells = <0x1>;
+
+		    spidev0: spidev@0 {{
+			compatible = "linux,spidev";
+			reg = <0 0>;
+			spi-max-frequency = <1000000>;
+			status = "okay";
+		    }};
+	    }};
+    """.format(spi_csr_base=d["csr_bases"]["spi"])
+
 dts += """
 	};
 """
 
-dts += """
+if aliases:
+    dts += """
 	aliases {
-		serial0 = &liteuart0;
+"""
+    for alias in aliases:
+    	dts += """
+	   {} = &{};
+""".format(alias, aliases[alias])
+    dts += """
 	};
+"""
+
+dts += """
 };
 """
 

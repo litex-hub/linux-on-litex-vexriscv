@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex.boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash+gpio")
+        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash+gpio+spi")
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -189,6 +189,8 @@ def main():
     parser.add_argument("--flash", action="store_true", help="flash bitstream/images (to SPI Flash)")
     parser.add_argument("--local-ip", default="192.168.1.50", help="local IP address")
     parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
+    parser.add_argument("--spi-bpw", type=int, default=8, help="Bits per word for SPI controller")
+    parser.add_argument("--spi-sck-freq", type=int, default=1e6, help="SPI clock frequency")
     args = parser.parse_args()
 
     if args.board == "all":
@@ -210,6 +212,8 @@ def main():
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         if "gpio" in board.soc_capabilities:
             soc.add_gpio()
+        if "spi" in board.soc_capabilities:
+            soc.add_spi(args.spi_bpw, args.spi_sck_freq)
         soc.configure_boot()
 
         build_dir = os.path.join("build", board_name)
