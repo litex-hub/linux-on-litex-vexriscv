@@ -149,6 +149,15 @@ if "spi" in d["csr_bases"]:
 	    }};
     """.format(spi_csr_base=d["csr_bases"]["spi"])
 
+if "i2c0" in d["csr_bases"]:
+    dts += """
+		i2c0: i2c@{i2c0_csr_base:x} {{
+			compatible = "litex,i2c";
+			reg = <0x0 0x{i2c0_csr_base:x} 0x0 0x5>;
+			status = "okay";
+		}};
+""".format(i2c0_csr_base=d["csr_bases"]["i2c0"])
+
 dts += """
 	};
 """
