@@ -158,6 +158,15 @@ if "i2c0" in d["csr_bases"]:
 		}};
 """.format(i2c0_csr_base=d["csr_bases"]["i2c0"])
 
+if "xadc" in d["csr_bases"]:
+    dts += """
+		hwmon0: xadc@{xadc_csr_base:x} {{
+			compatible = "litex,hwmon-xadc";
+			reg = <0x0 0x{xadc_csr_base:x} 0x0 0x20>;
+			status = "okay";
+		}};
+""".format(xadc_csr_base=d["csr_bases"]["xadc"])
+
 dts += """
 	};
 """

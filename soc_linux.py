@@ -11,6 +11,7 @@ from litex.soc.cores.spi_flash import SpiFlash
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
+from litex.soc.cores.xadc import XADC
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -82,6 +83,10 @@ def SoCLinux(soc_cls, **kwargs):
         def add_i2c(self):
             self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
             self.add_csr("i2c0")
+
+        def add_xadc(self):
+            self.submodules.xadc = XADC()
+            self.add_csr("xadc")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
