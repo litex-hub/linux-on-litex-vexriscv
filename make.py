@@ -28,7 +28,7 @@ class Arty(Board):
     SPIFLASH_PAGE_SIZE = 256
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
-        from litex.boards.targets import arty
+        from litex_boards.targets import arty
         Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash+gpio+spi+i2c+xadc")
 
     def load(self):
@@ -57,7 +57,7 @@ class Arty(Board):
 
 class NeTV2(Board):
     def __init__(self):
-        from litex.boards.targets import netv2
+        from litex_boards.targets import netv2
         Board.__init__(self, netv2.EthernetSoC, "serial+ethernet")
 
     def load(self):
@@ -69,7 +69,7 @@ class NeTV2(Board):
 
 class Genesys2(Board):
     def __init__(self):
-        from litex.boards.targets import genesys2
+        from litex_boards.targets import genesys2
         Board.__init__(self, genesys2.BaseSoC, "serial")
 
     def load(self):
@@ -81,7 +81,7 @@ class Genesys2(Board):
 
 class KCU105(Board):
     def __init__(self):
-        from litex.boards.targets import kcu105
+        from litex_boards.targets import kcu105
         Board.__init__(self, kcu105.EthernetSoC, "serial+ethernet")
 
     def load(self):
@@ -94,7 +94,7 @@ class KCU105(Board):
 
 class Nexys4DDR(Board):
     def __init__(self):
-        from litex.boards.targets import nexys4ddr
+        from litex_boards.targets import nexys4ddr
         Board.__init__(self, nexys4ddr.EthernetSoC, "serial+ethernet")
 
     def load(self):
@@ -106,7 +106,7 @@ class Nexys4DDR(Board):
 
 class NexysVideo(Board):
     def __init__(self):
-        from litex.boards.targets import nexys_video
+        from litex_boards.targets import nexys_video
         Board.__init__(self, nexys_video.EthernetSoC, "serial")
 
     def load(self):
@@ -118,7 +118,7 @@ class NexysVideo(Board):
 
 class MiniSpartan6(Board):
     def __init__(self):
-        from litex.boards.targets import minispartan6
+        from litex_boards.targets import minispartan6
         Board.__init__(self, minispartan6.BaseSoC, "serial")
 
     def load(self):
@@ -131,7 +131,7 @@ class VersaECP5(Board):
     SPIFLASH_PAGE_SIZE = 256
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
-        from litex.boards.targets import versa_ecp5
+        from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.EthernetSoC, "serial+ethernet+spiflash")
 
     def load(self):
@@ -141,7 +141,7 @@ class VersaECP5(Board):
 
 class ULX3S(Board):
     def __init__(self):
-        from litex.boards.targets import ulx3s
+        from litex_boards.targets import ulx3s
         Board.__init__(self, ulx3s.BaseSoC, "serial")
 
     def load(self):
@@ -151,7 +151,7 @@ class ULX3S(Board):
 
 class De0Nano(Board):
     def __init__(self):
-        from litex.boards.targets import de0nano
+        from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, "serial")
 
     def load(self):
