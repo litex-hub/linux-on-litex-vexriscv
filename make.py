@@ -107,11 +107,11 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.EthernetSoC, "serial")
+        Board.__init__(self, nexys_video.EthernetSoC, "serial+framebuffer")
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer(vivado_path=vivado_path)
+        prog = VivadoProgrammer()
         prog.load_bitstream("build/nexys_video/gateware/top.bit")
 
 # MiniSpartan6 support -----------------------------------------------------------------------------
@@ -218,6 +218,8 @@ def main():
             soc.add_i2c()
         if "xadc" in board.soc_capabilities:
             soc.add_xadc()
+        if "framebuffer" in board.soc_capabilities:
+            soc.add_framebuffer()
         soc.configure_boot()
 
         build_dir = os.path.join("build", board_name)

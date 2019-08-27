@@ -13,6 +13,9 @@ from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.xadc import XADC
 
+from litevideo.output import VideoOut
+
+
 # SoCLinux -----------------------------------------------------------------------------------------
 
 def SoCLinux(soc_cls, **kwargs):
@@ -87,6 +90,30 @@ def SoCLinux(soc_cls, **kwargs):
         def add_xadc(self):
             self.submodules.xadc = XADC()
             self.add_csr("xadc")
+
+        def add_framebuffer(self):
+            platform = self.platform
+            assert platform.device[:4] == "xc7a"
+            dram_port = self.sdram.crossbar.get_port(
+                mode="read",
+                data_width=32,
+                clock_domain="pix",
+                reverse=True)
+            framebuffer = VideoOut(
+                device=platform.device,
+                pads=platform.request("hdmi_out"),
+                dram_port=dram_port)
+            self.submodules.framebuffer = framebuffer
+            self.add_csr("framebuffer")
+
+            framebuffer.driver.clocking.cd_pix.clk.attr.add("keep")
+            framebuffer.driver.clocking.cd_pix5x.clk.attr.add("keep")
+            platform.add_period_constraint(framebuffer.driver.clocking.cd_pix.clk, 1e9/74.25e6)
+            platform.add_period_constraint(framebuffer.driver.clocking.cd_pix5x.clk, 1e9/(5*74.25e6))
+            platform.add_false_path_constraints(
+                self.crg.cd_sys.clk,
+                framebuffer.driver.clocking.cd_pix.clk,
+                framebuffer.driver.clocking.cd_pix5x.clk)
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")

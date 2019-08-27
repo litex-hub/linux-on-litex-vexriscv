@@ -167,6 +167,19 @@ if "xadc" in d["csr_bases"]:
 		}};
 """.format(xadc_csr_base=d["csr_bases"]["xadc"])
 
+if "framebuffer" in d["csr_bases"]:
+	# FIXME: dynamic framebuffer base and size
+	dts += """
+		framebuffer0: framebuffer@f0000000 {
+			compatible = "simple-framebuffer";
+			reg = <0x0 0xd0000000 0x0 0x12c000>;
+			width = <640>;
+			height = <480>;
+			stride = <2560>;
+			format = "a8b8g8r8";
+		};
+	"""
+
 dts += """
 	};
 """
