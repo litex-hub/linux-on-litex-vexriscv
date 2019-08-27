@@ -26,7 +26,7 @@ dts = """
 	model = "VexRiscv SoCLinux";
 
 	chosen {{
-		bootargs = "mem={main_ram_size_mb}M@0x{main_ram_base:x} rootwait console=liteuart root=/dev/ram0 init=/sbin/init swiotlb=32";
+		bootargs = "mem={main_ram_size_mb}M@0x{main_ram_base:x} rootwait console=liteuart earlycon=sbi root=/dev/ram0 init=/sbin/init swiotlb=32";
 		linux,initrd-start = <0x{linux_initrd_start:x}>;
 		linux,initrd-end   = <0x{linux_initrd_end:x}>;
 	}};
