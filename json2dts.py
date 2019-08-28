@@ -2,35 +2,50 @@
 
 import sys
 import json
+import argparse
 
-if len(sys.argv) < 2:
-    print("usage: ./json2dts.py <csr.json>")
+parser = argparse.ArgumentParser(description="LiteX's CSR JSON to Linux DTS generator")
+parser.add_argument("csr_json", help="CSR JSON file")
+args = parser.parse_args()
+
+d = json.load(open(args.csr_json))
 
 kB = 1024
 mB = kB*1024
 
-csr_json = sys.argv[1]
-f = open(csr_json, "r")
-d = json.load(f)
-f.close()
-
 aliases = {}
+
+# Header -------------------------------------------------------------------------------------------
 
 dts = """
 /dts-v1/;
 
-/ {{
+/ {
 	#address-cells = <0x2>;
 	#size-cells = <0x2>;
 	compatible = "enjoy-digital,litex-vexriscv-soclinux";
 	model = "VexRiscv SoCLinux";
+"""
 
+# Boot Arguments -----------------------------------------------------------------------------------
+
+dts += """
 	chosen {{
 		bootargs = "mem={main_ram_size_mb}M@0x{main_ram_base:x} rootwait console=liteuart earlycon=sbi root=/dev/ram0 init=/sbin/init swiotlb=32";
 		linux,initrd-start = <0x{linux_initrd_start:x}>;
 		linux,initrd-end   = <0x{linux_initrd_end:x}>;
 	}};
+""".format(
+		main_ram_base=d["memories"]["main_ram"]["base"],
+		main_ram_size=d["memories"]["main_ram"]["size"],
+		main_ram_size_mb=d["memories"]["main_ram"]["size"]//mB,
 
+		linux_initrd_start=d["memories"]["main_ram"]["base"] + 8*mB,
+		linux_initrd_end=d["memories"]["main_ram"]["base"] + 16*mB)
+
+# CPU ----------------------------------------------------------------------------------------------
+
+dts += """
 	cpus {{
 		#address-cells = <0x1>;
 		#size-cells = <0x0>;
@@ -58,24 +73,29 @@ dts = """
 			tlb-split;
 		}};
 	}};
+""".format(sys_clk_freq=int(50e6) if "sim" in d["constants"] else d["constants"]["config_clock_frequency"])
 
+# Memory -------------------------------------------------------------------------------------------
+
+dts += """
 	memory@{main_ram_base:x} {{
 		device_type = "memory";
 		reg = <0x0 0x{main_ram_base:x} 0x1 0x{main_ram_size:x}>;
 	}};
+""".format(main_ram_base=d["memories"]["main_ram"]["base"],
+		   main_ram_size=d["memories"]["main_ram"]["size"])
 
-	soc {{
+# SoC ----------------------------------------------------------------------------------------------
+
+dts += """
+	soc {
 		#address-cells = <0x2>;
 		#size-cells = <0x2>;
 		compatible = "simple-bus";
 		ranges;
-""".format(sys_clk_freq=int(50e6) if "sim" in d["constants"] else d["constants"]["config_clock_frequency"],
-		   main_ram_base=d["memories"]["main_ram"]["base"],
-		   main_ram_size=d["memories"]["main_ram"]["size"],
-		   main_ram_size_mb=d["memories"]["main_ram"]["size"]//mB,
+"""
 
-		   linux_initrd_start=d["memories"]["main_ram"]["base"] + 8*mB,
-		   linux_initrd_end=d["memories"]["main_ram"]["base"] + 16*mB)
+	# UART -----------------------------------------------------------------------------------------
 
 if "uart" in d["csr_bases"]:
 	aliases["serial0"] = "liteuart0"
@@ -87,6 +107,8 @@ if "uart" in d["csr_bases"]:
 			status = "okay";
 		}};
 	""".format(uart_csr_base=d["csr_bases"]["uart"])
+
+	# Ethernet MAC ---------------------------------------------------------------------------------
 
 if "ethmac" in d["csr_bases"]:
 	dts += """
@@ -104,6 +126,8 @@ if "ethmac" in d["csr_bases"]:
 			   ethmac_tx_slots=d["constants"]["ethmac_tx_slots"],
 			   ethmac_rx_slots=d["constants"]["ethmac_rx_slots"])
 
+	# Leds -----------------------------------------------------------------------------------------
+
 if "leds" in d["csr_bases"]:
 	dts += """
 		leds: gpio@{leds_csr_base:x} {{
@@ -114,6 +138,8 @@ if "leds" in d["csr_bases"]:
 		}};
 	""".format(leds_csr_base=d["csr_bases"]["leds"])
 
+	# Switches -------------------------------------------------------------------------------------
+
 if "switches" in d["csr_bases"]:
 	dts += """
 		switches: gpio@{switches_csr_base:x} {{
@@ -123,6 +149,8 @@ if "switches" in d["csr_bases"]:
 			status = "disabled";
 		}};
 	""".format(switches_csr_base=d["csr_bases"]["switches"])
+
+	# SPI ------------------------------------------------------------------------------------------
 
 if "spi" in d["csr_bases"]:
     aliases["spi0"] = "litespi0"
@@ -149,6 +177,8 @@ if "spi" in d["csr_bases"]:
 	    }};
     """.format(spi_csr_base=d["csr_bases"]["spi"])
 
+	# I2C ------------------------------------------------------------------------------------------
+
 if "i2c0" in d["csr_bases"]:
     dts += """
 		i2c0: i2c@{i2c0_csr_base:x} {{
@@ -158,6 +188,8 @@ if "i2c0" in d["csr_bases"]:
 		}};
 """.format(i2c0_csr_base=d["csr_bases"]["i2c0"])
 
+	# XADC -----------------------------------------------------------------------------------------
+
 if "xadc" in d["csr_bases"]:
     dts += """
 		hwmon0: xadc@{xadc_csr_base:x} {{
@@ -166,6 +198,8 @@ if "xadc" in d["csr_bases"]:
 			status = "okay";
 		}};
 """.format(xadc_csr_base=d["csr_bases"]["xadc"])
+
+	# Framebuffer ----------------------------------------------------------------------------------
 
 if "framebuffer" in d["csr_bases"]:
 	# FIXME: dynamic framebuffer base and size
@@ -184,6 +218,8 @@ dts += """
 	};
 """
 
+# Aliases -----------------------------------------------------------------------------------------
+
 if aliases:
     dts += """
 	aliases {
@@ -199,6 +235,8 @@ if aliases:
 dts += """
 };
 """
+
+# --------------------------------------------------------------------------------------------------
 
 if "leds" in d["csr_bases"]:
 	dts += """
