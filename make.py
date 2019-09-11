@@ -61,8 +61,8 @@ class NeTV2(Board):
         Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_netv2_rpi.cfg")
         prog.load_bitstream("build/netv2/gateware/top.bit")
 
 # Genesys2 support ---------------------------------------------------------------------------------
