@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, "serial+ethernet+spiflash+gpio+spi+i2c+xadc")
+        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "gpio", "spi", "i2c", "xadc"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -58,7 +58,7 @@ class Arty(Board):
 class NeTV2(Board):
     def __init__(self):
         from litex_boards.targets import netv2
-        Board.__init__(self, netv2.EthernetSoC, "serial+ethernet")
+        Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -70,7 +70,7 @@ class NeTV2(Board):
 class Genesys2(Board):
     def __init__(self):
         from litex_boards.targets import genesys2
-        Board.__init__(self, genesys2.BaseSoC, "serial")
+        Board.__init__(self, genesys2.BaseSoC, {"serial"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -82,7 +82,7 @@ class Genesys2(Board):
 class KCU105(Board):
     def __init__(self):
         from litex_boards.targets import kcu105
-        Board.__init__(self, kcu105.EthernetSoC, "serial+ethernet")
+        Board.__init__(self, kcu105.EthernetSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -95,7 +95,7 @@ class KCU105(Board):
 class Nexys4DDR(Board):
     def __init__(self):
         from litex_boards.targets import nexys4ddr
-        Board.__init__(self, nexys4ddr.EthernetSoC, "serial+ethernet")
+        Board.__init__(self, nexys4ddr.EthernetSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -107,7 +107,7 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.EthernetSoC, "serial+framebuffer")
+        Board.__init__(self, nexys_video.EthernetSoC, {"serial", "framebuffer"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -119,7 +119,7 @@ class NexysVideo(Board):
 class MiniSpartan6(Board):
     def __init__(self):
         from litex_boards.targets import minispartan6
-        Board.__init__(self, minispartan6.BaseSoC, "serial")
+        Board.__init__(self, minispartan6.BaseSoC, {"serial"})
 
     def load(self):
         os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
@@ -132,7 +132,7 @@ class VersaECP5(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import versa_ecp5
-        Board.__init__(self, versa_ecp5.EthernetSoC, "serial+ethernet+spiflash")
+        Board.__init__(self, versa_ecp5.EthernetSoC, {"serial", "ethernet", "spiflash"})
 
     def load(self):
         os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
@@ -142,7 +142,7 @@ class VersaECP5(Board):
 class ULX3S(Board):
     def __init__(self):
         from litex_boards.targets import ulx3s
-        Board.__init__(self, ulx3s.BaseSoC, "serial")
+        Board.__init__(self, ulx3s.BaseSoC, {"serial"})
 
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
@@ -152,7 +152,7 @@ class ULX3S(Board):
 class De0Nano(Board):
     def __init__(self):
         from litex_boards.targets import de0nano
-        Board.__init__(self, de0nano.BaseSoC, "serial")
+        Board.__init__(self, de0nano.BaseSoC, {"serial"})
 
     def load(self):
         from litex.build.altera import USBBlaster
