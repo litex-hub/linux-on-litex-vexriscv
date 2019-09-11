@@ -15,6 +15,19 @@ from litex.soc.cores.xadc import XADC
 
 from litevideo.output import VideoOut
 
+# Helpers ------------------------------------------------------------------------------------------
+
+def platform_request_all(platform, name):
+    from litex.build.generic_platform import ConstraintError
+    r = []
+    while True:
+        try:
+            r += [platform.request(name, len(r))]
+        except ConstraintError:
+            break
+    if r == []:
+        raise ValueError
+    return r
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -60,28 +73,18 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
 
-        def add_gpio(self):
-            def platform_request_all(name):
-                from litex.build.generic_platform import ConstraintError
-                r = []
-                while True:
-                    try:
-                        r += [self.platform.request(name, len(r))]
-                    except ConstraintError:
-                        break
-                return r
-
-            self.submodules.leds = GPIOOut(Cat(platform_request_all("user_led")))
+        def add_leds(self):
+            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
             self.add_csr("leds")
 
-            self.submodules.switches = GPIOOut(Cat(platform_request_all("user_sw")))
+        def add_switches(self):
+            self.submodules.switches = GPIOOut(Cat(platform_request_all(self.plarform, "user_sw")))
             self.add_csr("switches")
 
         def add_spi(self, data_width, spi_clk_freq):
             spi_pads = self.platform.request("spi")
             self.add_csr("spi")
-            self.submodules.spi = SPIMaster(spi_pads, data_width,
-                                            self.clk_freq, spi_clk_freq)
+            self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, spi_clk_freq)
 
         def add_i2c(self):
             self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
