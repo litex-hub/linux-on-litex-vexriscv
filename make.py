@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "gpio", "spi", "i2c", "xadc"})
+        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "switches", "spi", "i2c", "xadc"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -56,9 +56,11 @@ class Arty(Board):
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
+    SPIFLASH_PAGE_SIZE = 256
+    SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import netv2
-        Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet"})
+        Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -210,8 +212,10 @@ def main():
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
-        if "gpio" in board.soc_capabilities:
-            soc.add_gpio()
+        if "leds" in board.soc_capabilities:
+            soc.add_leds()
+        if "switches" in board.soc_capabilities:
+            soc.add_switches()
         if "spi" in board.soc_capabilities:
             soc.add_spi(args.spi_bpw, args.spi_sck_freq)
         if "i2c" in board.soc_capabilities:
