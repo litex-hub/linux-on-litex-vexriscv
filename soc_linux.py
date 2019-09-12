@@ -78,7 +78,7 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_csr("leds")
 
         def add_switches(self):
-            self.submodules.switches = GPIOOut(Cat(platform_request_all(self.plarform, "user_sw")))
+            self.submodules.switches = GPIOOut(Cat(platform_request_all(self.platform, "user_sw")))
             self.add_csr("switches")
 
         def add_spi(self, data_width, spi_clk_freq):
