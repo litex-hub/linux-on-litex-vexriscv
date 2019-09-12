@@ -13,6 +13,8 @@ d = json.load(open(args.csr_json))
 kB = 1024
 mB = kB*1024
 
+d["memories"]["main_ram"]["size"] = 256*mB # FIXME: limit kernel to 256mB
+
 aliases = {}
 
 # Header -------------------------------------------------------------------------------------------
@@ -202,17 +204,24 @@ if "xadc" in d["csr_bases"]:
 	# Framebuffer ----------------------------------------------------------------------------------
 
 if "framebuffer" in d["csr_bases"]:
-	# FIXME: dynamic framebuffer base and size
-	dts += """
-		framebuffer0: framebuffer@f0000000 {
+    # FIXME: dynamic framebuffer base and size
+    framebuffer_base   = 0xc8000000
+    framebuffer_width  = 1280
+    framebuffer_height = 720
+    dts += """
+		framebuffer0: framebuffer@f0000000 {{
 			compatible = "simple-framebuffer";
-			reg = <0x0 0xd0000000 0x0 0x12c000>;
-			width = <640>;
-			height = <480>;
-			stride = <2560>;
+			reg = <0x0 0x{framebuffer_base:x} 0x0 0x{framebuffer_size:x}>;
+			width = <{framebuffer_width}>;
+			height = <{framebuffer_height}>;
+			stride = <{framebuffer_stride}>;
 			format = "a8b8g8r8";
-		};
-	"""
+		}};
+	""".format(framebuffer_base=framebuffer_base,
+               framebuffer_width=framebuffer_width,
+               framebuffer_height=framebuffer_height,
+               framebuffer_size=framebuffer_width*framebuffer_height*4,
+               framebuffer_stride=framebuffer_width*4)
 
 dts += """
 	};

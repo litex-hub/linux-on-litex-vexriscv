@@ -6,6 +6,9 @@
 
 #include "framebuffer.h"
 
+//#define FRAMEBUFFER_MODE_640X480
+#define FRAMEBUFFER_MODE_1280X720
+
 struct video_timing {
 	unsigned int pixel_clock; /* in tens of kHz */
 
@@ -78,6 +81,7 @@ static void framebuffer_clkgen_write(int m, int d)
 void framebuffer_init(void)
 {
 	unsigned int m, d;
+#ifdef FRAMEBUFFER_MODE_640X480
 	struct video_timing mode = {
 		// 640x480 @ 75Hz
 		.pixel_clock = 3150,
@@ -92,6 +96,23 @@ void framebuffer_init(void)
 		.v_sync_offset = 1,
 		.v_sync_width = 3,
 	};
+#endif
+#ifdef FRAMEBUFFER_MODE_1280X720
+	struct video_timing mode = {
+		// 1280x720 @ 60Hz
+		.pixel_clock = 7425,
+
+		.h_active = 1280,
+		.h_blanking = 370,
+		.h_sync_offset = 220,
+		.h_sync_width = 40,
+
+		.v_active = 720,
+		.v_blanking = 30,
+		.v_sync_offset = 20,
+		.v_sync_width = 5,
+	};
+#endif
 
 	printf("Initializing framebuffer console to %dx%d @ %dHz\n",
 		mode.h_active,
@@ -116,7 +137,7 @@ void framebuffer_init(void)
 
 	/* configure dma */
 	framebuffer_core_initiator_enable_write(0);
-	framebuffer_core_initiator_base_write(0x10000000); // FIXME
+	framebuffer_core_initiator_base_write(0x08000000); // FIXME
 	framebuffer_core_initiator_length_write(mode.h_active*mode.v_active*4);
 	framebuffer_core_initiator_enable_write(1);
 }
