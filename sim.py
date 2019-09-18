@@ -91,7 +91,7 @@ class SoCLinux(SoCCore):
         "csr":          0xf0000000,
     }
 
-    def __init__(self, with_ethernet=False):
+    def __init__(self, init_memories=False, with_ethernet=False):
         platform = Platform()
         sys_clk_freq = int(1e6)
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
@@ -103,7 +103,7 @@ class SoCLinux(SoCCore):
                 "buildroot/Image":         "0x00000000",
                 "buildroot/rootfs.cpio":   "0x00800000",
                 "buildroot/rv32.dtb":      "0x01000000"
-                }, "little"))
+                }, "little") if init_memories else [])
         self.add_constant("SIM", None)
 
         # supervisor
@@ -114,7 +114,7 @@ class SoCLinux(SoCCore):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # machine mode emulator ram
-        emulator_rom = get_mem_data("emulator/emulator.bin", "little")
+        emulator_rom = get_mem_data("emulator/emulator.bin", "little") if init_memories else []
         self.submodules.emulator_ram = wishbone.SRAM(0x4000, init=emulator_rom)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
         self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
@@ -169,7 +169,7 @@ def main():
         sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": "192.168.1.100"})
 
     for i in range(2):
-        soc = SoCLinux(args.with_ethernet)
+        soc = SoCLinux(i!=0, args.with_ethernet)
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
