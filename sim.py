@@ -149,6 +149,9 @@ class SoCLinux(SoCCore):
         dtb = os.path.join("buildroot", "rv32.dtb")
         os.system("dtc -O dtb -o {} {}".format(dtb, dts))
 
+    def compile_emulator(self, board_name):
+        os.environ["BOARD"] = board_name
+        os.system("cd emulator && make")
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
@@ -173,7 +176,7 @@ def main():
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
-            compile_software=i!=0, compile_gateware=i!=0,
+            compile_gateware=i!=0,
             csr_json=os.path.join(build_dir, "csr.json"))
         builder.build(sim_config=sim_config,
             run=i!=0,
@@ -185,6 +188,7 @@ def main():
             os.chdir("..")
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
+            soc.compile_emulator(board_name)
 
 
 if __name__ == "__main__":
