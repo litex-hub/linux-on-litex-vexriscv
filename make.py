@@ -238,6 +238,7 @@ def main():
 
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
+        soc.compile_emulator(board_name)
 
         if args.load:
             board.load()

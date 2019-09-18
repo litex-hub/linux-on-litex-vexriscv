@@ -146,4 +146,8 @@ def SoCLinux(soc_cls, **kwargs):
             dtb = os.path.join("buildroot", "rv32.dtb")
             os.system("dtc -O dtb -o {} {}".format(dtb, dts))
 
+        def compile_emulator(self, board_name):
+            os.environ["BOARD"] = board_name
+            os.system("cd emulator && make")
+
     return _SoCLinux(**kwargs)
