@@ -33,7 +33,9 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 ## Prerequisites
 ```sh
-$ sudo apt install build-essential device-tree-compiler wget git iverilog python3-setuptools
+$ sudo apt install build-essential device-tree-compiler wget git python3-setuptools
+$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
+$ cd linux-on-litex-vexriscv
 ```
 
 ## Pre-built Bitstreams/Linux images
@@ -43,7 +45,6 @@ tests without the need to compile anything.
 To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
 and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
 ```sh
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
 $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
 $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```
@@ -78,7 +79,6 @@ $ sudo make install
 
 ## Running the LiteX simulation
 ```sh
-$ cd linux-on-litex-vexriscv
 $ ./sim.py
 ```
 You should see Linux booting and be able to interact with it:
