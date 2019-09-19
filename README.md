@@ -31,6 +31,11 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 > **Note:** Avalanche support can be found in [RISC-V - Getting Started Guide](https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-avalanche.html) thanks to [Antmicro](https://antmicro.com).
 
+## Prerequisites
+```sh
+$ sudo apt install build-essential device-tree-compiler wget git iverilog python3-setuptools
+```
+
 ## Pre-built Bitstreams/Linux images
 Pre-built bistreams for the supported board and pre-built Linux images can be found in the [linux-on-litex-vexriscv-prebuilt](https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt) repository and allow doing
 tests without the need to compile anything.
@@ -38,13 +43,9 @@ tests without the need to compile anything.
 To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
 and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
 ```sh
+$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
 $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
 $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
-```
-
-## Prerequisites
-```sh
-$ sudo apt install build-essential device-tree-compiler
 ```
 
 ## Installing LiteX
@@ -77,6 +78,7 @@ $ sudo make install
 
 ## Running the LiteX simulation
 ```sh
+$ cd linux-on-litex-vexriscv
 $ ./sim.py
 ```
 You should see Linux booting and be able to interact with it:
