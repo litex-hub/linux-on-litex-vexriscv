@@ -78,6 +78,7 @@ $ sudo make install
 
 ## Running the LiteX simulation
 ```sh
+$ cd linux-on-litex-vexriscv
 $ ./sim.py
 ```
 You should see Linux booting and be able to interact with it:
