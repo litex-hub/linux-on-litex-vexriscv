@@ -43,6 +43,7 @@ tests without the need to compile anything.
 To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
 and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
 ```sh
+$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
 $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
 $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```
