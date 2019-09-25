@@ -13,8 +13,6 @@ d = json.load(open(args.csr_json))
 kB = 1024
 mB = kB*1024
 
-d["memories"]["main_ram"]["size"] = 256*mB # FIXME: limit kernel to 256mB
-
 aliases = {}
 
 # Header -------------------------------------------------------------------------------------------
