@@ -245,7 +245,7 @@ The binaries are located in *output/images/*.
 ## Generating the VexRiscv Linux variant (optional)
 Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
 
-Clone VexRiscv repository and generate the Linux variant:
+Clone the VexRiscv repository and generate the Linux variant:
 ```sh
 $ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
 $ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPluginConfig=linux-minimal"
@@ -253,7 +253,7 @@ $ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPlugin
 The Linux variant is the *VexRiscv.v* file.
 
 ## Udev rules (optional)
-Don't needed but can make loading/flashing bistreams easier:
+Not needed but can make loading/flashing bitstreams easier:
 ```sh
 $ git clone https://github.com/litex-hub/litex-buildenv-udev
 $ cd litex-buildenv-udev
