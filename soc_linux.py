@@ -18,12 +18,12 @@ from litevideo.output import VideoOut
 
 # Helpers ------------------------------------------------------------------------------------------
 
-def platform_request_all(platform, name, skip=0):
+def platform_request_all(platform, name):
     from litex.build.generic_platform import ConstraintError
     r = []
     while True:
         try:
-            r += [platform.request(name, len(r) + skip)]
+            r += [platform.request(name, len(r))]
         except ConstraintError:
             break
     if r == []:
@@ -74,9 +74,15 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
 
-        def add_leds(self, skip=0):
-            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led", skip)))
+        def add_leds(self):
+            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
             self.add_csr("leds")
+
+        def add_rgb_led(self):
+            rgb_led_pads = self.platform.request("rgb_led", 0)
+            for n in "rgb":
+                setattr(self.submodules, "rgb_led_{}0".format(n), PWM(getattr(rgb_led_pads, n)))
+                self.add_csr("rgb_led_{}0".format(n))
 
         def add_switches(self):
             self.submodules.switches = GPIOOut(Cat(platform_request_all(self.platform, "user_sw")))
@@ -118,10 +124,6 @@ def SoCLinux(soc_cls, **kwargs):
                 self.crg.cd_sys.clk,
                 framebuffer.driver.clocking.cd_pix.clk,
                 framebuffer.driver.clocking.cd_pix5x.clk)
-
-        def add_pwm(self):
-            self.submodules.pwm0 = PWM(self.platform.request("user_led", 0))
-            self.add_csr("pwm0")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")

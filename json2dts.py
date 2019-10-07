@@ -138,6 +138,21 @@ if "leds" in d["csr_bases"]:
 		}};
 	""".format(leds_csr_base=d["csr_bases"]["leds"])
 
+	# RGB Led --------------------------------------------------------------------------------------
+
+for name in ["rgb_led_r0", "rgb_led_g0", "rgb_led_b0"]:
+	if name in d["csr_bases"]:
+	    dts += """
+		{pwm_name}: pwm@{pwm_csr_base:x} {{
+	        compatible = "litex,pwm";
+	        reg = <0x0 0x{pwm_csr_base:x} 0x0 0x24>;
+	        clock = <100000000>;
+	        #pwm-cells = <3>;
+	        status = "okay";
+	    }};
+	""".format(pwm_name=name,
+		       pwm_csr_base=d["csr_bases"][name])
+
 	# Switches -------------------------------------------------------------------------------------
 
 if "switches" in d["csr_bases"]:
@@ -220,19 +235,6 @@ if "framebuffer" in d["csr_bases"]:
                framebuffer_height=framebuffer_height,
                framebuffer_size=framebuffer_width*framebuffer_height*4,
                framebuffer_stride=framebuffer_width*4)
-
-	# PWM ------------------------------------------------------------------------------------------
-
-if "pwm0" in d["csr_bases"]:
-    dts += """
-		pwm0: pwm@{pwm_csr_base:x} {{
-                        compatible = "litex,pwm";
-                        reg = <0x0 0x{pwm_csr_base:x} 0x0 0x24>;
-                        clock = <100000000>;
-                        #pwm-cells = <3>;
-                        status = "okay";
-                }};
-""".format(pwm_csr_base=d["csr_bases"]["pwm0"])
 
 dts += """
 	};

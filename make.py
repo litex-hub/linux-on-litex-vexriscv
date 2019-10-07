@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "switches", "spi", "i2c", "xadc", "pwm"})
+        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -215,10 +215,9 @@ def main():
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         if "leds" in board.soc_capabilities:
-            # pwm uses led0 so this one must be skipped
-            soc.add_leds(1 if "pwm" in board.soc_capabilities else 0)
-        if "pwm" in board.soc_capabilities:
-            soc.add_pwm()
+            soc.add_leds()
+        if "rgb_led" in board.soc_capabilities:
+            soc.add_rgb_led()
         if "switches" in board.soc_capabilities:
             soc.add_switches()
         if "spi" in board.soc_capabilities:
