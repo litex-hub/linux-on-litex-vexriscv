@@ -12,17 +12,18 @@ from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.xadc import XADC
+from litex.soc.cores.pwm import PWM
 
 from litevideo.output import VideoOut
 
 # Helpers ------------------------------------------------------------------------------------------
 
-def platform_request_all(platform, name):
+def platform_request_all(platform, name, skip=0):
     from litex.build.generic_platform import ConstraintError
     r = []
     while True:
         try:
-            r += [platform.request(name, len(r))]
+            r += [platform.request(name, len(r) + skip)]
         except ConstraintError:
             break
     if r == []:
@@ -73,8 +74,8 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
 
-        def add_leds(self):
-            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
+        def add_leds(self, skip=0):
+            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led", skip)))
             self.add_csr("leds")
 
         def add_switches(self):
@@ -117,6 +118,10 @@ def SoCLinux(soc_cls, **kwargs):
                 self.crg.cd_sys.clk,
                 framebuffer.driver.clocking.cd_pix.clk,
                 framebuffer.driver.clocking.cd_pix5x.clk)
+
+        def add_pwm(self):
+            self.submodules.pwm0 = PWM(self.platform.request("user_led", 0))
+            self.add_csr("pwm0")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
