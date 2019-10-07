@@ -17,12 +17,12 @@ from litevideo.output import VideoOut
 
 # Helpers ------------------------------------------------------------------------------------------
 
-def platform_request_all(platform, name):
+def platform_request_all(platform, name, skip=0):
     from litex.build.generic_platform import ConstraintError
     r = []
     while True:
         try:
-            r += [platform.request(name, len(r))]
+            r += [platform.request(name, len(r) + skip)]
         except ConstraintError:
             break
     if r == []:
@@ -73,8 +73,8 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
             self.add_csr("spiflash")
 
-        def add_leds(self):
-            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
+        def add_leds(self, skip=0):
+            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led", skip)))
             self.add_csr("leds")
 
         def add_switches(self):
