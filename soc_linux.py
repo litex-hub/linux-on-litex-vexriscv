@@ -47,8 +47,8 @@ def SoCLinux(soc_cls, **kwargs):
             "rom":          0x00000000,
             "sram":         0x10000000,
             "emulator_ram": 0x20000000,
-            "ethmac":       0x30000000,
-            "spiflash":     0x50000000,
+            "ethmac":       0xb0000000,
+            "spiflash":     0xd0000000,
             "main_ram":     0xc0000000,
             "csr":          0xf0000000,
         }
@@ -71,7 +71,7 @@ def SoCLinux(soc_cls, **kwargs):
                 endianness=self.cpu.endianness)
             self.spiflash.add_clk_primitive(self.platform.device)
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
-            self.add_memory_region("spiflash", self.mem_map["spiflash"] | self.shadow_base, 0x1000000)
+            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000, io_region=True)
             self.add_csr("spiflash")
 
         def add_leds(self):

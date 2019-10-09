@@ -86,8 +86,8 @@ class SoCLinux(SoCCore):
         "rom":          0x00000000,
         "sram":         0x10000000,
         "emulator_ram": 0x20000000,
-        "ethmac":       0x30000000,
-        "main_ram":     0xC0000000,
+        "ethmac":       0xb0000000,
+        "main_ram":     0xc0000000,
         "csr":          0xf0000000,
     }
 
@@ -135,7 +135,7 @@ class SoCLinux(SoCCore):
                 interface="wishbone", endianness=self.cpu.endianness)
             self.submodules.ethmac = ethmac
             self.add_wb_slave(mem_decoder(self.mem_map["ethmac"]), self.ethmac.bus)
-            self.add_memory_region("ethmac", self.mem_map["ethmac"] | self.shadow_base, 0x2000)
+            self.add_memory_region("ethmac", self.mem_map["ethmac"], 0x2000, io_region=True)
             self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
