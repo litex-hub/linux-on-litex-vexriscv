@@ -29,7 +29,7 @@ class Arty(Board):
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc"})
+        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -228,6 +228,8 @@ def main():
             soc.add_xadc()
         if "framebuffer" in board.soc_capabilities:
             soc.add_framebuffer()
+        if "icap_bit" in board.soc_capabilities:
+            soc.add_icap_bitstream()
         soc.configure_boot()
 
         build_dir = os.path.join("build", board_name)

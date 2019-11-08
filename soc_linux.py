@@ -13,6 +13,7 @@ from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.xadc import XADC
 from litex.soc.cores.pwm import PWM
+from litex.soc.cores.icap import ICAPBitstream
 
 from litevideo.output import VideoOut
 
@@ -124,6 +125,10 @@ def SoCLinux(soc_cls, **kwargs):
                 self.crg.cd_sys.clk,
                 framebuffer.driver.clocking.cd_pix.clk,
                 framebuffer.driver.clocking.cd_pix5x.clk)
+
+        def add_icap_bitstream(self):
+            self.submodules.icap_bit = ICAPBitstream();
+            self.add_csr("icap_bit")
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")

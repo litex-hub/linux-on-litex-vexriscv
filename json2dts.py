@@ -253,6 +253,17 @@ if "framebuffer" in d["csr_bases"]:
                framebuffer_size=framebuffer_width*framebuffer_height*4,
                framebuffer_stride=framebuffer_width*4)
 
+	#·ICAPBitstream --------------------------------------------------------------------------------
+
+if "icap_bit" in d["csr_bases"]:
+    dts += """
+		fpga0: icap@{icap_csr_base:x} {{
+			compatible = "litex,fpga-icap";
+			reg = <0x0 0x{icap_csr_base:x} 0x0 0x14>;
+			status = "okay";
+		}};
+""".format(icap_csr_base=d["csr_bases"]["icap_bit"])
+
 dts += """
 	};
 """
