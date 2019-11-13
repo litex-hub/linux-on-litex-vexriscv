@@ -192,6 +192,23 @@ if "spi" in d["csr_bases"]:
 	    }};
     """.format(spi_csr_base=d["csr_bases"]["spi"])
 
+	# SPIFLASH ---------------------------------------------------------------------------------------
+
+if "spiflash" in d["csr_bases"]:
+    aliases["spiflash"] = "litespiflash"
+
+    dts += """
+	    litespiflash: spiflash@{spiflash_csr_base:x} {{
+		    compatible = "litex,spiflash";
+		    reg = <0x0 0x{spiflash_csr_base:x} 0x0 0x100>;
+		    status = "okay";
+			flash: flash@0 {{
+				compatible = "jedec,spi-nor";
+				reg = <0x0 0x0 0x0 0x{spiflash_size:x}>;
+		    }};
+	    }};
+    """.format(spiflash_csr_base=d["csr_bases"]["spiflash"], spiflash_size=d["memories"]["spiflash"]["size"])
+
 	# I2C ------------------------------------------------------------------------------------------
 
 if "i2c0" in d["csr_bases"]:
