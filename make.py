@@ -28,7 +28,7 @@ class Arty(Board):
     SPIFLASH_PAGE_SIZE = 256
     SPIFLASH_SECTOR_SIZE = 64*kB
     def __init__(self):
-        from litex_boards.targets import arty
+        from litex.boards.targets import arty
         Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc"})
 
     def load(self):
