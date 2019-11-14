@@ -135,7 +135,7 @@ class SoCLinux(SoCCore):
                 interface="wishbone", endianness=self.cpu.endianness)
             self.submodules.ethmac = ethmac
             self.add_wb_slave(mem_decoder(self.mem_map["ethmac"]), self.ethmac.bus)
-            self.add_memory_region("ethmac", self.mem_map["ethmac"], 0x2000, io_region=True)
+            self.add_memory_region("ethmac", self.mem_map["ethmac"], 0x2000, type="io")
             self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
