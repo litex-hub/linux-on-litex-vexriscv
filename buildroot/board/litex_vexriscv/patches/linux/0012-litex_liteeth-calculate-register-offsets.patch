@@ -1,0 +1,312 @@
+From ac2c5f435e3312c14875b84c8b7adf05ff43d03a Mon Sep 17 00:00:00 2001
+From: Gabriel Somlo <gsomlo@gmail.com>
+Date: Tue, 12 Nov 2019 12:00:05 -0500
+Subject: [PATCH] LiteETH: calculate hardware register offset using 'mmio-dw-bytes'
+
+LiteX MMIO (a.k.a. CSR) registers are exposed in chunks of a given
+width (typically 8 or 32), with chunks located at consecutive 32
+or 64 bit aligned (depending on the native CPU XLen) locations in
+the address space. While alignment can be inferred based on the
+hard-coded CONFIG_64BIT kernel option, chunk size must be provided
+as a boot-time property (called 'mmio-dw-bytes'), of the ethernet
+node's parent (i.e., in our case, the "soc" node).
+
+Make the LiteETH driver work on any combination of CPU XLen and
+MMIO chunk size by automatically calculating hardware register
+offsets based on alignment and chunk size, the latter of which
+defaults to 1 (8 bits) for backward compatibility.
+
+Signed-off-by: Gabriel Somlo <gsomlo@gmail.com>
+---
+ drivers/net/ethernet/litex/litex_liteeth.c | 187 +++++++++++++++------
+ 1 file changed, 137 insertions(+), 50 deletions(-)
+
+diff --git a/drivers/net/ethernet/litex/litex_liteeth.c b/drivers/net/ethernet/litex/litex_liteeth.c
+index 67b2f034f83a..33eac68302f6 100644
+--- a/drivers/net/ethernet/litex/litex_liteeth.c
++++ b/drivers/net/ethernet/litex/litex_liteeth.c
+@@ -19,27 +19,85 @@
+ #define DRV_NAME	"liteeth"
+ #define DRV_VERSION	"0.1"
+ 
+-#define LITEETH_WRITER_SLOT		0x00
+-#define LITEETH_WRITER_LENGTH		0x04
+-#define LITEETH_WRITER_ERRORS		0x14
+-#define LITEETH_WRITER_EV_STATUS	0x24
+-#define LITEETH_WRITER_EV_PENDING	0x28
+-#define LITEETH_WRITER_EV_ENABLE	0x2c
+-#define LITEETH_READER_START		0x30
+-#define LITEETH_READER_READY		0x34
+-#define LITEETH_READER_LEVEL		0x38
+-#define LITEETH_READER_SLOT		0x3c
+-#define LITEETH_READER_LENGTH		0x40
+-#define LITEETH_READER_EV_STATUS	0x48
+-#define LITEETH_READER_EV_PENDING	0x4c
+-#define LITEETH_READER_EV_ENABLE	0x50
+-#define LITEETH_PREAMBLE_CRC		0x54
+-#define LITEETH_PREAMBLE_ERRORS		0x58
+-#define LITEETH_CRC_ERRORS		0x68
+-
+-#define LITEETH_PHY_CRG_RESET		0x00
+-#define LITEETH_MDIO_W			0x04
+-#define LITEETH_MDIO_R			0x08
++/* MMIO alignment, in bytes -- depends on native XLen */
++#ifdef CONFIG_64BIT
++#define MMIO_ALIGN 8
++#else
++#define MMIO_ALIGN 4
++#endif
++
++/* MMIO chunk size, in bytes (default 1) -- probed during boot */
++static u32 mmio_dw_bytes = 1;
++
++enum ethmac_offset_key {
++	LITEETH_WRITER_SLOT,
++	LITEETH_WRITER_LENGTH,
++	LITEETH_WRITER_ERRORS,
++	LITEETH_WRITER_EV_STATUS,
++	LITEETH_WRITER_EV_PENDING,
++	LITEETH_WRITER_EV_ENABLE,
++	LITEETH_READER_START,
++	LITEETH_READER_READY,
++	LITEETH_READER_LEVEL,
++	LITEETH_READER_SLOT,
++	LITEETH_READER_LENGTH,
++	LITEETH_READER_EV_STATUS,
++	LITEETH_READER_EV_PENDING,
++	LITEETH_READER_EV_ENABLE,
++	LITEETH_PREAMBLE_CRC,
++	LITEETH_PREAMBLE_ERRORS,
++	LITEETH_CRC_ERRORS,
++	LITEETH_ETHMAC_MAX /* array size, keep in last position! */
++};
++
++static u8 ethmac_bytes[LITEETH_ETHMAC_MAX] = {
++	1, /* LITEETH_WRITER_SLOT */
++	4, /* LITEETH_WRITER_LENGTH */
++	4, /* LITEETH_WRITER_ERRORS */
++	1, /* LITEETH_WRITER_EV_STATUS */
++	1, /* LITEETH_WRITER_EV_PENDING */
++	1, /* LITEETH_WRITER_EV_ENABLE */
++	1, /* LITEETH_READER_START */
++	1, /* LITEETH_READER_READY */
++	1, /* LITEETH_READER_LEVEL */
++	1, /* LITEETH_READER_SLOT */
++	2, /* LITEETH_READER_LENGTH */
++	1, /* LITEETH_READER_EV_STATUS */
++	1, /* LITEETH_READER_EV_PENDING */
++	1, /* LITEETH_READER_EV_ENABLE */
++	1, /* LITEETH_PREAMBLE_CRC */
++	4, /* LITEETH_PREAMBLE_ERRORS */
++	4  /* LITEETH_CRC_ERRORS */
++};
++
++static u8 ethmac_offset[LITEETH_ETHMAC_MAX];
++
++enum ethphy_offset_key {
++	LITEETH_PHY_CRG_RESET,
++	LITEETH_MDIO_W,
++	LITEETH_MDIO_R,
++	LITEETH_ETHPHY_MAX /* array size, keep in last position! */
++};
++
++static u8 ethphy_bytes[LITEETH_ETHPHY_MAX] = {
++	1, /* LITEETH_PHY_CRG_RESET */
++	1, /* LITEETH_MDIO_W */
++	1  /* LITEETH_MDIO_R */
++};
++
++static u8 ethphy_offset[LITEETH_ETHPHY_MAX];
++
++static void
++init_offsets(u8 *offset, const u8 *bytes, int size)
++{
++	int i;
++
++	offset[0] = 0;
++	for (i = 1; i < size; i++) {
++		u8 chunks = (bytes[i - 1] + mmio_dw_bytes - 1) / mmio_dw_bytes;
++		offset[i] = offset[i - 1] + MMIO_ALIGN * chunks;
++	}
++}
+ 
+ #define LITEETH_BUFFER_SIZE		0x800
+ #define MAX_PKT_SIZE			LITEETH_BUFFER_SIZE
+@@ -68,10 +126,7 @@ struct liteeth {
+ 	void __iomem *rx_base;
+ };
+ 
+-/* Helper routines for accessing MMIO over a wishbone bus.
+- * Each 32 bit memory location contains a single byte of data, stored
+- * little endian
+- */
++/* Helper routines for accessing MMIO over a wishbone bus. */
+ static inline void outreg8(u8 val, void __iomem *addr)
+ {
+ 	iowrite32(val, addr);
+@@ -79,8 +134,12 @@ static inline void outreg8(u8 val, void __iomem *addr)
+ 
+ static inline void outreg16(u16 val, void __iomem *addr)
+ {
+-	outreg8(val >> 8, addr);
+-	outreg8(val, addr + 4);
++	if (mmio_dw_bytes == 1) {
++		outreg8(val >> 8, addr);
++		outreg8(val, addr + MMIO_ALIGN);
++	} else {
++		iowrite32(val, addr);
++	}
+ }
+ 
+ static inline u8 inreg8(void __iomem *addr)
+@@ -90,10 +149,20 @@ static inline u8 inreg8(void __iomem *addr)
+ 
+ static inline u32 inreg32(void __iomem *addr)
+ {
+-	return (inreg8(addr) << 24) |
+-		(inreg8(addr + 0x4) << 16) |
+-		(inreg8(addr + 0x8) <<  8) |
+-		(inreg8(addr + 0xc) <<  0);
++	u32 res;
++	switch (mmio_dw_bytes) {
++	case 4:
++		res = ioread32(addr);
++		break;
++	case 1:
++	default:
++		res = (inreg8(addr                 ) << 24) |
++			(inreg8(addr +   MMIO_ALIGN) << 16) |
++			(inreg8(addr + 2*MMIO_ALIGN) <<  8) |
++			(inreg8(addr + 3*MMIO_ALIGN));
++		break;
++	}
++	return res;
+ }
+ 
+ static int liteeth_rx(struct net_device *netdev)
+@@ -104,8 +173,8 @@ static int liteeth_rx(struct net_device *netdev)
+ 	u8 rx_slot;
+ 	int len;
+ 
+-	rx_slot = inreg8(priv->base + LITEETH_WRITER_SLOT);
+-	len = inreg32(priv->base + LITEETH_WRITER_LENGTH);
++	rx_slot = inreg8(priv->base + ethmac_offset[LITEETH_WRITER_SLOT]);
++	len = inreg32(priv->base + ethmac_offset[LITEETH_WRITER_LENGTH]);
+ 
+ 	skb = netdev_alloc_skb(netdev, len + NET_IP_ALIGN);
+ 	if (!skb) {
+@@ -139,16 +208,18 @@ static irqreturn_t liteeth_interrupt(int irq, void *dev_id)
+ 	struct liteeth *priv = netdev_priv(netdev);
+ 	u8 reg;
+ 
+-	reg = inreg8(priv->base + LITEETH_READER_EV_PENDING);
++	reg = inreg8(priv->base + ethmac_offset[LITEETH_READER_EV_PENDING]);
+ 	if (reg) {
+ 		liteeth_tx_done(netdev);
+-		outreg8(reg, priv->base + LITEETH_READER_EV_PENDING);
++		outreg8(reg,
++			priv->base + ethmac_offset[LITEETH_READER_EV_PENDING]);
+ 	}
+ 
+-	reg = inreg8(priv->base + LITEETH_WRITER_EV_PENDING);
++	reg = inreg8(priv->base + ethmac_offset[LITEETH_WRITER_EV_PENDING]);
+ 	if (reg) {
+ 		liteeth_rx(netdev);
+-		outreg8(reg, priv->base + LITEETH_WRITER_EV_PENDING);
++		outreg8(reg,
++			priv->base + ethmac_offset[LITEETH_WRITER_EV_PENDING]);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -181,13 +252,15 @@ static int liteeth_open(struct net_device *netdev)
+ 	}
+ 
+ 	/* Clear pending events? */
+-	outreg8(1, priv->base + LITEETH_WRITER_EV_PENDING);
+-	outreg8(1, priv->base + LITEETH_READER_EV_PENDING);
++	outreg8(1, priv->base + ethmac_offset[LITEETH_WRITER_EV_PENDING]);
++	outreg8(1, priv->base + ethmac_offset[LITEETH_READER_EV_PENDING]);
+ 
+ 	if (!priv->use_polling) {
+ 		/* Enable IRQs? */
+-		outreg8(1, priv->base + LITEETH_WRITER_EV_ENABLE);
+-		outreg8(1, priv->base + LITEETH_READER_EV_ENABLE);
++		outreg8(1,
++			priv->base + ethmac_offset[LITEETH_WRITER_EV_ENABLE]);
++		outreg8(1,
++			priv->base + ethmac_offset[LITEETH_READER_EV_ENABLE]);
+ 	}
+ 
+ 	netif_start_queue(netdev);
+@@ -212,8 +285,8 @@ static int liteeth_stop(struct net_device *netdev)
+ 
+ 	del_timer_sync(&priv->poll_timer);
+ 
+-	outreg8(0, priv->base + LITEETH_WRITER_EV_ENABLE);
+-	outreg8(0, priv->base + LITEETH_READER_EV_ENABLE);
++	outreg8(0, priv->base + ethmac_offset[LITEETH_WRITER_EV_ENABLE]);
++	outreg8(0, priv->base + ethmac_offset[LITEETH_READER_EV_ENABLE]);
+ 
+ 	if (!priv->use_polling) {
+ 		free_irq(netdev->irq, netdev);
+@@ -238,17 +311,18 @@ static int liteeth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
+ 
+ 	txbuffer = priv->tx_base + priv->tx_slot * LITEETH_BUFFER_SIZE;
+ 	memcpy_fromio(txbuffer, skb->data, skb->len);
+-	outreg8(priv->tx_slot, priv->base + LITEETH_READER_SLOT);
+-	outreg16(skb->len, priv->base + LITEETH_READER_LENGTH);
++	outreg8(priv->tx_slot, priv->base + ethmac_offset[LITEETH_READER_SLOT]);
++	outreg16(skb->len, priv->base + ethmac_offset[LITEETH_READER_LENGTH]);
+ 
+-	ret = readb_poll_timeout_atomic(priv->base + LITEETH_READER_READY,
++	ret = readb_poll_timeout_atomic(
++			priv->base + ethmac_offset[LITEETH_READER_READY],
+ 			val, val, 5, 1000);
+ 	if (ret == -ETIMEDOUT) {
+ 		netdev_err(netdev, "LITEETH_READER_READY timed out\n");
+ 		goto drop;
+ 	}
+ 
+-	outreg8(1, priv->base + LITEETH_READER_START);
++	outreg8(1, priv->base + ethmac_offset[LITEETH_READER_START]);
+ 
+ 	priv->tx_slot = (priv->tx_slot + 1) % priv->num_tx_slots;
+ 	dev_kfree_skb_any(skb);
+@@ -286,11 +360,11 @@ static const struct ethtool_ops liteeth_ethtool_ops = {
+ static void liteeth_reset_hw(struct liteeth *priv)
+ {
+ 	/* Reset, twice */
+-	outreg8(0, priv->base + LITEETH_PHY_CRG_RESET);
++	outreg8(0, priv->base + ethphy_offset[LITEETH_PHY_CRG_RESET]);
+ 	udelay(10);
+-	outreg8(1, priv->base + LITEETH_PHY_CRG_RESET);
++	outreg8(1, priv->base + ethphy_offset[LITEETH_PHY_CRG_RESET]);
+ 	udelay(10);
+-	outreg8(0, priv->base + LITEETH_PHY_CRG_RESET);
++	outreg8(0, priv->base + ethphy_offset[LITEETH_PHY_CRG_RESET]);
+ 	udelay(10);
+ }
+ 
+@@ -376,6 +450,19 @@ static int liteeth_probe(struct platform_device *pdev)
+ 	netdev->ethtool_ops = &liteeth_ethtool_ops;
+ 	netdev->irq = irq;
+ 
++	err = of_property_read_u32(pdev->dev.of_node->parent, "mmio-dw-bytes",
++			&mmio_dw_bytes);
++	if (err || !(mmio_dw_bytes == 4 || mmio_dw_bytes == 1)) {
++		mmio_dw_bytes = 1;
++		dev_info(&pdev->dev, "mmio-dw-bytes = 1 (default)\n");
++	} else {
++		dev_info(&pdev->dev, "mmio-dw-bytes = %d\n", mmio_dw_bytes);
++	}
++
++	/* programmatically initialize register offsets */
++	init_offsets(ethmac_offset, ethmac_bytes, LITEETH_ETHMAC_MAX);
++	init_offsets(ethphy_offset, ethphy_bytes, LITEETH_ETHPHY_MAX);
++
+ 	liteeth_reset_hw(priv);
+ 
+ 	err = register_netdev(netdev);
+-- 
+2.21.0
+
