@@ -95,6 +95,17 @@ dts += """
 		ranges;
 """
 
+# Interrupt controller
+
+dts += """
+		intc0: interrupt-controller {
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			compatible = "vexriscv,intc0";
+			status = "okay";
+		};
+"""
+
 	# UART -----------------------------------------------------------------------------------------
 
 if "uart" in d["csr_bases"]:
