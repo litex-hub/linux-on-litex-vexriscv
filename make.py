@@ -240,7 +240,7 @@ def main():
                 csr_json=os.path.join(build_dir, "csr.json"))
         else:
             builder = Builder(soc, output_dir="build/" + board_name,
-                compile_software=False, compile_gateware=False,
+                compile_software=True, compile_gateware=False,
                 csr_json=os.path.join(build_dir, "csr.json"))
         builder.build()
 
