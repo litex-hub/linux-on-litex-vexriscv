@@ -198,6 +198,8 @@ def main():
     if args.board == "all":
         board_names = list(supported_boards.keys())
     else:
+        args.board = args.board.lower()
+        args.board = args.board.replace(" ", "_")
         board_names = [args.board]
     for board_name in board_names:
         board = supported_boards[board_name]()
