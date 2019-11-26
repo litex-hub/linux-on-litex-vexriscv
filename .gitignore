@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Buildroot files
+buildroot/Image
+buildroot/rootfs.cpio
+buildroot/rootfs.tar
+buildroot/rv32.dtb
+
+# Build files
+build/*
+
+# Binaries files
+*.bin
+
+# C compiled files
+*.d
+*.o
+*.elf
