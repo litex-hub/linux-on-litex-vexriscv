@@ -149,6 +149,18 @@ class ULX3S(Board):
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
 
+# De10Lite support ------------------------------------------------------------------------------------
+
+class De10Lite(Board):
+    def __init__(self):
+        from litex_boards.targets import de10lite
+        Board.__init__(self, de10lite.BaseSoC, {"serial"})
+
+    def load(self):
+        from litex.build.altera import USBBlaster
+        prog = USBBlaster()
+        prog.load_bitstream("build/de10lite/gateware/top.sof")
+
 # De0Nano support ------------------------------------------------------------------------------------
 
 class De0Nano(Board):
@@ -177,6 +189,7 @@ supported_boards = {
     "ulx3s":        ULX3S,
     # Altera/Intel
     "de0nano":      De0Nano,
+    "de10lite":     De10Lite,
 }
 
 def main():
