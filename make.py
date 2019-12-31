@@ -127,6 +127,17 @@ class MiniSpartan6(Board):
         os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
 
 
+# Pipistrello support -----------------------------------------------------------------------------
+
+class Pipistrello(Board):
+    def __init__(self):
+        from litex_boards.targets import pipistrello
+        Board.__init__(self, pipistrello.BaseSoC, {"serial"})
+
+    def load(self):
+        os.system("fpgaprog -f build/pipistrello/gateware/top.bit")
+
+
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
@@ -194,6 +205,7 @@ supported_boards = {
     "nexys4ddr":    Nexys4DDR,
     "nexys_video":  NexysVideo,
     "minispartan6": MiniSpartan6,
+    "pipistrello":  Pipistrello,
     # Lattice
     "versa_ecp5":   VersaECP5,
     "ulx3s":        ULX3S,
