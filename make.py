@@ -160,6 +160,16 @@ class ULX3S(Board):
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
 
+# HADBadge support ------------------------------------------------------------------------------------
+
+class HADBadge(Board):
+    def __init__(self):
+        from litex_boards.targets import hadbadge
+        Board.__init__(self, hadbadge.BaseSoC, {"serial"})
+
+    def load(self):
+        os.system("dfu-util --alt 2 --download build/hadbadge/gateware/top.bit --reset")
+
 # OrangeCrab support ------------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
@@ -209,6 +219,7 @@ supported_boards = {
     # Lattice
     "versa_ecp5":   VersaECP5,
     "ulx3s":        ULX3S,
+    "hadbadge":     HADBadge,
     "orangecrab":   OrangeCrab,
     # Altera/Intel
     "de0nano":      De0Nano,
@@ -240,7 +251,7 @@ def main():
     for board_name in board_names:
         board = supported_boards[board_name]()
         soc_kwargs = {}
-        if board_name in ["versa_ecp5", "ulx3s", "orangecrab"]:
+        if board_name in ["versa_ecp5", "ulx3s", "hadbadge", "orangecrab"]:
             soc_kwargs["toolchain"] = "trellis"
             soc_kwargs["cpu_variant"] = "linux+no-dsp"
         if board_name in ["de0nano"]:
