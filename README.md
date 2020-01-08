@@ -1,5 +1,7 @@
 # Linux on LiteX-VexRiscv
 
+![Linux on LiteX-VexRiscv](https://raw.githubusercontent.com/litex-hub/linux-on-litex-vexriscv/master/doc/banner.png)
+
 > **Note:** Tested on Ubuntu 18.04.
 
 ## Intro:
