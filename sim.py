@@ -3,8 +3,6 @@
 import argparse
 
 from migen import *
-from migen.genlib.io import CRG
-from migen.genlib.misc import timeline
 
 from litex.build.generic_platform import *
 from litex.build.sim import SimPlatform
@@ -13,57 +11,47 @@ from litex.build.sim.config import SimConfig
 from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
-from litex.soc.interconnect import stream
 from litex.soc.interconnect import wishbone
 from litex.soc.cores import uart
 
-from liteeth.common import convert_ip
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.core.mac import LiteEthMAC
 
-
-class SimPins(Pins):
-    def __init__(self, n=1):
-        Pins.__init__(self, "s "*n)
-
+# IOs ----------------------------------------------------------------------------------------------
 
 _io = [
-    ("sys_clk", 0, SimPins(1)),
-    ("sys_rst", 0, SimPins(1)),
+    ("sys_clk", 0, Pins(1)),
+    ("sys_rst", 0, Pins(1)),
     ("serial", 0,
-        Subsignal("source_valid", SimPins()),
-        Subsignal("source_ready", SimPins()),
-        Subsignal("source_data", SimPins(8)),
+        Subsignal("source_valid", Pins(1)),
+        Subsignal("source_ready", Pins(1)),
+        Subsignal("source_data",  Pins(8)),
 
-        Subsignal("sink_valid", SimPins()),
-        Subsignal("sink_ready", SimPins()),
-        Subsignal("sink_data", SimPins(8)),
+        Subsignal("sink_valid", Pins(1)),
+        Subsignal("sink_ready", Pins(1)),
+        Subsignal("sink_data",  Pins(8)),
     ),
     ("eth_clocks", 0,
-        Subsignal("none", SimPins()),
+        Subsignal("none", Pins()),
     ),
     ("eth", 0,
-        Subsignal("source_valid", SimPins()),
-        Subsignal("source_ready", SimPins()),
-        Subsignal("source_data", SimPins(8)),
+        Subsignal("source_valid", Pins(1)),
+        Subsignal("source_ready", Pins(1)),
+        Subsignal("source_data",  Pins(8)),
 
-        Subsignal("sink_valid", SimPins()),
-        Subsignal("sink_ready", SimPins()),
-        Subsignal("sink_data", SimPins(8)),
+        Subsignal("sink_valid", Pins(1)),
+        Subsignal("sink_ready", Pins(1)),
+        Subsignal("sink_data",  Pins(8)),
     ),
 ]
 
+# Platform -----------------------------------------------------------------------------------------
 
 class Platform(SimPlatform):
-    default_clk_name = "sys_clk"
-    default_clk_period = 1e9/1e9 # ~ 1MHz
-
     def __init__(self):
         SimPlatform.__init__(self, "SIM", _io)
 
-    def do_finalize(self, fragment):
-        pass
-
+# Supervisor ---------------------------------------------------------------------------------------
 
 class Supervisor(Module, AutoCSR):
     def __init__(self):
@@ -71,6 +59,7 @@ class Supervisor(Module, AutoCSR):
         self.finish = Signal() # controlled from logic
         self.sync += If(self._finish.re | self.finish, Finish())
 
+# SoCLinux -----------------------------------------------------------------------------------------
 
 class SoCLinux(SoCCore):
     SoCCore.csr_map.update({
@@ -92,8 +81,10 @@ class SoCLinux(SoCCore):
     }
 
     def __init__(self, init_memories=False, with_ethernet=False):
-        platform = Platform()
+        platform     = Platform()
         sys_clk_freq = int(1e6)
+
+        # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type="vexriscv", cpu_variant="linux",
             with_uart=False,
@@ -106,26 +97,26 @@ class SoCLinux(SoCCore):
                 }, "little") if init_memories else [])
         self.add_constant("SIM", None)
 
-        # supervisor
+        # Supervisor -------------------------------------------------------------------------------
         self.submodules.supervisor = Supervisor()
         self.add_csr("supervisor")
 
-        # crg
+        # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
-        # machine mode emulator ram
+        # Machine mode emulator RAM ----------------------------------------------------------------
         emulator_rom = get_mem_data("emulator/emulator.bin", "little") if init_memories else []
         self.submodules.emulator_ram = wishbone.SRAM(0x4000, init=emulator_rom)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
         self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
 
-        # serial
+        # Serial -----------------------------------------------------------------------------------
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
         self.add_csr("uart", allow_user_defined=True)
         self.add_interrupt("uart", allow_user_defined=True)
 
-        # ethernet
+        # Ethernet ---------------------------------------------------------------------------------
         if with_ethernet:
             # eth phy
             self.submodules.ethphy = LiteEthPHYModel(self.platform.request("eth", 0))
@@ -152,6 +143,8 @@ class SoCLinux(SoCCore):
     def compile_emulator(self, board_name):
         os.environ["BOARD"] = board_name
         os.system("cd emulator && make")
+
+# Build --------------------------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
