@@ -17,7 +17,7 @@ index 000000000..5e9c4893d
 +	reg = <0x0 0xf0007000 0x0 0x14>;
 +};
 diff --git a/drivers/fpga/Kconfig b/drivers/fpga/Kconfig
-index 0bb7b5cd6..481d8922a 100644
+index 0bb7b5cd6..bbc4fe1d9 100644
 --- a/drivers/fpga/Kconfig
 +++ b/drivers/fpga/Kconfig
 @@ -89,6 +89,12 @@ config FPGA_MGR_TS73XX
@@ -26,7 +26,7 @@ index 0bb7b5cd6..481d8922a 100644
  
 +config FPGA_MGR_LITEX
 +	tristate "LiteX ICAPBitstream FPGA Manager"
-+	depends on OF && HAS_IOMEM
++	depends on OF && HAS_IOMEM && LITEX_SOC_CONTROLLER
 +	help
 +	  FPGA Manager for LiteX SoC builder that uses ICAPBitstream.
 +
@@ -47,10 +47,10 @@ index c0dd4c82f..f186fab32 100644
  obj-$(CONFIG_FPGA_MGR_SOCFPGA_A10)	+= socfpga-a10.o
 diff --git a/drivers/fpga/litex-fpga.c b/drivers/fpga/litex-fpga.c
 new file mode 100644
-index 000000000..1b3cbc543
+index 000000000..1990b55ca
 --- /dev/null
 +++ b/drivers/fpga/litex-fpga.c
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,203 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -204,6 +204,9 @@ index 000000000..1b3cbc543
 +	struct litex_fpga *fpga_s;
 +	struct fpga_manager *mgr;
 +	struct resource *res;
++
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
 +
 +	if (!node)
 +		return -ENODEV;

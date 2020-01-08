@@ -1,0 +1,340 @@
+diff --git a/Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml b/Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
+new file mode 100644
+index 000000000..039894265
+--- /dev/null
++++ b/Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
+@@ -0,0 +1,47 @@
++PDX-License-Identifier: GPL-2.0
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/soc/litex/litex,soc_controller.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: LiteX SoC Controller driver
++
++description: |
++  This is SoC Controller driver for LiteX SoC Builder.
++  It's purpose is to detect byte order of a SoC, set correct CSR
++  accessors in litex.h header and provide function for other drivers
++  to check if accessors are ready to use.
++
++maintainers:
++  - Karol Gugala <kgugala@antmicro.com>
++  - Mateusz Holenko <mholenko@antmicro.com>
++
++properties:
++  compatible:
++    const: litex,soc_controller
++
++  reg:
++    description: Base address and length of the register space
++
++  status:
++    description: |
++      disables or enables node
++
++    const: "okay"
++
++required:
++  - compatible
++  - reg
++  - status
++
++examples:
++  - |
++
++  soc_ctrl0: soc_controller@f0000000 {
++			compatible = "litex,soc_controller";
++			reg = <0x0 0xf0000000 0x0 0xC>;
++			status = "okay";
++  };
++
++...
++
+diff --git a/MAINTAINERS b/MAINTAINERS
+index c764e8d04..98fb5b059 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -9467,6 +9467,8 @@ M:	Karol Gugala <kgugala@antmicro.com>
+ M:	Mateusz Holenko <mholenko@antmicro.com>
+ S:	Maintained
+ F:	include/linux/litex.h
++F:	drivers/soc/litex/
++F:	Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
+ 
+ LIVE PATCHING
+ M:	Josh Poimboeuf <jpoimboe@redhat.com>
+diff --git a/drivers/soc/Kconfig b/drivers/soc/Kconfig
+index 833e04a78..f00d297f9 100644
+--- a/drivers/soc/Kconfig
++++ b/drivers/soc/Kconfig
+@@ -9,6 +9,7 @@ source "drivers/soc/bcm/Kconfig"
+ source "drivers/soc/fsl/Kconfig"
+ source "drivers/soc/imx/Kconfig"
+ source "drivers/soc/ixp4xx/Kconfig"
++source "drivers/soc/litex/Kconfig"
+ source "drivers/soc/mediatek/Kconfig"
+ source "drivers/soc/qcom/Kconfig"
+ source "drivers/soc/renesas/Kconfig"
+diff --git a/drivers/soc/Makefile b/drivers/soc/Makefile
+index 2ec355003..c244d76a7 100644
+--- a/drivers/soc/Makefile
++++ b/drivers/soc/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_ARCH_GEMINI)	+= gemini/
+ obj-$(CONFIG_ARCH_MXC)		+= imx/
+ obj-$(CONFIG_ARCH_IXP4XX)	+= ixp4xx/
+ obj-$(CONFIG_SOC_XWAY)		+= lantiq/
++obj-$(CONFIG_LITEX_SOC_CONTROLLER) += litex/
+ obj-y				+= mediatek/
+ obj-y				+= amlogic/
+ obj-y				+= qcom/
+diff --git a/drivers/soc/litex/Kconfig b/drivers/soc/litex/Kconfig
+new file mode 100644
+index 000000000..22c78cda0
+--- /dev/null
++++ b/drivers/soc/litex/Kconfig
+@@ -0,0 +1,14 @@
++# SPDX-License_Identifier: GPL-2.0
++
++menu "Enable LiteX SoC Builder specific drivers"
++
++config LITEX_SOC_CONTROLLER
++	tristate "Enable LiteX SoC Controller driver"
++	help
++	This option enables the SoC Controller Driver which detects
++	endiannes of SoC, sets correct functions in litex.h in runtime
++	and allow other LiteX drivers to initialise
++	All drivers that use functions from litex.h must depend on
++	LITEX_SOC_CONTROLLER
++
++endmenu
+diff --git a/drivers/soc/litex/Makefile b/drivers/soc/litex/Makefile
+new file mode 100644
+index 000000000..98ff7325b
+--- /dev/null
++++ b/drivers/soc/litex/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License_Identifier: GPL-2.0
++
++obj-$(CONFIG_LITEX_SOC_CONTROLLER)	+= litex_soc_ctrl.o
+diff --git a/drivers/soc/litex/litex_soc_ctrl.c b/drivers/soc/litex/litex_soc_ctrl.c
+new file mode 100644
+index 000000000..8e5d6833b
+--- /dev/null
++++ b/drivers/soc/litex/litex_soc_ctrl.c
+@@ -0,0 +1,138 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * LiteX SoC Controller Driver
++ *
++ * Copyright (C) 2020 Antmicro
++ *
++ */
++
++#include <linux/litex.h>
++#include <linux/device.h>
++#include <linux/errno.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/printk.h>
++#include <linux/module.h>
++#include <linux/errno.h>
++#include <linux/io.h>
++
++#define SCRATCH_REG_OFF 	0x04
++#define SCRATCH_REG_VALUE	0x12345678
++
++/*
++ * Pointers for accessor functions
++ *
++ * note: or1k and vexriscv kernels use different CONFIG_GENERIC_IOMAP
++ *	setting and it changes the definition of io{read,write}32
++ *	functions so we are checking here to use correct definition
++ */
++#ifndef CONFIG_GENERIC_IOMAP
++unsigned int (*litex_read_reg)(const volatile void __iomem *addr) = NULL;
++void (*litex_write_reg)(u32 val, volatile void __iomem *addr) = NULL;
++#else
++unsigned int (*litex_read_reg)(void __iomem *addr) = NULL;
++void (*litex_write_reg)(u32 val, void __iomem *addr) = NULL;
++#endif
++
++/*
++ * check if accessors are ready to use
++ * returns true if yes - false if not
++ */
++int litex_check_accessors(void)
++{
++	if (litex_read_reg == NULL || litex_write_reg == NULL)
++		return 0;
++	return 1;
++}
++
++struct litex_soc_ctrl_device {
++	void __iomem *base;
++};
++
++/* Read litex CSR with Little Endian function */
++static inline u32 litex_soc_ctrl_get_reg(void __iomem *reg_addr)
++{
++	return  (ioread32(reg_addr) << 24)	 |
++		(ioread32(reg_addr + 0x4) << 16) |
++		(ioread32(reg_addr + 0x8) << 8)  |
++		 ioread32(reg_addr + 0xc);
++}
++
++/* Check byte order and set correct accessors */
++static void litex_soc_ctrl_check_endianness(void __iomem *reg_addr)
++{
++	u32 reg;
++
++	reg = litex_soc_ctrl_get_reg(reg_addr + SCRATCH_REG_OFF);
++
++	if (reg == SCRATCH_REG_VALUE) {
++		pr_info("Detected endianness: Little Endian");
++		litex_read_reg = ioread32;
++		litex_write_reg = iowrite32;
++	} else {
++		pr_info("Detected endianness: Big Endian");
++		litex_read_reg = ioread32be;
++		litex_write_reg = iowrite32be;
++	}
++}
++
++static const struct of_device_id litex_soc_ctrl_of_match[] = {
++	{.compatible = "litex,soc_controller"},
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, litex_soc_ctrl_of_match);
++
++static int litex_soc_ctrl_probe(struct platform_device *pdev)
++{
++	struct device *dev;
++	struct device_node *node;
++	const struct of_device_id *id;
++	struct litex_soc_ctrl_device *soc_ctrl_dev;
++	struct resource *res;
++
++	dev = &pdev->dev;
++	node = dev->of_node;
++	if (!node)
++		return -ENODEV;
++
++	id = of_match_node(litex_soc_ctrl_of_match, node);
++	if (!id)
++		return -ENODEV;
++
++	soc_ctrl_dev = devm_kzalloc(dev, sizeof(*soc_ctrl_dev), GFP_KERNEL);
++	if (IS_ERR_OR_NULL(soc_ctrl_dev))
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (IS_ERR_OR_NULL(res))
++		return -EBUSY;
++
++	soc_ctrl_dev->base = devm_of_iomap(dev, node, 0, &res->end);
++	if (IS_ERR_OR_NULL(soc_ctrl_dev->base))
++		return -EIO;
++
++	litex_soc_ctrl_check_endianness(soc_ctrl_dev->base);
++
++	return 0;
++}
++
++static int litex_soc_ctrl_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static struct platform_driver litex_soc_ctrl_driver = {
++	.driver = {
++		.name = "litex-soc-controller",
++		.of_match_table = of_match_ptr(litex_soc_ctrl_of_match)
++	},
++	.probe = litex_soc_ctrl_probe,
++	.remove = litex_soc_ctrl_remove
++};
++
++module_platform_driver(litex_soc_ctrl_driver);
++MODULE_DESCRIPTION("LiteX SoC Controller driver");
++MODULE_AUTHOR("Antmicro <www.antmicro.com>");
++MODULE_LICENSE("GPL v2");
+diff --git a/include/linux/litex.h b/include/linux/litex.h
+index 278295eaa..e7c8f8930 100644
+--- a/include/linux/litex.h
++++ b/include/linux/litex.h
+@@ -10,42 +10,57 @@
+ #define LITEX_SUBREG_SIZE          0x1
+ #define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
+ 
+-#ifdef __LITTLE_ENDIAN
+-# define LITEX_READ_REG(addr)                  ioread32(addr)
+-# define LITEX_READ_REG_OFF(addr, off)         ioread32(addr + off)
+-# define LITEX_WRITE_REG(val, addr)            iowrite32(val, addr)
+-# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32(val, addr + off)
++// pointers to read and write functions
++// set in soc controller driver
++//
++// note: or1k and vexriscv kernels use different CONFIG_GENERIC_IOMAP
++//	setting and it changes the definition of io{read,write}32
++//	functions so we are checking here to use correct definition
++#ifndef CONFIG_GENERIC_IOMAP
++extern unsigned int (*litex_read_reg)(const volatile void __iomem *addr);
++extern void (*litex_write_reg)(u32 val, volatile void __iomem *addr);
+ #else
+-# define LITEX_READ_REG(addr)                  ioread32be(addr)
+-# define LITEX_READ_REG_OFF(addr, off)         ioread32be(addr + off)
+-# define LITEX_WRITE_REG(val, addr)            iowrite32be(val, addr)
+-# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32be(val, addr + off)
++extern unsigned int (*litex_read_reg)(void __iomem *addr);
++extern void (*litex_write_reg)(u32 val, void __iomem *addr);
+ #endif
+ 
+-/* Helper functions for manipulating LiteX registers */
++// function implemented in
++// drivers/soc/litex/litex_soc_controller.c
++// to check if accessors are ready to use
++// returns true if yes - false if not
++//
++// Important: all drivers that use functions from this header
++// must check at the beginning of their probe()
++// if litex_read_reg and litex_write_reg are initialized
++// and return -EPROBE_DEFER when they are not
++//
++// example:
++// if (!litex_check_accessors())
++//	return -EPROBE_DEFER;
++int litex_check_accessors(void);
+ 
+-inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
++// Helper functions for manipulating LiteX registers
++static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
+ {
+ 	u32 shifted_data, shift, i;
+ 
+ 	for (i = 0; i < reg_size; ++i) {
+ 		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
+ 		shifted_data = val >> shift;
+-		LITEX_WRITE_REG(shifted_data, reg + (LITEX_REG_SIZE * i));
++		litex_write_reg(shifted_data, reg + (LITEX_REG_SIZE * i));
+ 	}
+ }
+ 
+-inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
++static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
+ {
+ 	u32 shifted_data, shift, i;
+ 	u32 result = 0;
+ 
+ 	for (i = 0; i < reg_size; ++i) {
+-		shifted_data = LITEX_READ_REG(reg + (LITEX_REG_SIZE * i));
++		shifted_data = litex_read_reg(reg + (LITEX_REG_SIZE * i));
+ 		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
+ 		result |= (shifted_data << shift);
+ 	}
+-
+ 	return result;
+ }
+ 

@@ -17,7 +17,7 @@ index 000000000..be2ceba16
 +	reg = <0x0 0xf0003000 0x0 0x20>;
 +};
 diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
-index 6f929bfa9..01ffdd6d6 100644
+index 6f929bfa9..3d5c93e93 100644
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
 @@ -986,6 +986,12 @@ config SENSORS_ADCXX
@@ -26,7 +26,7 @@ index 6f929bfa9..01ffdd6d6 100644
  
 +config SENSORS_LITEX_HWMON
 +	tristate "LiteX XADC hardware monitor"
-+	depends on OF && HAS_IOMEM
++	depends on OF && HAS_IOMEM && LITEX_SOC_CONTROLLER
 +	help
 +	  This enables hardware monitoring using LiteX XADC.
 +
@@ -47,10 +47,10 @@ index f5c7b442e..59740cb47 100644
  obj-$(CONFIG_SENSORS_LM73)	+= lm73.o
 diff --git a/drivers/hwmon/litex-hwmon.c b/drivers/hwmon/litex-hwmon.c
 new file mode 100644
-index 000000000..1f338b451
+index 000000000..182a46a9f
 --- /dev/null
 +++ b/drivers/hwmon/litex-hwmon.c
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,230 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -97,8 +97,8 @@ index 000000000..1f338b451
 +{
 +	unsigned short int regv_l, regv_h;
 +
-+	regv_l = LITEX_READ_REG_OFF(reg, offset);
-+	regv_h = LITEX_READ_REG_OFF(reg, offset + LITEX_REG_SIZE);
++	regv_l = litex_read_reg(reg + offset);
++	regv_h = litex_read_reg(reg + offset + LITEX_REG_SIZE);
 +	return ((regv_l << 8) | regv_h);
 +}
 +
@@ -233,6 +233,9 @@ index 000000000..1f338b451
 +	struct device_node *node = pdev->dev.of_node;
 +	struct litex_hwmon *hwmon_s;
 +	struct resource *res;
++
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
 +
 +	if (!node)
 +		return -ENODEV;

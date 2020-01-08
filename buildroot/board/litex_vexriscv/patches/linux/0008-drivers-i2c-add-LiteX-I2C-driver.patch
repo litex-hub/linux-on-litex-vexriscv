@@ -17,7 +17,7 @@ index 000000000..e78a87155
 +	reg = <0x0 0xf0003000 0x0 0x5>;
 +};
 diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index f2c681971..e3748016d 100644
+index f2c681971..df58b8036 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -682,6 +682,13 @@ config I2C_KEMPLD
@@ -26,7 +26,7 @@ index f2c681971..e3748016d 100644
  
 +config I2C_LITEX
 +	tristate "LiteX I2C support"
-+	depends on OF && HAS_IOMEM
++	depends on OF && HAS_IOMEM && LITEX_SOC_CONTROLLER
 +	select I2C_ALGOBIT
 +	help
 +	  This enables I2C bitbang driver for LiteX SoC builder.
@@ -48,10 +48,10 @@ index 5f0cb6915..976c6fedd 100644
  obj-$(CONFIG_I2C_MPC)		+= i2c-mpc.o
 diff --git a/drivers/i2c/busses/i2c-litex.c b/drivers/i2c/busses/i2c-litex.c
 new file mode 100644
-index 000000000..ff3b3d79e
+index 000000000..b0f7a7466
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-litex.c
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,159 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -104,16 +104,16 @@ index 000000000..ff3b3d79e
 +{
 +	u32 regv, new_regv;
 +
-+	regv = LITEX_READ_REG(mem);
++	regv = litex_read_reg(mem);
 +	new_regv = (regv & ~BIT(bit)) | ((!!val) << bit);
-+	LITEX_WRITE_REG(new_regv, mem);
++	litex_write_reg(new_regv, mem);
 +}
 +
 +static inline int litex_get_bit(void __iomem *mem, int bit)
 +{
 +	u32 regv;
 +
-+	regv = LITEX_READ_REG(mem);
++	regv = litex_read_reg(mem);
 +	return !!(regv & BIT(bit));
 +}
 +
@@ -150,6 +150,9 @@ index 000000000..ff3b3d79e
 +	void __iomem *membase;
 +	struct litex_i2c *i2c_s;
 +	struct resource *res;
++
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
 +
 +	if (!node)
 +		return -ENODEV;

@@ -106,6 +106,16 @@ dts += """
 		};
 """
 
+	# SoC Controller -----------------------------------------------------------------------------------
+
+dts += """
+		soc_ctrl0: soc_controller@{soc_ctrl_csr_base:x} {{
+			compatible = "litex,soc_controller";
+			reg = <0x0 0x{soc_ctrl_csr_base:x} 0x0 0xc>;
+			status = "okay";
+		}};
+	""".format(soc_ctrl_csr_base=d["csr_bases"]["ctrl"])
+
 	# UART -----------------------------------------------------------------------------------------
 
 if "uart" in d["csr_bases"]:
