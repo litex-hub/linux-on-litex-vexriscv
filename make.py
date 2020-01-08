@@ -264,7 +264,6 @@ def main():
         soc_kwargs = {}
         if board_name in ["versa_ecp5", "ulx3s", "hadbadge", "orangecrab"]:
             soc_kwargs["toolchain"] = "trellis"
-            soc_kwargs["cpu_variant"] = "linux+no-dsp"
         if board_name in ["de0nano"]:
             soc_kwargs["l2_size"] = 1024 # FIXME: Reduce l2_size, blockram not infered correctly?
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
