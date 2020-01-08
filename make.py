@@ -104,7 +104,7 @@ class Nexys4DDR(Board):
         prog = VivadoProgrammer()
         prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
 
-# NexysVideo support --------------------------------------------------------------------------------
+# NexysVideo support -------------------------------------------------------------------------------
 
 class NexysVideo(Board):
     def __init__(self):
@@ -127,7 +127,7 @@ class MiniSpartan6(Board):
         os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
 
 
-# Pipistrello support -----------------------------------------------------------------------------
+# Pipistrello support ------------------------------------------------------------------------------
 
 class Pipistrello(Board):
     def __init__(self):
@@ -160,7 +160,7 @@ class ULX3S(Board):
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
 
-# HADBadge support ------------------------------------------------------------------------------------
+# HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
     def __init__(self):
@@ -170,7 +170,7 @@ class HADBadge(Board):
     def load(self):
         os.system("dfu-util --alt 2 --download build/hadbadge/gateware/top.bit --reset")
 
-# OrangeCrab support ------------------------------------------------------------------------------------
+# OrangeCrab support -------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
     def __init__(self):
@@ -180,7 +180,17 @@ class OrangeCrab(Board):
     def load(self):
         os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/gateware/top.svf; exit\"")
 
-# De10Lite support ------------------------------------------------------------------------------------
+# Cam Link 4K support ------------------------------------------------------------------------------
+
+class CamLink4K(Board):
+    def __init__(self):
+        from litex_boards.targets import camlink_4k
+        Board.__init__(self, camlink_4k.BaseSoC, {"serial"})
+
+    def load(self):
+        os.system("camlink configure build/gateware/top.bit")
+
+# De10Lite support ---------------------------------------------------------------------------------
 
 class De10Lite(Board):
     def __init__(self):
@@ -192,7 +202,7 @@ class De10Lite(Board):
         prog = USBBlaster()
         prog.load_bitstream("build/de10lite/gateware/top.sof")
 
-# De0Nano support ------------------------------------------------------------------------------------
+# De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
     def __init__(self):
@@ -221,6 +231,7 @@ supported_boards = {
     "ulx3s":        ULX3S,
     "hadbadge":     HADBadge,
     "orangecrab":   OrangeCrab,
+    "camlink_4k":   CamLink4K,
     # Altera/Intel
     "de0nano":      De0Nano,
     "de10lite":     De10Lite,
@@ -289,7 +300,10 @@ def main():
             builder = Builder(soc, output_dir="build/" + board_name,
                 compile_software=True, compile_gateware=False,
                 csr_json=os.path.join(build_dir, "csr.json"))
-        builder.build()
+        if board_name == "camlink_4k": # FIXME
+            builder.build("/usr/local/diamond/3.10_x64/bin/lin64")
+        else:
+            builder.build()
 
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
