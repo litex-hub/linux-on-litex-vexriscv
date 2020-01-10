@@ -5,7 +5,7 @@ import os
 
 from litex.soc.integration.builder import Builder
 
-from soc_linux import SoCLinux
+from soc_linux import SoCLinux, video_resolutions
 
 kB = 1024
 
@@ -265,6 +265,7 @@ def main():
     parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
     parser.add_argument("--spi-bpw", type=int, default=8, help="Bits per word for SPI controller")
     parser.add_argument("--spi-sck-freq", type=int, default=1e6, help="SPI clock frequency")
+    parser.add_argument("--video", default="1920x1080_60Hz", help="video configuration")
     args = parser.parse_args()
 
     if args.board == "all":
@@ -300,7 +301,9 @@ def main():
         if "xadc" in board.soc_capabilities:
             soc.add_xadc()
         if "framebuffer" in board.soc_capabilities:
-            soc.add_framebuffer()
+            assert args.video in video_resolutions.keys(), "Unsupported video resolution"
+            video_settings = video_resolutions[args.video]
+            soc.add_framebuffer(video_settings)
         if "icap_bit" in board.soc_capabilities:
             soc.add_icap_bitstream()
         soc.configure_boot()

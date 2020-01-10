@@ -13,7 +13,6 @@
 #include <generated/mem.h>
 
 #include "riscv.h"
-#include "framebuffer.h"
 
 #define LINUX_IMAGE_BASE 0xC0000000
 #define LINUX_DTB_BASE   0xC1000000
@@ -544,9 +543,6 @@ int main(void)
 	irq_setie(1);
 	uart_init();
 	puts("VexRiscv Machine Mode software built "__DATE__" "__TIME__"");
-#ifdef CSR_FRAMEBUFFER_BASE
-	framebuffer_init();
-#endif
 	printf("--========== \e[1mBooting Linux\e[0m =============--\n");
 	uart_sync();
 	vexriscv_machine_mode_init();
