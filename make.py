@@ -79,6 +79,19 @@ class Genesys2(Board):
         prog = VivadoProgrammer()
         prog.load_bitstream("build/genesys2/gateware/top.bit")
 
+# KC705 support ---------------------------------------------------------------------------------
+
+class KC705(Board):
+    def __init__(self):
+        from litex_boards.targets import kc705
+        Board.__init__(self, kc705.BaseSoC, {"serial", "ethernet", "leds", "xadc"})
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/kc705/gateware/top.bit")
+
+
 # KCU105 support -----------------------------------------------------------------------------------
 
 class KCU105(Board):
@@ -221,6 +234,7 @@ supported_boards = {
     "arty":         Arty,
     "netv2":        NeTV2,
     "genesys2":     Genesys2,
+    "kc705":        KC705,
     "kcu105":       KCU105,
     "nexys4ddr":    Nexys4DDR,
     "nexys_video":  NexysVideo,
