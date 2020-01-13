@@ -44,15 +44,12 @@ def SoCLinux(soc_cls, **kwargs):
             "uart":       0,
             "timer0":     1,
         })
-        soc_cls.mem_map = {
-            "rom":          0x00000000,
-            "sram":         0x10000000,
+        soc_cls.mem_map.update({
             "emulator_ram": 0x20000000,
-            "main_ram":     0x40000000,
             "ethmac":       0xb0000000,
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
-        }
+        })
 
         def __init__(self, cpu_variant="linux", **kwargs):
             soc_cls.__init__(self, cpu_type="vexriscv", cpu_variant=cpu_variant, uart_baudrate=1e6, **kwargs)
