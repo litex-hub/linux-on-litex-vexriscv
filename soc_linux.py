@@ -48,9 +48,9 @@ def SoCLinux(soc_cls, **kwargs):
             "rom":          0x00000000,
             "sram":         0x10000000,
             "emulator_ram": 0x20000000,
+            "main_ram":     0x40000000,
             "ethmac":       0xb0000000,
             "spiflash":     0xd0000000,
-            "main_ram":     0xc0000000,
             "csr":          0xf0000000,
         }
 
