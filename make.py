@@ -72,7 +72,7 @@ class NeTV2(Board):
 class Genesys2(Board):
     def __init__(self):
         from litex_boards.targets import genesys2
-        Board.__init__(self, genesys2.BaseSoC, {"serial"})
+        Board.__init__(self, genesys2.EthernetSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -275,7 +275,7 @@ def main():
         board_names = [args.board]
     for board_name in board_names:
         board = supported_boards[board_name]()
-        soc_kwargs = {}
+        soc_kwargs = {"integrated_rom_size": 0x8000}
         if board_name in ["versa_ecp5", "ulx3s", "hadbadge", "orangecrab"]:
             soc_kwargs["toolchain"] = "trellis"
         if board_name in ["de0nano"]:
