@@ -45,7 +45,8 @@ def SoCLinux(soc_cls, **kwargs):
             "timer0":     1,
         }}
         mem_map = {**soc_cls.mem_map, **{
-            "emulator_ram": 0x20000000,
+            "emulator_ram": 0x02000000,
+            "main_ram":     0x10000000,
             "ethmac":       0xb0000000,
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
