@@ -40,4 +40,4 @@ env:
  - BOARD=De0Nano
  - BOARD=De10Lite
  # TOOLCHAIN=libero
- - BOARD=Avalanche
+ #- BOARD=Avalanche
