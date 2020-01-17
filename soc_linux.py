@@ -52,7 +52,12 @@ def SoCLinux(soc_cls, **kwargs):
         }}
 
         def __init__(self, cpu_variant="linux", **kwargs):
-            soc_cls.__init__(self, cpu_type="vexriscv", cpu_variant=cpu_variant, uart_baudrate=1e6, **kwargs)
+            soc_cls.__init__(self,
+                cpu_type       = "vexriscv",
+                cpu_variant    = cpu_variant,
+                uart_baudrate  = 1e6,
+                max_sdram_size = 0x1000000, # Limit mapped SDRAM to 256MB for now
+                **kwargs)
 
             # machine mode emulator ram
             self.submodules.emulator_ram = wishbone.SRAM(0x4000)
