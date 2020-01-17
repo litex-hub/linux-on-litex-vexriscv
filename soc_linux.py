@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import subprocess
 
 from migen import *
 
@@ -153,15 +154,17 @@ def SoCLinux(soc_cls, **kwargs):
         def generate_dts(self, board_name):
             json = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-            os.system("./json2dts.py {} > {}".format(json, dts))
+            subprocess.check_call(
+                "./json2dts.py {} > {}".format(json, dts), shell=True)
 
         def compile_dts(self, board_name):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             dtb = os.path.join("buildroot", "rv32.dtb")
-            os.system("dtc -O dtb -o {} {}".format(dtb, dts))
+            subprocess.check_call(
+                "dtc -O dtb -o {} {}".format(dtb, dts), shell=True)
 
         def compile_emulator(self, board_name):
             os.environ["BOARD"] = board_name
-            os.system("cd emulator && make")
+            subprocess.check_call("cd emulator && make", shell=True)
 
     return _SoCLinux(**kwargs)
