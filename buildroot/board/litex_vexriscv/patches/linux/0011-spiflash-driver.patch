@@ -47,10 +47,10 @@ index 000000000..b92544488
 +    };
 \ No newline at end of file
 diff --git a/drivers/mtd/spi-nor/Kconfig b/drivers/mtd/spi-nor/Kconfig
-index 44fe80187..04d2d4684 100644
+index 44fe80187..c2308b7c3 100644
 --- a/drivers/mtd/spi-nor/Kconfig
 +++ b/drivers/mtd/spi-nor/Kconfig
-@@ -120,4 +120,11 @@ config SPI_STM32_QUADSPI
+@@ -120,4 +120,12 @@ config SPI_STM32_QUADSPI
  	  This enables support for the STM32 Quad SPI controller.
  	  We only connect the NOR to this controller.
  
@@ -58,6 +58,7 @@ index 44fe80187..04d2d4684 100644
 +	tristate "LiteX SPI Flash support"
 +	depends on OF
 +	depends on HAS_IOMEM
++	depends on LITEX_SOC_CONTROLLER
 +	help
 +	  Generic SPI Flash driver for LiteX
 +
@@ -73,10 +74,10 @@ index a552efd22..7314415dc 100644
 +obj-$(CONFIG_SPI_FLASH_LITEX)	+= litex-spiflash.o
 diff --git a/drivers/mtd/spi-nor/litex-spiflash.c b/drivers/mtd/spi-nor/litex-spiflash.c
 new file mode 100644
-index 000000000..09b28b194
+index 000000000..752235359
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/litex-spiflash.c
-@@ -0,0 +1,398 @@
+@@ -0,0 +1,401 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -144,47 +145,47 @@ index 000000000..09b28b194
 +static void cs(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = LITEX_READ_REG(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
 +	u8 set_val = new_val == CS_ENABLE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	LITEX_WRITE_REG(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
 +}
 +
 +static void clk(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = LITEX_READ_REG(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
 +	u8 set_val = new_val == CLK_ENABLE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	LITEX_WRITE_REG(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
 +}
 +
 +static u8 miso_read(struct spi_nor *nor)
 +{
 +	struct spi *spi = nor->priv;
 +
-+	return (u8)(LITEX_READ_REG(spi->base + SPIFLASH_MISO_OFFSET) & 0x1);
++	return (u8)(litex_read_reg(spi->base + SPIFLASH_MISO_OFFSET) & 0x1);
 +}
 +
 +static void mosi_set(bool mosi, struct spi_nor *nor)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = LITEX_READ_REG(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
 +	u8 set_val = mosi ? curr_val | (0x01) : curr_val & (~0x01);
 +
-+	LITEX_WRITE_REG(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
 +}
 +
 +static void enable(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u32 curr_val = LITEX_READ_REG(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u32 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
 +	u32 set_val = new_val == MISO_MODE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	LITEX_WRITE_REG(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
 +}
 +
 +static void initial_config(struct spi_nor *nor)
@@ -194,7 +195,7 @@ index 000000000..09b28b194
 +	clk(nor, ~CLK_ENABLE);
 +	cs(nor, CS_ENABLE);
 +	enable(nor, ~MISO_MODE);
-+	LITEX_WRITE_REG(SPIFLASH_ENABLE,
++	litex_write_reg(SPIFLASH_ENABLE,
 +		spi->base + SPIFLASH_BITBANG_EN_OFFSET);
 +}
 +
@@ -389,6 +390,9 @@ index 000000000..09b28b194
 +			SNOR_HWCAPS_PP,
 +	};
 +
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
++
 +	if (!pdev->dev.of_node) {
 +		dev_err(&pdev->dev, "No DT found\n");
 +		return -EINVAL;
@@ -448,7 +452,7 @@ index 000000000..09b28b194
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	spi->base = devm_ioremap_resource(&pdev->dev, res);
-+	LITEX_WRITE_REG(SPIFLASH_DISABLE,
++	litex_write_reg(SPIFLASH_DISABLE,
 +		spi->base + SPIFLASH_BITBANG_EN_OFFSET);
 +	mtd_device_unregister(&spi->nor.mtd);
 +
@@ -475,6 +479,3 @@ index 000000000..09b28b194
 +MODULE_DESCRIPTION("LiteX SPI Flash driver");
 +MODULE_AUTHOR("Antmicro <www.antmicro.com>");
 +MODULE_LICENSE("GPL v2");
--- 
-2.22.0
-

@@ -24,7 +24,7 @@ index 000000000..c265bb3aa
 +	litespi,num-cs = <2>;
 +};
 diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 9f89cb134..18db2c39b 100644
+index 9f89cb134..bd9af63f4 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -306,6 +306,13 @@ config SPI_JCORE
@@ -33,7 +33,7 @@ index 9f89cb134..18db2c39b 100644
  
 +config SPI_LITESPI
 +	tristate "LiteSPI SPI master driver"
-+	depends on OF
++	depends on OF && LITEX_SOC_CONTROLLER
 +	help
 +	  This enables support for the LiteSPI SPI master controller of the LiteX
 +	  FPGA SoC builder.
@@ -55,10 +55,10 @@ index f29627040..ca63b8e82 100644
  obj-$(CONFIG_SPI_MESON_SPICC)		+= spi-meson-spicc.o
 diff --git a/drivers/spi/spi-litespi.c b/drivers/spi/spi-litespi.c
 new file mode 100644
-index 000000000..3a4345c25
+index 000000000..417309754
 --- /dev/null
 +++ b/drivers/spi/spi-litespi.c
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,209 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * LiteSPI controller (LiteX) Driver
@@ -189,6 +189,9 @@ index 000000000..3a4345c25
 +	int ret;
 +	u32 val;
 +
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
++
 +	/* check if device tree exists */
 +	np = pdev->dev.of_node;
 +	if (!np)
@@ -265,6 +268,3 @@ index 000000000..3a4345c25
 +MODULE_AUTHOR("Antmicro Ltd <www.antmicro.com>");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:" DRIVER_NAME);
--- 
-2.20.1
-

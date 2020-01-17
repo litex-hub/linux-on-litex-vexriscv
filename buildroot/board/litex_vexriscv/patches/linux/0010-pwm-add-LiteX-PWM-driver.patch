@@ -1,6 +1,6 @@
 diff --git a/Documentation/devicetree/bindings/pwm/litex,pwm.txt b/Documentation/devicetree/bindings/pwm/litex,pwm.txt
 new file mode 100644
-index 000000000..b42a4cedb
+index 000000000..403de8b69
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pwm/litex,pwm.txt
 @@ -0,0 +1,19 @@
@@ -24,10 +24,10 @@ index 000000000..b42a4cedb
 +    status = "okay";
 +};
 diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index a8f47df06..bb005cefc 100644
+index a8f47df06..48c633a62 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -211,6 +211,13 @@ config PWM_JZ4740
+@@ -211,6 +211,14 @@ config PWM_JZ4740
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-jz4740.
  
@@ -35,6 +35,7 @@ index a8f47df06..bb005cefc 100644
 +	tristate "LiteX PWM support"
 +	depends on OF
 +	depends on HAS_IOMEM
++	depends on LITEX_SOC_CONTROLLER
 +	help
 +	  Generic PWM framework driver for LiteX
 +
@@ -55,10 +56,10 @@ index 9c676a0da..8a374920c 100644
  obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx.o
 diff --git a/drivers/pwm/pwm-litex.c b/drivers/pwm/pwm-litex.c
 new file mode 100644
-index 000000000..8257807cc
+index 000000000..1cd70bfb8
 --- /dev/null
 +++ b/drivers/pwm/pwm-litex.c
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,181 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -161,6 +162,9 @@ index 000000000..8257807cc
 +	struct resource *res;
 +	int ret;
 +
++	if (!litex_check_accessors())
++		return -EPROBE_DEFER;
++
 +	if (!node) {
 +		dev_err(&pdev->dev, "Fail on obtaining device node\n");
 +		return -ENOMEM;
@@ -237,6 +241,3 @@ index 000000000..8257807cc
 +MODULE_DESCRIPTION("LiteX PWM driver");
 +MODULE_AUTHOR("Antmicro <www.antmicro.com>");
 +MODULE_LICENSE("GPL v2");
--- 
-2.23.0
-
