@@ -69,7 +69,7 @@ def SoCLinux(soc_cls, **kwargs):
                 endianness=self.cpu.endianness)
             self.spiflash.add_clk_primitive(self.platform.device)
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
-            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000, type="io")
+            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000)
             self.add_csr("spiflash")
 
         def add_leds(self):
