@@ -35,21 +35,21 @@ def platform_request_all(platform, name):
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
-        soc_cls.csr_map.update({
+        csr_map = {**soc_cls.csr_map, **{
             "ctrl":       0,
             "uart":       2,
             "timer0":     3,
-        })
-        soc_cls.interrupt_map.update({
+        }}
+        interrupt_map = {**soc_cls.interrupt_map, **{
             "uart":       0,
             "timer0":     1,
-        })
-        soc_cls.mem_map.update({
+        }}
+        mem_map = {**soc_cls.mem_map, **{
             "emulator_ram": 0x20000000,
             "ethmac":       0xb0000000,
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
-        })
+        }}
 
         def __init__(self, cpu_variant="linux", **kwargs):
             soc_cls.__init__(self, cpu_type="vexriscv", cpu_variant=cpu_variant, uart_baudrate=1e6, **kwargs)
@@ -69,7 +69,7 @@ def SoCLinux(soc_cls, **kwargs):
                 endianness=self.cpu.endianness)
             self.spiflash.add_clk_primitive(self.platform.device)
             self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
-            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000, type="io")
+            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000)
             self.add_csr("spiflash")
 
         def add_leds(self):
