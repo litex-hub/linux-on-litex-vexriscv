@@ -62,23 +62,21 @@ class Supervisor(Module, AutoCSR):
 # SoCLinux -----------------------------------------------------------------------------------------
 
 class SoCLinux(SoCCore):
-    SoCCore.csr_map.update({
+    csr_map = {**SoCCore.csr_map, **{
         "ctrl":       0,
         "uart":       2,
         "timer0":     3,
-    })
-    SoCCore.interrupt_map.update({
+    }}
+    interrupt_map = {**SoCCore.interrupt_map, **{
         "uart":       0,
         "timer0":     1,
-    })
-    SoCCore.mem_map = {
-        "rom":          0x00000000,
-        "sram":         0x10000000,
+    }}
+    mem_map = {**SoCCore.mem_map, **{
         "emulator_ram": 0x20000000,
         "ethmac":       0xb0000000,
-        "main_ram":     0xc0000000,
+        "spiflash":     0xd0000000,
         "csr":          0xf0000000,
-    }
+    }}
 
     def __init__(self, init_memories=False, with_ethernet=False):
         platform     = Platform()
