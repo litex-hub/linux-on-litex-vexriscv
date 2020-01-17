@@ -1,0 +1,43 @@
+language: minimal
+
+git:
+  submodules: false
+
+dist: xenial
+
+install:
+ - wget -c https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+ - chmod a+x Miniconda3-latest-Linux-x86_64.sh
+ - ./Miniconda3-latest-Linux-x86_64.sh -p ~/conda -b -f
+ - ~/conda/bin/conda init bash
+ - source ~/.bashrc
+ - conda env create --file environment.yml
+ - conda activate linux-on-litex-vexriscv
+ - conda info
+ - ./make.py --help
+
+script:
+ - ./make.py --board="$BOARD"
+
+env:
+ # TOOLCHAIN=vivado
+ - BOARD=Arty
+ - BOARD=NeTV2
+ - BOARD=Genesys2
+ - BOARD=KC705
+ - BOARD=KCU105
+ - BOARD=Nexys4DDR
+ - BOARD="Nexys Video"
+ # TOOLCHAIN=ise
+ - BOARD=miniSpartan6
+ - BOARD=Pipistrello
+ # TOOLCHAIN=nextpnr-ecp5
+ - BOARD="Versa ECP5"
+ - BOARD=ULX3S
+ - BOARD=OrangeCrab
+ - BOARD="CamLink 4K"
+ # TOOLCHAIN=quartus
+ - BOARD=De0Nano
+ - BOARD=De10Lite
+ # TOOLCHAIN=libero
+ - BOARD=Avalanche
