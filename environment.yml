@@ -1,0 +1,13 @@
+name: linux-on-litex-vexriscv
+channels:
+  - litex-hub
+dependencies:
+  - gcc-riscv32-elf-nostdc
+  - gdb-riscv32-elf
+  - nextpnr-ecp5
+  - openocd
+  - verilator
+  - yosys
+  - pip
+  - pip:                            # Packages installed from PyPI
+    - -r file:requirements.txt
