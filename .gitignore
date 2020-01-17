@@ -9,6 +9,10 @@ buildroot/rootfs.cpio
 buildroot/rootfs.tar
 buildroot/rv32.dtb
 
+# Ignore src+env directories
+src/
+env/
+
 # Build files
 build/*
 
