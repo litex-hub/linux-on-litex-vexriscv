@@ -51,27 +51,14 @@ index 000000000..039894265
 +
 +...
 +
-diff --git a/MAINTAINERS b/MAINTAINERS
-index c764e8d04..98fb5b059 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -9467,6 +9467,8 @@ M:	Karol Gugala <kgugala@antmicro.com>
- M:	Mateusz Holenko <mholenko@antmicro.com>
- S:	Maintained
- F:	include/linux/litex.h
-+F:	drivers/soc/litex/
-+F:	Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
- 
- LIVE PATCHING
- M:	Josh Poimboeuf <jpoimboe@redhat.com>
 diff --git a/drivers/soc/Kconfig b/drivers/soc/Kconfig
 index 833e04a78..f00d297f9 100644
 --- a/drivers/soc/Kconfig
 +++ b/drivers/soc/Kconfig
-@@ -9,6 +9,7 @@ source "drivers/soc/bcm/Kconfig"
+@@ -9,6 +9,7 @@  source "drivers/soc/atmel/Kconfig"
+ source "drivers/soc/bcm/Kconfig"
  source "drivers/soc/fsl/Kconfig"
  source "drivers/soc/imx/Kconfig"
- source "drivers/soc/ixp4xx/Kconfig"
 +source "drivers/soc/litex/Kconfig"
  source "drivers/soc/mediatek/Kconfig"
  source "drivers/soc/qcom/Kconfig"
@@ -265,7 +252,7 @@ diff --git a/include/linux/litex.h b/include/linux/litex.h
 index 278295eaa..e7c8f8930 100644
 --- a/include/linux/litex.h
 +++ b/include/linux/litex.h
-@@ -10,42 +10,57 @@
+@@ -10,20 +10,36 @@
  #define LITEX_SUBREG_SIZE          0x1
  #define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
  
@@ -308,12 +295,11 @@ index 278295eaa..e7c8f8930 100644
 +//	return -EPROBE_DEFER;
 +int litex_check_accessors(void);
  
--inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
 +// Helper functions for manipulating LiteX registers
-+static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
+ static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
  {
  	u32 shifted_data, shift, i;
- 
+@@ -31,7 +47,7 @@ static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
  	for (i = 0; i < reg_size; ++i) {
  		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
  		shifted_data = val >> shift;
@@ -322,10 +308,7 @@ index 278295eaa..e7c8f8930 100644
  	}
  }
  
--inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
-+static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
- {
- 	u32 shifted_data, shift, i;
+@@ -41,7 +57,7 @@ static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
  	u32 result = 0;
  
  	for (i = 0; i < reg_size; ++i) {
@@ -334,7 +317,3 @@ index 278295eaa..e7c8f8930 100644
  		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
  		result |= (shifted_data << shift);
  	}
--
- 	return result;
- }
- 
