@@ -1,0 +1,7 @@
+-e git+https://github.com/m-labs/migen@master#egg=migen
+-e git+https://github.com/enjoy-digital/litex@master#egg=litex
+-e git+https://github.com/enjoy-digital/liteeth@master#egg=liteeth
+-e git+https://github.com/enjoy-digital/litedram@master#egg=litedram
+-e git+https://github.com/enjoy-digital/litesdcard@master#egg=litesdcard
+-e git+https://github.com/enjoy-digital/litevideo@master#egg=litevideo
+-e git+https://github.com/litex-hub/litex-boards@master#egg=litex-boards

@@ -130,8 +130,10 @@ if "uart" in d["csr_bases"]:
 	""".format(uart_csr_base=d["csr_bases"]["uart"])
 
 	# Ethernet MAC ---------------------------------------------------------------------------------
+if "ethphy" in d["csr_bases"] and "ethmac" not in d["csr_bases"]:
+        pass
 
-if "ethmac" in d["csr_bases"]:
+if "ethphy" in d["csr_bases"] and "ethmac" in d["csr_bases"]:
 	dts += """
 		mac0: mac@{ethmac_csr_base:x} {{
 			compatible = "litex,liteeth";
