@@ -1,7 +1,17 @@
-# Linux on LiteX-VexRiscv
+```
+                                   __   _
+                                  / /  (_)__  __ ____ __
+                                 / /__/ / _ \/ // /\ \ /
+                                /____/_/_//_/\_,_//_\_\
+                                      / _ \/ _ \
+                      __   _ __      _\___/_//_/ __             _
+                     / /  (_) /____ | |/_/__| | / /____ __ ____(_)__ _____  __
+                    / /__/ / __/ -_)>  </___/ |/ / -_) \ // __/ (_-</ __/ |/ /
+                   /____/_/\__/\__/_/|_|    |___/\__/_\_\/_/ /_/___/\__/|___/
 
-![Linux on LiteX-VexRiscv](https://raw.githubusercontent.com/litex-hub/linux-on-litex-vexriscv/master/doc/banner.png)
-
+                   Copyright (c) 2019-2020, Linux on LiteX VexRiscv Developers
+```
+[![](https://travis-ci.com/litex-hub/linux-on-litex-vexriscv.svg?branch=master)](https://travis-ci.com/litex-hub/linux-on-litex-vexriscv) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
 > **Note:** Tested on Ubuntu 18.04.
 
 ## Intro:
