@@ -1,0 +1,81 @@
+diff --git a/drivers/soc/litex/litex_soc_ctrl.c b/drivers/soc/litex/litex_soc_ctrl.c
+index f15217a96eae..393e99996f3b 100644
+--- a/drivers/soc/litex/litex_soc_ctrl.c
++++ b/drivers/soc/litex/litex_soc_ctrl.c
+@@ -19,6 +19,8 @@
+ 
+ #define SCRATCH_REG_OFF		0x04
+ #define SCRATCH_REG_VALUE	0x12345678
++#define SCRATCH_LE		0x00000012
++#define SCRATCH_BE		0x12000000
+ 
+ /*
+  * Pointers for accessor functions
+@@ -50,31 +52,41 @@ struct litex_soc_ctrl_device {
+ 	void __iomem *base;
+ };
+ 
+-/* Read litex CSR with Little Endian function */
+-static inline u32 litex_soc_ctrl_get_reg(void __iomem *reg_addr)
+-{
+-	return  (ioread32(reg_addr) << 24)	 |
+-		(ioread32(reg_addr + 0x4) << 16) |
+-		(ioread32(reg_addr + 0x8) << 8)  |
+-		 ioread32(reg_addr + 0xc);
+-}
+-
+ /* Check byte order and set correct accessors */
+-static void litex_soc_ctrl_check_endianness(void __iomem *reg_addr)
++static int litex_soc_ctrl_check_endianness(void __iomem *reg_addr)
+ {
+ 	u32 reg;
++	u8 le_flag = -1;
+ 
+-	reg = litex_soc_ctrl_get_reg(reg_addr + SCRATCH_REG_OFF);
++	/* Read first part of litex CSR with Little Endian function */
++	reg = ioread32(reg_addr + SCRATCH_REG_OFF);
+ 
+-	if (reg == SCRATCH_REG_VALUE) {
+-		pr_info("Detected endianness: Little Endian");
++	if (reg == SCRATCH_LE) {
++		le_flag = 1;
+ 		litex_read_reg = ioread32;
+ 		litex_write_reg = iowrite32;
+-	} else {
+-		pr_info("Detected endianness: Big Endian");
++	} else if (reg == SCRATCH_BE) {
++		le_flag = 0;
+ 		litex_read_reg = ioread32be;
+ 		litex_write_reg = iowrite32be;
++	} else {
++		panic("Endianness detection failure! scratch: 0x%x", reg);
++		return -EINVAL;
++	}
++	/* Double check - this time whole CSR */
++	reg = litex_get_reg(reg_addr + SCRATCH_REG_OFF, 4);
++	if (reg != SCRATCH_REG_VALUE) {
++		panic("Endianness detection failure! scratch: 0x%x should be: 0x%x",
++							reg, SCRATCH_REG_VALUE);
++		return -EINVAL;
+ 	}
++
++	if (le_flag)
++		pr_info("LiteX CSR access configured: Little Endian");
++	else
++		pr_info("LiteX CSR access configured: Big Endian");
++
++	return 0;
+ }
+ 
+ static const struct of_device_id litex_soc_ctrl_of_match[] = {
+@@ -113,9 +125,7 @@ static int litex_soc_ctrl_probe(struct platform_device *pdev)
+ 	if (IS_ERR_OR_NULL(soc_ctrl_dev->base))
+ 		return -EIO;
+ 
+-	litex_soc_ctrl_check_endianness(soc_ctrl_dev->base);
+-
+-	return 0;
++	return litex_soc_ctrl_check_endianness(soc_ctrl_dev->base);
+ }
+ 
+ static int litex_soc_ctrl_remove(struct platform_device *pdev)
