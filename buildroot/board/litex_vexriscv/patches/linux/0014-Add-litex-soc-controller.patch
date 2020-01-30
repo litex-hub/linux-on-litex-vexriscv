@@ -3,7 +3,7 @@ new file mode 100644
 index 000000000..039894265
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +PDX-License-Identifier: GPL-2.0
 +%YAML 1.2
 +---
@@ -50,12 +50,11 @@ index 000000000..039894265
 +  };
 +
 +...
-+
 diff --git a/drivers/soc/Kconfig b/drivers/soc/Kconfig
 index 833e04a78..f00d297f9 100644
 --- a/drivers/soc/Kconfig
 +++ b/drivers/soc/Kconfig
-@@ -9,6 +9,7 @@  source "drivers/soc/atmel/Kconfig"
+@@ -6,6 +6,7 @@  source "drivers/soc/atmel/Kconfig"
  source "drivers/soc/bcm/Kconfig"
  source "drivers/soc/fsl/Kconfig"
  source "drivers/soc/imx/Kconfig"
@@ -129,7 +128,7 @@ index 000000000..8e5d6833b
 +#include <linux/errno.h>
 +#include <linux/io.h>
 +
-+#define SCRATCH_REG_OFF 	0x04
++#define SCRATCH_REG_OFF		0x04
 +#define SCRATCH_REG_VALUE	0x12345678
 +
 +/*
