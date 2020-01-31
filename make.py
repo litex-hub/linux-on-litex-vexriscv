@@ -220,7 +220,7 @@ class De10Lite(Board):
 class De10Nano(Board):
     def __init__(self):
         from litex_boards.targets import de10nano
-        Board.__init__(self, de10nano.SDRAMSoC, {"serial", "leds", "switches"})
+        Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "leds", "switches"})
 
     def load(self):
         from litex.build.altera import USBBlaster
