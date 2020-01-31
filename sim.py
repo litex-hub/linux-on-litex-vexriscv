@@ -10,9 +10,14 @@ from litex.build.sim.config import SimConfig
 
 from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
+from litex.soc.integration.soc_sdram import *
 from litex.soc.integration.builder import *
 from litex.soc.interconnect import wishbone
 from litex.soc.cores import uart
+
+from litedram import modules as litedram_modules
+from litedram.phy.model import SDRAMPHYModel
+from litex.tools.litex_sim import sdram_module_nphases, get_sdram_phy_settings
 
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.core.mac import LiteEthMAC
@@ -61,38 +66,47 @@ class Supervisor(Module, AutoCSR):
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
-class SoCLinux(SoCCore):
-    csr_map = {**SoCCore.csr_map, **{
+class SoCLinux(SoCSDRAM):
+    csr_map = {**SoCSDRAM.csr_map, **{
         "ctrl":       0,
         "uart":       2,
         "timer0":     3,
     }}
-    interrupt_map = {**SoCCore.interrupt_map, **{
+    interrupt_map = {**SoCSDRAM.interrupt_map, **{
         "uart":       0,
         "timer0":     1,
     }}
-    mem_map = {**SoCCore.mem_map, **{
+    mem_map = {**SoCSDRAM.mem_map, **{
         "emulator_ram": 0x20000000,
         "ethmac":       0xb0000000,
         "spiflash":     0xd0000000,
         "csr":          0xf0000000,
     }}
 
-    def __init__(self, init_memories=False, with_ethernet=False):
+    def __init__(self,
+        init_memories    = False,
+        with_sdram       = False,
+        sdram_module     = "MT48LC16M16",
+        sdram_data_width = 32,
+        with_ethernet    = False):
         platform     = Platform()
         sys_clk_freq = int(1e6)
 
-        # SoCCore ----------------------------------------------------------------------------------
-        SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
-            cpu_type="vexriscv", cpu_variant="linux",
-            with_uart=False,
-            integrated_rom_size=0x8000,
-            integrated_main_ram_size=0x02000000, # 32MB
-            integrated_main_ram_init=get_mem_data({
-                "buildroot/Image":         "0x00000000",
-                "buildroot/rootfs.cpio":   "0x00800000",
-                "buildroot/rv32.dtb":      "0x01000000"
-                }, "little") if init_memories else [])
+        ram_init = []
+        if init_memories:
+            ram_init = get_mem_data({
+                "buildroot/Image":       "0x00000000",
+                "buildroot/rootfs.cpio": "0x00800000",
+                "buildroot/rv32.dtb":    "0x01000000",
+                }, "little")
+
+        # SoCSDRAM ----------------------------------------------------------------------------------
+        SoCSDRAM.__init__(self, platform, clk_freq=sys_clk_freq,
+            cpu_type                 = "vexriscv", cpu_variant="linux",
+            with_uart                = False,
+            integrated_rom_size      = 0x8000,
+            integrated_main_ram_size = 0x00000000 if with_sdram else 0x02000000, # 32MB
+            integrated_main_ram_init = [] if (with_sdram or not init_memories) else ram_init)
         self.add_constant("SIM", None)
 
         # Supervisor -------------------------------------------------------------------------------
@@ -107,6 +121,26 @@ class SoCLinux(SoCCore):
         self.submodules.emulator_ram = wishbone.SRAM(0x4000, init=emulator_rom)
         self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
         self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
+
+        # SDRAM ------------------------------------------------------------------------------------
+        if with_sdram:
+            sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
+            sdram_module_cls = getattr(litedram_modules, sdram_module)
+            sdram_rate       = "1:{}".format(sdram_module_nphases[sdram_module_cls.memtype])
+            sdram_module     = sdram_module_cls(sdram_clk_freq, sdram_rate)
+            phy_settings     = get_sdram_phy_settings(
+                memtype    = sdram_module.memtype,
+                data_width = sdram_data_width,
+                clk_freq   = sdram_clk_freq)
+            self.submodules.sdrphy = SDRAMPHYModel(sdram_module, phy_settings, init=ram_init)
+            self.register_sdram(
+                self.sdrphy,
+                sdram_module.geom_settings,
+                sdram_module.timing_settings)
+            # FIXME: skip memtest to avoid corrupting memory
+            self.add_constant("MEMTEST_BUS_SIZE",  0)
+            self.add_constant("MEMTEST_ADDR_SIZE", 0)
+            self.add_constant("MEMTEST_DATA_SIZE", 0)
 
         # Serial -----------------------------------------------------------------------------------
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
@@ -146,15 +180,14 @@ class SoCLinux(SoCCore):
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
-    parser.add_argument("--with-ethernet", action="store_true",
-                        help="enable Ethernet support")
-    parser.add_argument("--trace", action="store_true", help="enable VCD tracing")
-    parser.add_argument("--trace-start", default=0,
-                        help="cycle to start VCD tracing")
-    parser.add_argument("--trace-end", default=-1,
-                        help="cycle to end VCD tracing")
-    parser.add_argument("--opt-level", default="O3",
-                        help="compilation optimization level")
+    parser.add_argument("--with-sdram",       action="store_true",   help="enable SDRAM support")
+    parser.add_argument("--sdram-module",     default="MT48LC16M16", help="Select SDRAM chip")
+    parser.add_argument("--sdram-data-width", default=32,            help="Set SDRAM chip data width")
+    parser.add_argument("--with-ethernet",    action="store_true",   help="enable Ethernet support")
+    parser.add_argument("--trace",            action="store_true",   help="enable VCD tracing")
+    parser.add_argument("--trace-start",      default=0,             help="cycle to start VCD tracing")
+    parser.add_argument("--trace-end",        default=-1,            help="cycle to end VCD tracing")
+    parser.add_argument("--opt-level",        default="O3",          help="compilation optimization level")
     args = parser.parse_args()
 
     sim_config = SimConfig(default_clk="sys_clk")
@@ -163,18 +196,22 @@ def main():
         sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": "192.168.1.100"})
 
     for i in range(2):
-        soc = SoCLinux(i!=0, args.with_ethernet)
+        soc = SoCLinux(i!=0,
+            with_sdram       = args.with_sdram,
+            sdram_module     = args.sdram_module,
+            sdram_data_width = args.sdram_data_width,
+            with_ethernet    = args.with_ethernet)
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
-            compile_gateware=i!=0,
-            csr_json=os.path.join(build_dir, "csr.json"))
+            compile_gateware = i!=0,
+            csr_json         = os.path.join(build_dir, "csr.json"))
         builder.build(sim_config=sim_config,
-            run=i!=0,
-            opt_level=args.opt_level,
-            trace=args.trace,
-            trace_start=int(args.trace_start),
-            trace_end=int(args.trace_end))
+            run         = i!=0,
+            opt_level   = args.opt_level,
+            trace       = args.trace,
+            trace_start = int(args.trace_start),
+            trace_end   = int(args.trace_end))
         if i == 0:
             os.chdir("..")
             soc.generate_dts(board_name)
