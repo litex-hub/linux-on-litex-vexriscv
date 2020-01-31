@@ -215,6 +215,18 @@ class De10Lite(Board):
         prog = USBBlaster()
         prog.load_bitstream("build/de10lite/gateware/top.sof")
 
+# De10Nano support ----------------------------------------------------------------------------------
+
+class De10Nano(Board):
+    def __init__(self):
+        from litex_boards.targets import de10nano
+        Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "leds", "switches"})
+
+    def load(self):
+        from litex.build.altera import USBBlaster
+        prog = USBBlaster()
+        prog.load_bitstream("build/de10nano/gateware/top.sof")
+
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
@@ -249,6 +261,7 @@ supported_boards = {
     # Altera/Intel
     "de0nano":      De0Nano,
     "de10lite":     De10Lite,
+    "de10nano":     De10Nano,
 }
 
 def main():
