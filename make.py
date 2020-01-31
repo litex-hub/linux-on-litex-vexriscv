@@ -84,7 +84,7 @@ class Genesys2(Board):
 class KC705(Board):
     def __init__(self):
         from litex_boards.targets import kc705
-        Board.__init__(self, kc705.BaseSoC, {"serial", "ethernet", "leds", "xadc"})
+        Board.__init__(self, kc705.EthernetSoC, {"serial", "ethernet", "leds", "xadc"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
