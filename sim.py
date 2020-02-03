@@ -104,6 +104,7 @@ class SoCLinux(SoCSDRAM):
         SoCSDRAM.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type                 = "vexriscv", cpu_variant="linux",
             with_uart                = False,
+            l2_reverse               = False,
             integrated_rom_size      = 0x8000,
             integrated_main_ram_size = 0x00000000 if with_sdram else 0x02000000, # 32MB
             integrated_main_ram_init = [] if (with_sdram or not init_memories) else ram_init)
@@ -199,7 +200,7 @@ def main():
         soc = SoCLinux(i!=0,
             with_sdram       = args.with_sdram,
             sdram_module     = args.sdram_module,
-            sdram_data_width = args.sdram_data_width,
+            sdram_data_width = int(args.sdram_data_width),
             with_ethernet    = args.with_ethernet)
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
