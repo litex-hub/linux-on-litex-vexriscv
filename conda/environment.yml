@@ -8,6 +8,8 @@ dependencies:
   - nextpnr-ecp5
   - openocd
   - verilator
+  - libevent
+  - json-c
   - yosys
   - pip
   - pip:                            # Packages installed from PyPI
