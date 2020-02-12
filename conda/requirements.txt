@@ -4,4 +4,6 @@
 -e git+https://github.com/enjoy-digital/litedram@master#egg=litedram
 -e git+https://github.com/enjoy-digital/litesdcard@master#egg=litesdcard
 -e git+https://github.com/enjoy-digital/litevideo@master#egg=litevideo
+-e git+https://github.com/enjoy-digital/litescope@master#egg=litescope
 -e git+https://github.com/litex-hub/litex-boards@master#egg=litex-boards
+pexpect

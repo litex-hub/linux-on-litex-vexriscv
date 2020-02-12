@@ -17,11 +17,15 @@ install:
  - conda activate linux-on-litex-vexriscv
  - conda info
  - ./make.py --help
+ - if [[ -v SDRAM_MODULE ]]; then git clone --depth 1 https://github.com/litex-hub/linux-on-litex-vexriscv-prebuilt.git; fi
+ - if [[ -v SDRAM_MODULE ]]; then cp -R linux-on-litex-vexriscv-prebuilt/buildroot ./; fi
 
 script:
- - ./make.py --board="$BOARD"
+ - if [[ -v BOARD        ]]; then ./make.py --board="$BOARD"; fi
+ - if [[ -v SDRAM_MODULE ]]; then ./.sim-test.py --sdram-module="$SDRAM_MODULE"; fi
 
 env:
+ # ----- BOARDS -----
  # TOOLCHAIN=vivado
  - BOARD=Arty
  - BOARD=NeTV2
@@ -43,3 +47,36 @@ env:
  - BOARD=De10Lite
  # TOOLCHAIN=libero
  #- BOARD=Avalanche
+
+ # ----- SIMULATIONS -----
+ - SDRAM_MODULE=IS42S16160
+ - SDRAM_MODULE=IS42S16320
+ #- SDRAM_MODULE=MT48LC4M16  # Too small for Linux
+ - SDRAM_MODULE=MT48LC16M16
+ - SDRAM_MODULE=AS4C16M16
+ - SDRAM_MODULE=AS4C32M16
+ - SDRAM_MODULE=AS4C32M8
+ #- SDRAM_MODULE=M12L64322A  # Too small for Linux
+ #- SDRAM_MODULE=M12L16161A  # Too small for Linux
+ - SDRAM_MODULE=MT46V32M16
+ - SDRAM_MODULE=MT46H32M16
+ - SDRAM_MODULE=MT46H32M32
+ - SDRAM_MODULE=MT47H128M8
+ - SDRAM_MODULE=MT47H32M16
+ - SDRAM_MODULE=MT47H64M16
+ - SDRAM_MODULE=P3R1GE4JGF
+ - SDRAM_MODULE=MT41K64M16
+ - SDRAM_MODULE=MT41J128M16
+ - SDRAM_MODULE=MT41J256M16
+ - SDRAM_MODULE=K4B1G0446F
+ - SDRAM_MODULE=K4B2G1646F
+ - SDRAM_MODULE=H5TC4G63CFR
+ - SDRAM_MODULE=IS43TR16128B
+ - SDRAM_MODULE=MT8JTF12864
+ - SDRAM_MODULE=MT8KTF51264
+ - SDRAM_MODULE=MT18KSF1G72HZ
+ - SDRAM_MODULE=AS4C256M16D3A
+ - SDRAM_MODULE=MT16KTF1G64HZ
+ - SDRAM_MODULE=EDY4016A
+ - SDRAM_MODULE=MT40A1G8
+ - SDRAM_MODULE=MT40A512M16
