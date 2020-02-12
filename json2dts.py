@@ -317,9 +317,61 @@ if "icap_bit" in d["csr_bases"]:
 		}};
 """.format(icap_csr_base=d["csr_bases"]["icap_bit"])
 
+	# CLK ----------------------------------------------------------------------------------
+
+def add_clkout(clkout_nr, clk_f, clk_p, clk_dn, clk_dd):
+
+	return """	CLKOUT{clkout_nr}: CLKOUT{clkout_nr} {{
+				compatible = "litex,clk";
+				#clock-cells =	<0>;
+				clock-output-names = "CLKOUT{clkout_nr}";
+				reg = <{clkout_nr}>;
+				litex,clock-frequency = <{clk_f}>;
+				litex,clock-phase = <{clk_p}>;
+				litex,clock-duty-num = <{clk_dn}>;
+				litex,clock-duty-den = <{clk_dd}>;
+			}};
+		""".format(clkout_nr=clkout_nr, clk_f=clk_f, clk_p=clk_p, clk_dn=clk_dn, clk_dd=clk_dd)
+
+if "mmcm" in d["csr_bases"]:
+	clkout_def_freq = d["constants"]["clkout_def_freq"]
+	clkout_def_phase = d["constants"]["clkout_def_phase"]
+	clkout_def_duty_num = d["constants"]["clkout_def_duty_num"]
+	clkout_def_duty_den = d["constants"]["clkout_def_duty_den"]
+	mmcm_lock_timeout = d["constants"]["mmcm_lock_timeout"]
+	mmcm_drdy_timeout = d["constants"]["mmcm_drdy_timeout"]
+	sys_clk = d["constants"]["config_clock_frequency"]
+
+	dts += """
+		clk0: clk@{mmcm_csr_base:x} {{
+			compatible = "litex,clk";
+			reg = <0x0 0x{mmcm_csr_base:x} 0x0 0x100>;
+			#clock-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-output-names = "CLKOUT0",
+					     "CLKOUT1",
+					     "CLKOUT2",
+					     "CLKOUT3",
+					     "CLKOUT4",
+					     "CLKOUT5",
+					     "CLKOUT6";
+			litex,nclkout = <7>;
+			litex,lock-timeout = <{mmcm_lock_timeout}>;
+			litex,drdy-timeout = <{mmcm_drdy_timeout}>;
+			litex,sys-clock-frequency = <{sys_clk}>;
+		""".format(mmcm_csr_base = d["csr_bases"]["mmcm"],
+			   mmcm_lock_timeout = mmcm_lock_timeout,
+			   mmcm_drdy_timeout = mmcm_drdy_timeout,
+			   sys_clk = sys_clk)
+	for clkout_nr in range(7):
+		dts += add_clkout(clkout_nr, clkout_def_freq, clkout_def_phase,
+							    clkout_def_duty_num,
+							    clkout_def_duty_den)
+	dts += """
+		};"""
 dts += """
-	};
-"""
+	};"""
 
 # Aliases -----------------------------------------------------------------------------------------
 

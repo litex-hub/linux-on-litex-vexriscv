@@ -14,6 +14,7 @@ from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.xadc import XADC
 from litex.soc.cores.pwm import PWM
 from litex.soc.cores.icap import ICAPBitstream
+from litex.soc.cores.clock import S7MMCM
 
 from litevideo.output import VideoOut
 
@@ -179,6 +180,30 @@ def SoCLinux(soc_cls, **kwargs):
         def add_icap_bitstream(self):
             self.submodules.icap_bit = ICAPBitstream();
             self.add_csr("icap_bit")
+
+        def add_mmcm(self):
+            self.cd_mmcm_clkout = []
+            self.submodules.mmcm = S7MMCM(speedgrade=-1)
+            self.mmcm.register_clkin(self.crg.cd_sys.clk, self.clk_freq)
+
+            self.add_constant("clkout_def_freq", int(self.clk_freq))
+            self.add_constant("clkout_def_phase", int(0))
+            self.add_constant("clkout_def_duty_num", int(50))
+            self.add_constant("clkout_def_duty_den", int(100))
+            self.add_constant("mmcm_lock_timeout", int(10))
+            self.add_constant("mmcm_drdy_timeout", int(10))
+
+            for n in range(7):
+                self.cd_mmcm_clkout += [ClockDomain(name="cd_mmcm_clkout{}".format(n))]
+                self.mmcm.create_clkout(self.cd_mmcm_clkout[n], self.clk_freq)
+
+            self.mmcm.expose_drp()
+
+            for csr in ["mmcm", "drp_reset", "drp_read", "drp_write", "drp_drdy",
+                                "drp_adr", "drp_dat_w", "drp_dat_r", "drp_locked"]:
+                self.add_csr(csr)
+
+            self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
         def configure_ethernet(self, local_ip, remote_ip):
             local_ip = local_ip.split(".")
