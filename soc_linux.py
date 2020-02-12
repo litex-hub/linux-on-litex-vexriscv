@@ -6,7 +6,6 @@ import subprocess
 from migen import *
 
 from litex.soc.interconnect import wishbone
-from litex.soc.integration.soc_core import mem_decoder
 
 from litex.soc.cores.spi_flash import SpiFlash
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
@@ -112,8 +111,8 @@ def SoCLinux(soc_cls, **kwargs):
                 with_bitbang=True,
                 endianness=self.cpu.endianness)
             self.spiflash.add_clk_primitive(self.platform.device)
-            self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
             self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000)
+            self.add_wb_slave(self.mem_map["spiflash"], self.spiflash.bus)
             self.add_csr("spiflash")
 
         def add_leds(self):
