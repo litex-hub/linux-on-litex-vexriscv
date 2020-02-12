@@ -146,8 +146,8 @@ class SoCLinux(SoCSDRAM):
         # Serial -----------------------------------------------------------------------------------
         self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
         self.submodules.uart = uart.UART(self.uart_phy)
-        self.add_csr("uart", allow_user_defined=True)
-        self.add_interrupt("uart", allow_user_defined=True)
+        self.add_csr("uart", use_loc_if_exists=True)
+        self.add_interrupt("uart", use_loc_if_exists=True)
 
         # Ethernet ---------------------------------------------------------------------------------
         if with_ethernet:
