@@ -105,6 +105,7 @@ class SoCLinux(SoCSDRAM):
             cpu_type                 = "vexriscv", cpu_variant="linux",
             with_uart                = False,
             l2_reverse               = False,
+            max_sdram_size           = 0x10000000, # Limit mapped SDRAM to 256MB for now
             integrated_rom_size      = 0x8000,
             integrated_main_ram_size = 0x00000000 if with_sdram else 0x02000000, # 32MB
             integrated_main_ram_init = [] if (with_sdram or not init_memories) else ram_init)
