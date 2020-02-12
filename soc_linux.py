@@ -198,10 +198,7 @@ def SoCLinux(soc_cls, **kwargs):
                 self.mmcm.create_clkout(self.cd_mmcm_clkout[n], self.clk_freq)
 
             self.mmcm.expose_drp()
-
-            for csr in ["mmcm", "drp_reset", "drp_read", "drp_write", "drp_drdy",
-                                "drp_adr", "drp_dat_w", "drp_dat_r", "drp_locked"]:
-                self.add_csr(csr)
+            self.add_csr("mmcm")
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
