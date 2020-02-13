@@ -78,6 +78,7 @@ index 000000000..b0f7a7466
 +#include <linux/bits.h>
 +#include <linux/litex.h>
 +
++#define REGISTER_SIZE           1
 +#define OFFSET_REG_W            0x0
 +#define OFFSET_REG_R            0x4
 +
@@ -104,16 +105,16 @@ index 000000000..b0f7a7466
 +{
 +	u32 regv, new_regv;
 +
-+	regv = litex_read_reg(mem);
++	regv = litex_get_reg(mem, REGISTER_SIZE);
 +	new_regv = (regv & ~BIT(bit)) | ((!!val) << bit);
-+	litex_write_reg(new_regv, mem);
++	litex_set_reg(mem, REGISTER_SIZE, new_regv);
 +}
 +
 +static inline int litex_get_bit(void __iomem *mem, int bit)
 +{
 +	u32 regv;
 +
-+	regv = litex_read_reg(mem);
++	regv = litex_get_reg(mem, REGISTER_SIZE);
 +	return !!(regv & BIT(bit));
 +}
 +
