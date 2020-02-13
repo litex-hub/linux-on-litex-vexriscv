@@ -1748,7 +1748,7 @@ index 000000000000..7a591b60c21e
 +				     struct litex_clk_clkout *clkout)
 +{
 +	int ret;
-+	u32 dt_num, dt_freq, dt_phase, dt_duty_num, dt_sys_clk_freq,
++	u32 dt_num, dt_freq, dt_phase, dt_duty_num,
 +	    dt_duty_den, f_max, f_min, gf;
 +
 +	gf = litex_clk_get_expctd_global_frequency(clkout->sys_clk_freq);
@@ -1994,7 +1994,7 @@ index 000000000000..7a591b60c21e
 +{
 +	const struct of_device_id *id;
 +	struct device *dev;
-+	struct device_node *node, *cpu;
++	struct device_node *node;
 +	struct litex_clk_device *litex_clk_device;
 +	struct resource *res;
 +	int ret;
