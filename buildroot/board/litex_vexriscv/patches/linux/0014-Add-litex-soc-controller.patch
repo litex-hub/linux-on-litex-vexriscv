@@ -108,7 +108,7 @@ new file mode 100644
 index 000000000..8e5d6833b
 --- /dev/null
 +++ b/drivers/soc/litex/litex_soc_ctrl.c
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,148 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * LiteX SoC Controller Driver
@@ -130,6 +130,8 @@ index 000000000..8e5d6833b
 +
 +#define SCRATCH_REG_OFF		0x04
 +#define SCRATCH_REG_VALUE	0x12345678
++#define SCRATCH_LE		0x00000012
++#define SCRATCH_BE		0x12000000
 +
 +/*
 + * Pointers for accessor functions
@@ -161,31 +163,41 @@ index 000000000..8e5d6833b
 +	void __iomem *base;
 +};
 +
-+/* Read litex CSR with Little Endian function */
-+static inline u32 litex_soc_ctrl_get_reg(void __iomem *reg_addr)
-+{
-+	return  (ioread32(reg_addr) << 24)	 |
-+		(ioread32(reg_addr + 0x4) << 16) |
-+		(ioread32(reg_addr + 0x8) << 8)  |
-+		 ioread32(reg_addr + 0xc);
-+}
-+
 +/* Check byte order and set correct accessors */
-+static void litex_soc_ctrl_check_endianness(void __iomem *reg_addr)
++static int litex_soc_ctrl_check_endianness(void __iomem *reg_addr)
 +{
 +	u32 reg;
++	u8 le_flag = -1;
 +
-+	reg = litex_soc_ctrl_get_reg(reg_addr + SCRATCH_REG_OFF);
++	/* Read first part of litex CSR with Little Endian function */
++	reg = ioread32(reg_addr + SCRATCH_REG_OFF);
 +
-+	if (reg == SCRATCH_REG_VALUE) {
-+		pr_info("Detected endianness: Little Endian");
++	if (reg == SCRATCH_LE) {
++		le_flag = 1;
 +		litex_read_reg = ioread32;
 +		litex_write_reg = iowrite32;
-+	} else {
-+		pr_info("Detected endianness: Big Endian");
++	} else if (reg == SCRATCH_BE) {
++		le_flag = 0;
 +		litex_read_reg = ioread32be;
 +		litex_write_reg = iowrite32be;
++	} else {
++		panic("Endianness detection failure! scratch: 0x%x", reg);
++		return -EINVAL;
 +	}
++	/* Double check - this time whole CSR */
++	reg = litex_get_reg(reg_addr + SCRATCH_REG_OFF, 4);
++	if (reg != SCRATCH_REG_VALUE) {
++		panic("Endianness detection failure! scratch: 0x%x should be: 0x%x",
++							reg, SCRATCH_REG_VALUE);
++		return -EINVAL;
++	}
++
++	if (le_flag)
++		pr_info("LiteX CSR access configured: Little Endian");
++	else
++		pr_info("LiteX CSR access configured: Big Endian");
++
++	return 0;
 +}
 +
 +static const struct of_device_id litex_soc_ctrl_of_match[] = {
@@ -224,9 +236,7 @@ index 000000000..8e5d6833b
 +	if (IS_ERR_OR_NULL(soc_ctrl_dev->base))
 +		return -EIO;
 +
-+	litex_soc_ctrl_check_endianness(soc_ctrl_dev->base);
-+
-+	return 0;
++	return litex_soc_ctrl_check_endianness(soc_ctrl_dev->base);
 +}
 +
 +static int litex_soc_ctrl_remove(struct platform_device *pdev)
@@ -248,18 +258,23 @@ index 000000000..8e5d6833b
 +MODULE_AUTHOR("Antmicro <www.antmicro.com>");
 +MODULE_LICENSE("GPL v2");
 diff --git a/include/linux/litex.h b/include/linux/litex.h
-index 278295eaa..e7c8f8930 100644
---- a/include/linux/litex.h
+new file mode 100644
+index 000000000000..ddae454b52e5
+--- /dev/null
 +++ b/include/linux/litex.h
-@@ -10,20 +10,36 @@
- #define LITEX_SUBREG_SIZE          0x1
- #define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
- 
--#ifdef __LITTLE_ENDIAN
--# define LITEX_READ_REG(addr)                  ioread32(addr)
--# define LITEX_READ_REG_OFF(addr, off)         ioread32(addr + off)
--# define LITEX_WRITE_REG(val, addr)            iowrite32(val, addr)
--# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32(val, addr + off)
+@@ -0,0 +1,68 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _LINUX_LITEX_H
++#define _LINUX_LITEX_H
++
++#include <linux/io.h>
++#include <linux/types.h>
++#include <linux/compiler_types.h>
++
++#define LITEX_REG_SIZE             0x4
++#define LITEX_SUBREG_SIZE          0x1
++#define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
++
 +// pointers to read and write functions
 +// set in soc controller driver
 +//
@@ -269,16 +284,11 @@ index 278295eaa..e7c8f8930 100644
 +#ifndef CONFIG_GENERIC_IOMAP
 +extern unsigned int (*litex_read_reg)(const volatile void __iomem *addr);
 +extern void (*litex_write_reg)(u32 val, volatile void __iomem *addr);
- #else
--# define LITEX_READ_REG(addr)                  ioread32be(addr)
--# define LITEX_READ_REG_OFF(addr, off)         ioread32be(addr + off)
--# define LITEX_WRITE_REG(val, addr)            iowrite32be(val, addr)
--# define LITEX_WRITE_REG_OFF(val, addr, off)   iowrite32be(val, addr + off)
++#else
 +extern unsigned int (*litex_read_reg)(void __iomem *addr);
 +extern void (*litex_write_reg)(u32 val, void __iomem *addr);
- #endif
- 
--/* Helper functions for manipulating LiteX registers */
++#endif
++
 +// function implemented in
 +// drivers/soc/litex/litex_soc_controller.c
 +// to check if accessors are ready to use
@@ -293,26 +303,31 @@ index 278295eaa..e7c8f8930 100644
 +// if (!litex_check_accessors())
 +//	return -EPROBE_DEFER;
 +int litex_check_accessors(void);
- 
++
 +// Helper functions for manipulating LiteX registers
- static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
- {
- 	u32 shifted_data, shift, i;
-@@ -31,7 +47,7 @@ static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
- 	for (i = 0; i < reg_size; ++i) {
- 		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
- 		shifted_data = val >> shift;
--		LITEX_WRITE_REG(shifted_data, reg + (LITEX_REG_SIZE * i));
++static inline void litex_set_reg(void __iomem *reg, u32 reg_size, u32 val)
++{
++	u32 shifted_data, shift, i;
++
++	for (i = 0; i < reg_size; ++i) {
++		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
++		shifted_data = val >> shift;
 +		litex_write_reg(shifted_data, reg + (LITEX_REG_SIZE * i));
- 	}
- }
- 
-@@ -41,7 +57,7 @@ static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
- 	u32 result = 0;
- 
- 	for (i = 0; i < reg_size; ++i) {
--		shifted_data = LITEX_READ_REG(reg + (LITEX_REG_SIZE * i));
++	}
++}
++
++static inline u32 litex_get_reg(void __iomem *reg, u32 reg_size)
++{
++	u32 shifted_data, shift, i;
++	u32 result = 0;
++
++	for (i = 0; i < reg_size; ++i) {
 +		shifted_data = litex_read_reg(reg + (LITEX_REG_SIZE * i));
- 		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
- 		result |= (shifted_data << shift);
- 	}
++		shift = ((reg_size - i - 1) * LITEX_SUBREG_SIZE_BIT);
++		result |= (shifted_data << shift);
++	}
++
++	return result;
++}
++
++#endif /* _LINUX_LITEX_H */
