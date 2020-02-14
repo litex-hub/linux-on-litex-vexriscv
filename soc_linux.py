@@ -90,11 +90,11 @@ def SoCLinux(soc_cls, **kwargs):
             "csr":          0xf0000000,
         }}
 
-        def __init__(self, cpu_variant="linux", **kwargs):
+        def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
             soc_cls.__init__(self,
                 cpu_type       = "vexriscv",
                 cpu_variant    = cpu_variant,
-                uart_baudrate  = 1e6,
+                uart_baudrate  = uart_baudrate,
                 max_sdram_size = 0x10000000, # Limit mapped SDRAM to 256MB for now
                 **kwargs)
 

@@ -294,6 +294,8 @@ def main():
             soc_kwargs["toolchain"] = "trellis"
         if board_name in ["de0nano"]:
             soc_kwargs["l2_size"] = 2048 # Not enough blockrams for default l2_size of 8192
+        if board_name in ["kc705"]:
+            soc_kwargs["uart_baudrate"] = 500e3 # Set UART baudrate to 500KBauds since 1Mbauds not supported
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash()
