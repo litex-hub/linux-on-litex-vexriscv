@@ -84,11 +84,13 @@ class SoCLinux(SoCSDRAM):
     }}
 
     def __init__(self,
-        init_memories    = False,
-        with_sdram       = False,
-        sdram_module     = "MT48LC16M16",
-        sdram_data_width = 32,
-        with_ethernet    = False):
+        init_memories         = False,
+        with_sdram            = False,
+        sdram_module          = "MT48LC16M16",
+        sdram_data_width      = 32,
+        sdram_timing_checker  = False,
+        sdram_verbose_timings = False,
+        with_ethernet         = False):
         platform     = Platform()
         sys_clk_freq = int(1e6)
 
@@ -134,7 +136,12 @@ class SoCLinux(SoCSDRAM):
                 memtype    = sdram_module.memtype,
                 data_width = sdram_data_width,
                 clk_freq   = sdram_clk_freq)
-            self.submodules.sdrphy = SDRAMPHYModel(sdram_module, phy_settings, init=ram_init)
+            self.submodules.sdrphy = SDRAMPHYModel(
+                sdram_module,
+                phy_settings,
+                use_timing_checker=sdram_timing_checker,
+                verbose_timing_checker=sdram_verbose_timings,
+                init=ram_init)
             self.register_sdram(
                 self.sdrphy,
                 sdram_module.geom_settings,
@@ -182,14 +189,16 @@ class SoCLinux(SoCSDRAM):
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
-    parser.add_argument("--with-sdram",       action="store_true",   help="enable SDRAM support")
-    parser.add_argument("--sdram-module",     default="MT48LC16M16", help="Select SDRAM chip")
-    parser.add_argument("--sdram-data-width", default=32,            help="Set SDRAM chip data width")
-    parser.add_argument("--with-ethernet",    action="store_true",   help="enable Ethernet support")
-    parser.add_argument("--trace",            action="store_true",   help="enable VCD tracing")
-    parser.add_argument("--trace-start",      default=0,             help="cycle to start VCD tracing")
-    parser.add_argument("--trace-end",        default=-1,            help="cycle to end VCD tracing")
-    parser.add_argument("--opt-level",        default="O3",          help="compilation optimization level")
+    parser.add_argument("--with-sdram",           action="store_true",   help="enable SDRAM support")
+    parser.add_argument("--sdram-module",         default="MT48LC16M16", help="Select SDRAM chip")
+    parser.add_argument("--sdram-data-width",     default=32,            help="Set SDRAM chip data width")
+    parser.add_argument("--sdram-no-timing",      action="store_true",   help="Disable SDRAM timing verification checks")
+    parser.add_argument("--sdram-verbose-timing", action="store_true",   help="Enable SDRAM verbose timing logging")
+    parser.add_argument("--with-ethernet",        action="store_true",   help="enable Ethernet support")
+    parser.add_argument("--trace",                action="store_true",   help="enable VCD tracing")
+    parser.add_argument("--trace-start",          default=0,             help="cycle to start VCD tracing")
+    parser.add_argument("--trace-end",            default=-1,            help="cycle to end VCD tracing")
+    parser.add_argument("--opt-level",            default="O3",          help="compilation optimization level")
     args = parser.parse_args()
 
     sim_config = SimConfig(default_clk="sys_clk")
@@ -199,10 +208,12 @@ def main():
 
     for i in range(2):
         soc = SoCLinux(i!=0,
-            with_sdram       = args.with_sdram,
-            sdram_module     = args.sdram_module,
-            sdram_data_width = int(args.sdram_data_width),
-            with_ethernet    = args.with_ethernet)
+            with_sdram            = args.with_sdram,
+            sdram_module          = args.sdram_module,
+            sdram_data_width      = int(args.sdram_data_width),
+            sdram_timing_checker  = not args.sdram_no_timing,
+            sdram_verbose_timings = args.sdram_verbose_timing,
+            with_ethernet         = args.with_ethernet)
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
