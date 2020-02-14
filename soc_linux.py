@@ -102,15 +102,15 @@ def SoCLinux(soc_cls, **kwargs):
             self.submodules.emulator_ram = wishbone.SRAM(0x4000)
             self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
 
-        def add_spi_flash(self):
+        def add_spi_flash(self, dummy_cycles):
             # TODO: add spiflash1x support
             spiflash_pads = self.platform.request("spiflash4x")
             self.submodules.spiflash = SpiFlash(
                 spiflash_pads,
-                dummy=11,
-                div=2,
-                with_bitbang=True,
-                endianness=self.cpu.endianness)
+                dummy        = dummy_cycles,
+                div          = 2,
+                with_bitbang = True,
+                endianness   = self.cpu.endianness)
             self.spiflash.add_clk_primitive(self.platform.device)
             self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000)
             self.add_wb_slave(self.mem_map["spiflash"], self.spiflash.bus)

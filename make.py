@@ -25,8 +25,9 @@ class Board:
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
-    SPIFLASH_PAGE_SIZE = 256
-    SPIFLASH_SECTOR_SIZE = 64*kB
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit", "mmcm"})
@@ -56,8 +57,9 @@ class Arty(Board):
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
-    SPIFLASH_PAGE_SIZE = 256
-    SPIFLASH_SECTOR_SIZE = 64*kB
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import netv2
         Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
@@ -154,8 +156,9 @@ class Pipistrello(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
-    SPIFLASH_PAGE_SIZE = 256
-    SPIFLASH_SECTOR_SIZE = 64*kB
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.EthernetSoC, {"serial", "ethernet", "spiflash"})
@@ -176,9 +179,12 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
+    SPIFLASH_PAGE_SIZE    = 256   # CHECKME
+    SPIFLASH_SECTOR_SIZE  = 64*kB # CHECKME
+    SPIFLASH_DUMMY_CYCLES = 8
     def __init__(self):
         from litex_boards.targets import hadbadge
-        Board.__init__(self, hadbadge.BaseSoC, {"serial"})
+        Board.__init__(self, hadbadge.BaseSoC, {"serial", "spiflash"})
 
     def load(self):
         os.system("dfu-util --alt 2 --download build/hadbadge/gateware/top.bit --reset")
@@ -298,7 +304,7 @@ def main():
             soc_kwargs["uart_baudrate"] = 500e3 # Set UART baudrate to 500KBauds since 1Mbauds not supported
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         if "spiflash" in board.soc_capabilities:
-            soc.add_spi_flash()
+            soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
             soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "ethernet" in board.soc_capabilities:
