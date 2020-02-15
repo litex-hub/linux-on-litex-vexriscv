@@ -189,22 +189,24 @@ class SoCLinux(SoCSDRAM):
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
-    parser.add_argument("--with-sdram",           action="store_true",   help="enable SDRAM support")
-    parser.add_argument("--sdram-module",         default="MT48LC16M16", help="Select SDRAM chip")
-    parser.add_argument("--sdram-data-width",     default=32,            help="Set SDRAM chip data width")
-    parser.add_argument("--sdram-no-timing",      action="store_true",   help="Disable SDRAM timing verification checks")
-    parser.add_argument("--sdram-verbose-timing", action="store_true",   help="Enable SDRAM verbose timing logging")
-    parser.add_argument("--with-ethernet",        action="store_true",   help="enable Ethernet support")
-    parser.add_argument("--trace",                action="store_true",   help="enable VCD tracing")
-    parser.add_argument("--trace-start",          default=0,             help="cycle to start VCD tracing")
-    parser.add_argument("--trace-end",            default=-1,            help="cycle to end VCD tracing")
-    parser.add_argument("--opt-level",            default="O3",          help="compilation optimization level")
+    parser.add_argument("--with-sdram",           action="store_true",     help="enable SDRAM support")
+    parser.add_argument("--sdram-module",         default="MT48LC16M16",   help="Select SDRAM chip")
+    parser.add_argument("--sdram-data-width",     default=32,              help="Set SDRAM chip data width")
+    parser.add_argument("--sdram-no-timing",      action="store_true",     help="Disable SDRAM timing verification checks")
+    parser.add_argument("--sdram-verbose-timing", action="store_true",     help="Enable SDRAM verbose timing logging")
+    parser.add_argument("--with-ethernet",        action="store_true",     help="enable Ethernet support")
+    parser.add_argument("--local-ip",             default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50)")
+    parser.add_argument("--remote-ip",            default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100)")
+    parser.add_argument("--trace",                action="store_true",     help="enable VCD tracing")
+    parser.add_argument("--trace-start",          default=0,               help="cycle to start VCD tracing")
+    parser.add_argument("--trace-end",            default=-1,              help="cycle to end VCD tracing")
+    parser.add_argument("--opt-level",            default="O3",            help="compilation optimization level")
     args = parser.parse_args()
 
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
     if args.with_ethernet:
-        sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": "192.168.1.100"})
+        sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": args.remote_ip})
 
     for i in range(2):
         soc = SoCLinux(i!=0,
@@ -214,6 +216,11 @@ def main():
             sdram_timing_checker  = not args.sdram_no_timing,
             sdram_verbose_timings = args.sdram_verbose_timing,
             with_ethernet         = args.with_ethernet)
+        if args.with_ethernet:
+            for i in range(4):
+                soc.add_constant("LOCALIP{}".format(i+1), int(args.local_ip.split(".")[i]))
+            for i in range(4):
+                soc.add_constant("REMOTEIP{}".format(i+1), int(args.remote_ip.split(".")[i]))
         board_name = "sim"
         build_dir = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
