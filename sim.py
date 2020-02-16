@@ -88,8 +88,7 @@ class SoCLinux(SoCSDRAM):
         with_sdram            = False,
         sdram_module          = "MT48LC16M16",
         sdram_data_width      = 32,
-        sdram_timing_checker  = False,
-        sdram_verbose_timings = False,
+        sdram_verbosity       = 0,
         with_ethernet         = False):
         platform     = Platform()
         sys_clk_freq = int(1e6)
@@ -137,11 +136,11 @@ class SoCLinux(SoCSDRAM):
                 data_width = sdram_data_width,
                 clk_freq   = sdram_clk_freq)
             self.submodules.sdrphy = SDRAMPHYModel(
-                sdram_module,
-                phy_settings,
-                use_timing_checker=sdram_timing_checker,
-                verbose_timing_checker=sdram_verbose_timings,
-                init=ram_init)
+                module    = sdram_module,
+                settings  = phy_settings,
+                clk_freq  = sdram_clk_freq,
+                verbosity = sdram_verbosity,
+                init      = ram_init)
             self.register_sdram(
                 self.sdrphy,
                 sdram_module.geom_settings,
@@ -192,8 +191,7 @@ def main():
     parser.add_argument("--with-sdram",           action="store_true",     help="enable SDRAM support")
     parser.add_argument("--sdram-module",         default="MT48LC16M16",   help="Select SDRAM chip")
     parser.add_argument("--sdram-data-width",     default=32,              help="Set SDRAM chip data width")
-    parser.add_argument("--sdram-no-timing",      action="store_true",     help="Disable SDRAM timing verification checks")
-    parser.add_argument("--sdram-verbose-timing", action="store_true",     help="Enable SDRAM verbose timing logging")
+    parser.add_argument("--sdram-verbosity",      default=0,               help="Set SDRAM checker verbosity")
     parser.add_argument("--with-ethernet",        action="store_true",     help="enable Ethernet support")
     parser.add_argument("--local-ip",             default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50)")
     parser.add_argument("--remote-ip",            default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100)")
@@ -213,8 +211,7 @@ def main():
             with_sdram            = args.with_sdram,
             sdram_module          = args.sdram_module,
             sdram_data_width      = int(args.sdram_data_width),
-            sdram_timing_checker  = not args.sdram_no_timing,
-            sdram_verbose_timings = args.sdram_verbose_timing,
+            sdram_verbosity       = int(args.sdram_verbosity),
             with_ethernet         = args.with_ethernet)
         if args.with_ethernet:
             for i in range(4):
