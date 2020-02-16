@@ -179,8 +179,8 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
-    SPIFLASH_PAGE_SIZE    = 256   # CHECKME
-    SPIFLASH_SECTOR_SIZE  = 64*kB # CHECKME
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 8
     def __init__(self):
         from litex_boards.targets import hadbadge
