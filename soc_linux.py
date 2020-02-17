@@ -218,7 +218,7 @@ def SoCLinux(soc_cls, **kwargs):
 
         def configure_boot(self):
             if hasattr(self, "spiflash"):
-                self.add_constant("FLASH_BOOT_ADDRESS", 0x00400000)
+                self.add_constant("FLASH_BOOT_ADDRESS", self.mem_map["spiflash"])
 
         def generate_dts(self, board_name):
             json = os.path.join("build", board_name, "csr.json")

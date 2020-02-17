@@ -39,11 +39,10 @@ class Arty(Board):
 
     def flash(self):
         flash_regions = {
-            "build/arty/gateware/top.bin": "0x00000000", # FPGA image:  loaded at startup
-            "buildroot/Image":             "0x00400000", # Linux Image: copied to 0xc0000000 by bios
-            "buildroot/rootfs.cpio":       "0x00800000", # File System: copied to 0xc0800000 by bios
-            "buildroot/rv32.dtb":          "0x00f00000", # Device tree: copied to 0xc1000000 by bios
-            "emulator/emulator.bin":       "0x00f80000", # MM Emulator: copied to 0x20000000 by bios
+            "buildroot/Image.fbi":             "0x00000000", # Linux Image: copied to 0xc0000000 by bios
+            "buildroot/rootfs.cpio.fbi":       "0x00500000", # File System: copied to 0xc0800000 by bios
+            "buildroot/rv32.dtb.fbi":          "0x00d00000", # Device tree: copied to 0xc1000000 by bios
+            "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0x20000000 by bios
         }
         from litex.build.openocd import OpenOCD
         prog = OpenOCD("prog/openocd_xilinx.cfg",
@@ -285,6 +284,7 @@ def main():
     parser.add_argument("--spi-bpw", type=int, default=8, help="Bits per word for SPI controller")
     parser.add_argument("--spi-sck-freq", type=int, default=1e6, help="SPI clock frequency")
     parser.add_argument("--video", default="1920x1080_60Hz", help="video configuration")
+    parser.add_argument("--fbi", action="store_true", help="generate fbi images")
     args = parser.parse_args()
 
     if args.board == "all":
@@ -347,6 +347,12 @@ def main():
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
         soc.compile_emulator(board_name)
+
+        if args.fbi:
+            os.system("python3 -m litex.soc.software.mkmscimg buildroot/Image -o buildroot/Image.fbi --fbi --little")
+            os.system("python3 -m litex.soc.software.mkmscimg buildroot/rootfs.cpio -o buildroot/rootfs.cpio.fbi --fbi --little")
+            os.system("python3 -m litex.soc.software.mkmscimg buildroot/rv32.dtb -o buildroot/rv32.dtb.fbi --fbi --little")
+            os.system("python3 -m litex.soc.software.mkmscimg emulator/emulator.bin -o emulator/emulator.bin.fbi --fbi --little")
 
         if args.load:
             board.load()

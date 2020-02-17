@@ -1,0 +1,6 @@
+{
+	"buildroot/Image.fbi":        "0xd0000000",
+	"buildroot/rootfs.cpio.fbi":  "0xd0500000",
+	"buildroot/rv32.dtb.fbi":     "0xd0d00000",
+	"emulator/emulator.bin.fbi":  "0xd0e00000"
+}
