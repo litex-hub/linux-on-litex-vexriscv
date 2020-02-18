@@ -112,8 +112,11 @@ index 000000000..752235359
 +#include <linux/litex.h>
 +
 +#define SPIFLASH_BITBANG_OFFSET 0x0
++#define SPIFLASH_BITBANG_SIZE 0x1
 +#define SPIFLASH_MISO_OFFSET 0x4
++#define SPIFLASH_MISO_SIZE 0x1
 +#define SPIFLASH_BITBANG_EN_OFFSET 0x8
++#define SPIFLASH_BITBANG_EN_SIZE 0x1
 +
 +#define SPIFLASH_ENABLE 0x01
 +#define SPIFLASH_DISABLE 0x00
@@ -145,47 +148,47 @@ index 000000000..752235359
 +static void cs(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = (u8)litex_get_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE);
 +	u8 set_val = new_val == CS_ENABLE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE, set_val);
 +}
 +
 +static void clk(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = (u8)litex_get_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE);
 +	u8 set_val = new_val == CLK_ENABLE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE, set_val);
 +}
 +
 +static u8 miso_read(struct spi_nor *nor)
 +{
 +	struct spi *spi = nor->priv;
 +
-+	return (u8)(litex_read_reg(spi->base + SPIFLASH_MISO_OFFSET) & 0x1);
++	return (u8)(litex_get_reg(spi->base + SPIFLASH_MISO_OFFSET, SPIFLASH_MISO_SIZE) & 0x1);
 +}
 +
 +static void mosi_set(bool mosi, struct spi_nor *nor)
 +{
 +	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
++	u8 curr_val = (u8)litex_get_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE);
 +	u8 set_val = mosi ? curr_val | (0x01) : curr_val & (~0x01);
 +
-+	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE, set_val);
 +}
 +
 +static void enable(struct spi_nor *nor, u8 new_val)
 +{
 +	struct spi *spi = nor->priv;
-+	u32 curr_val = litex_read_reg(spi->base + SPIFLASH_BITBANG_OFFSET);
-+	u32 set_val = new_val == MISO_MODE ?
++	u8 curr_val = (u8)litex_get_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE);
++	u8 set_val = new_val == MISO_MODE ?
 +		curr_val | new_val : curr_val & new_val;
 +
-+	litex_write_reg(set_val, spi->base + SPIFLASH_BITBANG_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_OFFSET, SPIFLASH_BITBANG_SIZE, set_val);
 +}
 +
 +static void initial_config(struct spi_nor *nor)
@@ -195,8 +198,7 @@ index 000000000..752235359
 +	clk(nor, ~CLK_ENABLE);
 +	cs(nor, CS_ENABLE);
 +	enable(nor, ~MISO_MODE);
-+	litex_write_reg(SPIFLASH_ENABLE,
-+		spi->base + SPIFLASH_BITBANG_EN_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_EN_OFFSET, SPIFLASH_BITBANG_EN_SIZE, SPIFLASH_ENABLE);
 +}
 +
 +static void dummy_cycles(struct spi_nor *nor, int n_cycles)
@@ -452,8 +454,7 @@ index 000000000..752235359
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	spi->base = devm_ioremap_resource(&pdev->dev, res);
-+	litex_write_reg(SPIFLASH_DISABLE,
-+		spi->base + SPIFLASH_BITBANG_EN_OFFSET);
++	litex_set_reg(spi->base + SPIFLASH_BITBANG_EN_OFFSET, SPIFLASH_BITBANG_EN_SIZE, SPIFLASH_DISABLE);
 +	mtd_device_unregister(&spi->nor.mtd);
 +
 +	return 0;

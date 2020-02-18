@@ -50,7 +50,7 @@ new file mode 100644
 index 000000000..182a46a9f
 --- /dev/null
 +++ b/drivers/hwmon/litex-hwmon.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,223 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -75,10 +75,14 @@ index 000000000..182a46a9f
 +#include <linux/hwmon.h>
 +#include <linux/litex.h>
 +
-+#define OFFSET_REG_TEMP               0x0
-+#define OFFSET_REG_VCCINT             0x8
-+#define OFFSET_REG_VCCAUX             0x10
-+#define OFFSET_REG_VCCBRAM            0x18
++#define TEMP_REG_OFFSET               0x0
++#define TEMP_REG_SIZE                 2
++#define VCCINT_REG_OFFSET             0x8
++#define VCCINT_REG_SIZE               2
++#define VCCAUX_REG_OFFSET             0x10
++#define VCCAUX_REG_SIZE               2
++#define VCCBRAM_REG_OFFSET            0x18
++#define VCCBRAM_REG_SIZE              2
 +
 +#define CHANNEL_TEMP                  0
 +#define CHANNEL_VCCINT                0
@@ -89,18 +93,6 @@ index 000000000..182a46a9f
 +	void __iomem     *membase;
 +	struct device    *hdev;
 +};
-+
-+/* Helper functions */
-+
-+static long litex_hwmon_read_val(void __iomem *reg,
-+				 unsigned int offset)
-+{
-+	unsigned short int regv_l, regv_h;
-+
-+	regv_l = litex_read_reg(reg + offset);
-+	regv_h = litex_read_reg(reg + offset + LITEX_REG_SIZE);
-+	return ((regv_l << 8) | regv_h);
-+}
 +
 +/* Transfer functions taken from XILINX UG480 (v1.10.1)
 + * www.xilinx.com/support/documentation/user_guides/ug480_7Series_XADC.pdf
@@ -127,7 +119,7 @@ index 000000000..182a46a9f
 +	if (channel != CHANNEL_TEMP)
 +		return -EINVAL;
 +
-+	raw_data = litex_hwmon_read_val(hwmon_s->membase, OFFSET_REG_TEMP);
++	raw_data = litex_get_reg(hwmon_s->membase + TEMP_REG_OFFSET, TEMP_REG_SIZE);
 +	*val = litex_temp_transfer_fun(raw_data);
 +	return 0;
 +}
@@ -136,6 +128,7 @@ index 000000000..182a46a9f
 +				int channel, long *val)
 +{
 +	int offset;
++	int size;
 +	unsigned long raw_data;
 +
 +	if (attr != hwmon_in_input)
@@ -143,19 +136,22 @@ index 000000000..182a46a9f
 +
 +	switch (channel) {
 +	case CHANNEL_VCCINT:
-+		offset = OFFSET_REG_VCCINT;
++		offset = VCCINT_REG_OFFSET;
++		size = VCCINT_REG_SIZE;
 +		break;
 +	case CHANNEL_VCCAUX:
-+		offset = OFFSET_REG_VCCAUX;
++		offset = VCCAUX_REG_OFFSET;
++		size = VCCAUX_REG_SIZE;
 +		break;
 +	case CHANNEL_VCCBRAM:
-+		offset = OFFSET_REG_VCCBRAM;
++		offset = VCCBRAM_REG_OFFSET;
++		size = VCCBRAM_REG_SIZE;
 +		break;
 +	default:
 +		return -EINVAL;
 +	}
 +
-+	raw_data = litex_hwmon_read_val(hwmon_s->membase, offset);
++	raw_data = litex_get_reg(hwmon_s->membase + offset, size);
 +	*val = litex_supp_transfer_fun(raw_data);
 +	return 0;
 +}
