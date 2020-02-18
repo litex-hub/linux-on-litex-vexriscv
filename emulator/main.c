@@ -351,7 +351,7 @@ static uint32_t vexriscv_read_instruction(uint32_t pc){
 }
 
 
-void vexriscv_machine_mode_trap(void) {
+__attribute__((used)) void vexriscv_machine_mode_trap(void) {
 	int32_t cause = csr_read(mcause);
 
 	/* Interrupt */
