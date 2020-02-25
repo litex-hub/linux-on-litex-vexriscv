@@ -16,7 +16,7 @@ all: emulator.bin
 	chmod -x $@
 
 emulator.elf: $(OBJECTS)
-	$(LD) $(LDFLAGS) \
+	$(CC) $(LDFLAGS) \
 		-T linker.ld \
 		-N -o $@ \
 		 $(BUILD_DIR)/software/libbase/crt0-$(CPU)-ctr.o \
