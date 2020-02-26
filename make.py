@@ -275,16 +275,16 @@ def main():
     for name in supported_boards.keys():
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--board", required=True, help="FPGA board")
-    parser.add_argument("--build", action="store_true", help="build bitstream")
-    parser.add_argument("--load", action="store_true", help="load bitstream (to SRAM)")
-    parser.add_argument("--flash", action="store_true", help="flash bitstream/images (to SPI Flash)")
-    parser.add_argument("--local-ip", default="192.168.1.50", help="local IP address")
-    parser.add_argument("--remote-ip", default="192.168.1.100", help="remote IP address of TFTP server")
-    parser.add_argument("--spi-bpw", type=int, default=8, help="Bits per word for SPI controller")
-    parser.add_argument("--spi-sck-freq", type=int, default=1e6, help="SPI clock frequency")
-    parser.add_argument("--video", default="1920x1080_60Hz", help="video configuration")
-    parser.add_argument("--fbi", action="store_true", help="generate fbi images")
+    parser.add_argument("--board",        required=True,            help="FPGA board")
+    parser.add_argument("--build",        action="store_true",      help="Build bitstream")
+    parser.add_argument("--load",         action="store_true",      help="Load bitstream (to SRAM)")
+    parser.add_argument("--flash",        action="store_true",      help="Flash bitstream/images (to SPI Flash)")
+    parser.add_argument("--local-ip",     default="192.168.1.50",   help="Local IP address")
+    parser.add_argument("--remote-ip",    default="192.168.1.100",  help="Remote IP address of TFTP server")
+    parser.add_argument("--spi-bpw",      type=int, default=8,      help="Bits per word for SPI controller")
+    parser.add_argument("--spi-sck-freq", type=int, default=1e6,    help="SPI clock frequency")
+    parser.add_argument("--video",        default="1920x1080_60Hz", help="Video configuration")
+    parser.add_argument("--fbi",          action="store_true",      help="Generate fbi images")
     args = parser.parse_args()
 
     if args.board == "all":
