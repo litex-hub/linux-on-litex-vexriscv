@@ -53,6 +53,14 @@ class Arty(Board):
             print("Flashing {} at 0x{:08x}".format(filename, base))
             prog.flash(base, filename)
 
+class ArtyA7(Arty):
+    SPIFLASH_DUMMY_CYCLES = 7
+
+    def load(self):
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog.load_bitstream("build/arty_a7/gateware/top.bit")
+
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
@@ -249,6 +257,7 @@ class De0Nano(Board):
 supported_boards = {
     # Xilinx
     "arty":         Arty,
+    "arty_a7":      ArtyA7,
     "netv2":        NeTV2,
     "genesys2":     Genesys2,
     "kc705":        KC705,
