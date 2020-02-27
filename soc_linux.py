@@ -236,4 +236,10 @@ def SoCLinux(soc_cls, **kwargs):
             os.environ["BOARD"] = board_name
             subprocess.check_call("cd emulator && make", shell=True)
 
+        def generate_doc(self, board_name):
+            from litex.soc.doc import generate_docs
+            doc_dir = os.path.join("build", board_name, "doc")
+            generate_docs(self, doc_dir)
+            os.system("sphinx-build -M html {}/ {}/_build".format(doc_dir, doc_dir))
+
     return _SoCLinux(**kwargs)

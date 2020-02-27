@@ -279,6 +279,7 @@ def main():
     parser.add_argument("--build",        action="store_true",      help="Build bitstream")
     parser.add_argument("--load",         action="store_true",      help="Load bitstream (to SRAM)")
     parser.add_argument("--flash",        action="store_true",      help="Flash bitstream/images (to SPI Flash)")
+    parser.add_argument("--doc",          action="store_true",      help="Build documentation")
     parser.add_argument("--local-ip",     default="192.168.1.50",   help="Local IP address")
     parser.add_argument("--remote-ip",    default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-bpw",      type=int, default=8,      help="Bits per word for SPI controller")
@@ -359,6 +360,9 @@ def main():
 
         if args.flash:
             board.flash()
+
+        if args.doc:
+            soc.generate_doc(board_name)
 
 if __name__ == "__main__":
     main()
