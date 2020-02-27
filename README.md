@@ -32,6 +32,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | Genesys2     | Xilinx Kintex7      | XC7K325T      |    125MHz     | 32-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps RGMII*     |   Yes* |
 | KC705        | Xilinx Kintex7      | XC7K325T      |    125MHz     | 64-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps GMII*      |   Yes* |
 | KCU105       | Xilinx KintexU      | XCKU40        |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps 1000BASE-X |   Yes* |
+| ZCU104       | Xilinx ZynqU+       | XCZU7EV       |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps RGMII*     |   Yes* |
 | Nexys4DDR    | Xilinx Artix7       | XC7A100T      |    100MHz     | 16-bits 128MB DDR2 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
 | Nexys Video  | Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits 512MB DDR3 |  32MB QSPI*   |   1Gbps RMII*      |   Yes* |
 | miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes* |
