@@ -114,6 +114,19 @@ class KCU105(Board):
         prog.load_bitstream("build/kcu105/gateware/top.bit")
 
 
+# ZCU104 support -----------------------------------------------------------------------------------
+
+class ZCU104(Board):
+    def __init__(self):
+        from litex_boards.targets import zcu104
+        Board.__init__(self, zcu104.BaseSoC, {"serial"})
+
+    def load(self):
+        from litex.build.xilinx import VivadoProgrammer
+        prog = VivadoProgrammer()
+        prog.load_bitstream("build/zcu104/gateware/top.bit")
+
+
 # Nexys4DDR support --------------------------------------------------------------------------------
 
 class Nexys4DDR(Board):
@@ -262,6 +275,7 @@ supported_boards = {
     "genesys2":     Genesys2,
     "kc705":        KC705,
     "kcu105":       KCU105,
+    "zcu104":       ZCU104,
     "nexys4ddr":    Nexys4DDR,
     "nexys_video":  NexysVideo,
     "minispartan6": MiniSpartan6,
