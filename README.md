@@ -30,7 +30,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | Arty(A7)     | Xilinx Artix7       | XC7A35T       |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    | 100Mbps MII        |   No   |
 | NeTV2        | Xilinx Artix7       | XC7A35T       |    100MHz     | 32-bits 512MB DDR3 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
 | Genesys2     | Xilinx Kintex7      | XC7K325T      |    125MHz     | 32-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps RGMII*     |   Yes* |
-| KC705        | Xilinx Kintex7      | XC7K325T      |    125MHz     | 64-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps GMII*      |   Yes* |
+| KC705        | Xilinx Kintex7      | XC7K325T      |    125MHz     | 64-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps GMII       |   Yes* |
 | KCU105       | Xilinx KintexU      | XCKU40        |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps 1000BASE-X |   Yes* |
 | ZCU104       | Xilinx ZynqU+       | XCZU7EV       |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps RGMII*     |   Yes* |
 | Nexys4DDR    | Xilinx Artix7       | XC7A100T      |    100MHz     | 16-bits 128MB DDR2 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
@@ -38,11 +38,13 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes* |
 | Pipistrello  | Xilinx Spartan6     | XC6SLX45      |     83MHz     | 16-bits  64MB LPDDR|  16MB QSPI*   |         No         |   Yes* |
 | Versa ECP5   | Lattice ECP5        | LFE5UM5G 45F  |     75MHz     | 16-bits 128MB DDR3 |  16MB QSPI*   |   1Gbps RGMII      |   No   |
+| HADBadge     | Lattice ECP5        | LFE5U-45F     |     48MHz     |  8-bits  32MB SDR  |  16MB QSPI*   |         No         |   No   |
 | ULX3S        | Lattice ECP5        | LFE5U 45F     |     50MHz     | 16-bits  32MB SDR  |   4MB QSPI*   |         No         |   Yes* |
 | OrangeCrab   | Lattice ECP5        | LFE5U 25F     |     48MHz     | 16-bits 128MB SDR  |   4MB QSPI*   |         No         |   Yes* |
 | CamLink 4K   | Lattice ECP5        | LFE5U 25F     |     81MHz     | 16-bits 128MB SDR  |      No       |         No         |   No   |
 | De0Nano      | Intel Cyclone4      | EP4CE22F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
 | De10Lite     | Intel MAX10         | 10M50DA       |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
+| De10Nano     | Intel Cyclone5      | 5CSEBA6U23I7  |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
 | Avalanche    | Microsemi PolarFire | MPF300TS      |    100MHz     | 16-bits 256MB DDR3 |   8MB QSPI*   |   1Gbps RGMII*     |   No   |
 
 > **Note:** \*=present on the board but not yet supported.
