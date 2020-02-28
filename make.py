@@ -320,8 +320,6 @@ def main():
     for board_name in board_names:
         board = supported_boards[board_name]()
         soc_kwargs = {"integrated_rom_size": 0x8000}
-        if board_name in ["versa_ecp5", "ulx3s", "hadbadge", "orangecrab"]:
-            soc_kwargs["toolchain"] = "trellis"
         if board_name in ["de0nano"]:
             soc_kwargs["l2_size"] = 2048 # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
