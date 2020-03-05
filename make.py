@@ -361,10 +361,7 @@ def main():
             builder = Builder(soc, output_dir="build/" + board_name,
                 compile_software=True, compile_gateware=False,
                 csr_json=os.path.join(build_dir, "csr.json"))
-        if board_name == "camlink_4k": # FIXME
-            builder.build("/usr/local/diamond/3.10_x64/bin/lin64")
-        else:
-            builder.build()
+        builder.build()
 
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
