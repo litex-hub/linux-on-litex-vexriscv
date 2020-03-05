@@ -248,11 +248,15 @@ SPI Flash and directly loaded during boot.
 
 To flash the bitstream and linux images to you board, run:
 ```sh
-$ ./make.py --board=XXYY --flash
+$ ./make.py --board=XXYY --fbi --flash
 ```
 
-When done, the FPGA of the board should automatically reload itself from the SPI-Flash, start the BIOS, copy
-the Linux images to RAM and boot :)
+When done, reload the FPGA of the board with:
+```sh
+$ ./make.py --board=XXYY --load
+```
+
+The system should run the LiteX BIOS, copy the images from SPI Flash to RAM and boot Linux :)
 
 ## Generating the Linux binaries (optional)
 ```sh
