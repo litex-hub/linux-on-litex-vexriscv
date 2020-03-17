@@ -4,7 +4,7 @@ index 000000000..039894265
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/soc/litex/litex,soc_controller.yaml
 @@ -0,0 +1,46 @@
-+PDX-License-Identifier: GPL-2.0
++# SPDX-License-Identifier: GPL-2.0
 +%YAML 1.2
 +---
 +$id: http://devicetree.org/schemas/soc/litex/litex,soc_controller.yaml#
@@ -80,7 +80,7 @@ index 000000000..22c78cda0
 --- /dev/null
 +++ b/drivers/soc/litex/Kconfig
 @@ -0,0 +1,14 @@
-+# SPDX-License_Identifier: GPL-2.0
++# SPDX-License-Identifier: GPL-2.0
 +
 +menu "Enable LiteX SoC Builder specific drivers"
 +
