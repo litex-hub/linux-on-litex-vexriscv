@@ -191,7 +191,7 @@ class VersaECP5(Board):
 class ULX3S(Board):
     def __init__(self):
         from litex_boards.targets import ulx3s
-        Board.__init__(self, ulx3s.BaseSoC, {"serial"})
+        Board.__init__(self, ulx3s.BaseSoC, {"serial", "spisdcard"})
 
     def load(self):
         os.system("ujprog build/ulx3s/gateware/top.svf")
