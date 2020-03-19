@@ -116,6 +116,13 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_wb_slave(self.mem_map["spiflash"], self.spiflash.bus)
             self.add_csr("spiflash")
 
+        def add_spi_sdcard(self, spisdcard_clk_freq=400e3):
+            spisdcard_pads = self.platform.request("spisdcard")
+            if hasattr(spisdcard_pads, "rst"):
+                self.comb += spisdcard_pads.rst.eq(0)
+            self.submodules.spisdcard = SPIMaster(spisdcard_pads, 8, self.clk_freq, spisdcard_clk_freq)
+            self.add_csr("spisdcard")
+
         def add_leds(self):
             self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
             self.add_csr("leds")

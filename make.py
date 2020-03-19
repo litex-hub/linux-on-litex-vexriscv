@@ -132,7 +132,7 @@ class ZCU104(Board):
 class Nexys4DDR(Board):
     def __init__(self):
         from litex_boards.targets import nexys4ddr
-        Board.__init__(self, nexys4ddr.EthernetSoC, {"serial", "ethernet"})
+        Board.__init__(self, nexys4ddr.EthernetSoC, {"serial", "spisdcard", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -246,7 +246,7 @@ class De10Lite(Board):
 class De10Nano(Board):
     def __init__(self):
         from litex_boards.targets import de10nano
-        Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "leds", "switches"})
+        Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "spisdcard", "leds", "switches"})
 
     def load(self):
         from litex.build.altera import USBBlaster
@@ -329,6 +329,8 @@ def main():
             soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
             soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
+        if "spisdcard" in board.soc_capabilities:
+            soc.add_spi_sdcard()
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         if "leds" in board.soc_capabilities:
