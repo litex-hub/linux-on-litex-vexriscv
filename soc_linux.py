@@ -7,7 +7,6 @@ from migen import *
 
 from litex.soc.interconnect import wishbone
 
-from litex.soc.cores.spi_flash import SpiFlash
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
@@ -101,27 +100,6 @@ def SoCLinux(soc_cls, **kwargs):
             # machine mode emulator ram
             self.submodules.emulator_ram = wishbone.SRAM(0x4000)
             self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
-
-        def add_spi_flash(self, dummy_cycles):
-            # TODO: add spiflash1x support
-            spiflash_pads = self.platform.request("spiflash4x")
-            self.submodules.spiflash = SpiFlash(
-                spiflash_pads,
-                dummy        = dummy_cycles,
-                div          = 2,
-                with_bitbang = True,
-                endianness   = self.cpu.endianness)
-            self.spiflash.add_clk_primitive(self.platform.device)
-            self.add_memory_region("spiflash", self.mem_map["spiflash"], 0x1000000)
-            self.add_wb_slave(self.mem_map["spiflash"], self.spiflash.bus)
-            self.add_csr("spiflash")
-
-        def add_spi_sdcard(self, spisdcard_clk_freq=400e3):
-            spisdcard_pads = self.platform.request("spisdcard")
-            if hasattr(spisdcard_pads, "rst"):
-                self.comb += spisdcard_pads.rst.eq(0)
-            self.submodules.spisdcard = SPIMaster(spisdcard_pads, 8, self.clk_freq, spisdcard_clk_freq)
-            self.add_csr("spisdcard")
 
         def add_leds(self):
             self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
