@@ -30,7 +30,7 @@ class Arty(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.EthernetSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit", "mmcm"})
+        Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit", "mmcm"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -69,7 +69,7 @@ class NeTV2(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import netv2
-        Board.__init__(self, netv2.EthernetSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
+        Board.__init__(self, netv2.BaseSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -81,7 +81,7 @@ class NeTV2(Board):
 class Genesys2(Board):
     def __init__(self):
         from litex_boards.targets import genesys2
-        Board.__init__(self, genesys2.EthernetSoC, {"serial", "ethernet"})
+        Board.__init__(self, genesys2.BaseSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -93,7 +93,7 @@ class Genesys2(Board):
 class KC705(Board):
     def __init__(self):
         from litex_boards.targets import kc705
-        Board.__init__(self, kc705.EthernetSoC, {"serial", "ethernet", "leds", "xadc"})
+        Board.__init__(self, kc705.BaseSoC, {"serial", "ethernet", "leds", "xadc"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -106,7 +106,7 @@ class KC705(Board):
 class KCU105(Board):
     def __init__(self):
         from litex_boards.targets import kcu105
-        Board.__init__(self, kcu105.EthernetSoC, {"serial", "ethernet"})
+        Board.__init__(self, kcu105.BaseSoC, {"serial", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -132,7 +132,7 @@ class ZCU104(Board):
 class Nexys4DDR(Board):
     def __init__(self):
         from litex_boards.targets import nexys4ddr
-        Board.__init__(self, nexys4ddr.EthernetSoC, {"serial", "spisdcard", "ethernet"})
+        Board.__init__(self, nexys4ddr.BaseSoC, {"serial", "spisdcard", "ethernet"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -144,7 +144,7 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.EthernetSoC, {"serial", "framebuffer"})
+        Board.__init__(self, nexys_video.BaseSoC, {"serial", "framebuffer"})
 
     def load(self):
         from litex.build.xilinx import VivadoProgrammer
@@ -181,7 +181,7 @@ class VersaECP5(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import versa_ecp5
-        Board.__init__(self, versa_ecp5.EthernetSoC, {"serial", "ethernet", "spiflash"})
+        Board.__init__(self, versa_ecp5.BaseSoC, {"serial", "ethernet", "spiflash"})
 
     def load(self):
         os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
@@ -319,11 +319,14 @@ def main():
         board_names = [args.board]
     for board_name in board_names:
         board = supported_boards[board_name]()
-        soc_kwargs = {"integrated_rom_size": 0x8000}
+        soc_kwargs = {}
+        soc_kwargs.update(integrated_rom_size=0x8000)
         if board_name in ["de0nano"]:
-            soc_kwargs["l2_size"] = 2048 # Not enough blockrams for default l2_size of 8192
+            soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
-            soc_kwargs["uart_baudrate"] = 500e3 # Set UART baudrate to 500KBauds since 1Mbauds not supported
+            soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
+        if "ethernet" in board.soc_capabilities:
+            soc_kwargs.update(with_ethernet=True)
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
