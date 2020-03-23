@@ -77,7 +77,6 @@ class SoCLinux(SoCSDRAM):
         "timer0":     1,
     }}
     mem_map = {**SoCSDRAM.mem_map, **{
-        "emulator_ram": 0x20000000,
         "ethmac":       0xb0000000,
         "spiflash":     0xd0000000,
         "csr":          0xf0000000,
@@ -99,6 +98,7 @@ class SoCLinux(SoCSDRAM):
                 "buildroot/Image":       "0x00000000",
                 "buildroot/rootfs.cpio": "0x00800000",
                 "buildroot/rv32.dtb":    "0x01000000",
+                "emulator/emulator.bin": "0x01100000",
                 }, "little")
 
         # SoCSDRAM ----------------------------------------------------------------------------------
@@ -120,10 +120,8 @@ class SoCLinux(SoCSDRAM):
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # Machine mode emulator RAM ----------------------------------------------------------------
-        emulator_rom = get_mem_data("emulator/emulator.bin", "little") if init_memories else []
-        self.submodules.emulator_ram = wishbone.SRAM(0x4000, init=emulator_rom)
-        self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
-        self.add_constant("ROM_BOOT_ADDRESS",self.mem_map["emulator_ram"])
+        self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000, type="cached+linker")
+        self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["emulator"].origin)
 
         # SDRAM ------------------------------------------------------------------------------------
         if with_sdram:

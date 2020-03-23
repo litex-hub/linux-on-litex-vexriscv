@@ -12,7 +12,7 @@ SECTIONS
 		_ftext = .;
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 		_etext = .;
-	} > emulator_ram
+	} > emulator
 
 	.rodata :
 	{
@@ -21,7 +21,7 @@ SECTIONS
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 		*(.rodata1)
 		_erodata = .;
-	} > emulator_ram
+	} > emulator
 
 	.data :
 	{
@@ -32,7 +32,7 @@ SECTIONS
 		_gp = ALIGN(16);
 		*(.sdata .sdata.* .gnu.linkonce.s.*)
 		_edata = .;
-	} > emulator_ram
+	} > emulator
 
 	.bss :
 	{
@@ -47,7 +47,7 @@ SECTIONS
 		. = ALIGN(4);
 		_ebss = .;
 		_end = .;
-	} > emulator_ram
+	} > emulator
 
 	__stack_size = DEFINED(__stack_size) ? __stack_size : 2K;
 	.stack :
@@ -55,7 +55,7 @@ SECTIONS
 		PROVIDE( _heap_end = . );
 		. = __stack_size;
 		PROVIDE( _sp = . );
-	} > emulator_ram
+	} > emulator
 }
 
-PROVIDE(_fstack = ORIGIN(emulator_ram) + LENGTH(emulator_ram) - 4);
+PROVIDE(_fstack = ORIGIN(emulator) + LENGTH(emulator) - 4);

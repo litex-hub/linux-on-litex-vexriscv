@@ -42,7 +42,7 @@ class Arty(Board):
             "buildroot/Image.fbi":             "0x00000000", # Linux Image: copied to 0xc0000000 by bios
             "buildroot/rootfs.cpio.fbi":       "0x00500000", # File System: copied to 0xc0800000 by bios
             "buildroot/rv32.dtb.fbi":          "0x00d00000", # Device tree: copied to 0xc1000000 by bios
-            "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0x20000000 by bios
+            "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0xc1100000 by bios
         }
         from litex.build.openocd import OpenOCD
         prog = OpenOCD("prog/openocd_xilinx.cfg",

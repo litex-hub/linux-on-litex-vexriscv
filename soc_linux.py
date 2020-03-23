@@ -83,7 +83,6 @@ def SoCLinux(soc_cls, **kwargs):
             "timer0":     1,
         }}
         mem_map = {**soc_cls.mem_map, **{
-            "emulator_ram": 0x20000000,
             "ethmac":       0xb0000000,
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
@@ -98,8 +97,7 @@ def SoCLinux(soc_cls, **kwargs):
                 **kwargs)
 
             # machine mode emulator ram
-            self.submodules.emulator_ram = wishbone.SRAM(0x4000)
-            self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, 0x4000)
+            self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000, type="cached+linker")
 
         def add_leds(self):
             self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
