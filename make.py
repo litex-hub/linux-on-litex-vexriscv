@@ -30,7 +30,8 @@ class Arty(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit", "mmcm"})
+        Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led",
+         "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm"})
 
     def load(self):
         from litex.build.openocd import OpenOCD
@@ -184,7 +185,8 @@ class VersaECP5(Board):
         Board.__init__(self, versa_ecp5.BaseSoC, {"serial", "ethernet", "spiflash"})
 
     def load(self):
-        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/versa_ecp5/gateware/top.svf; exit\"")
+        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
+            " svf \build/versa_ecp5/gateware/top.svf; exit\"")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -217,7 +219,8 @@ class OrangeCrab(Board):
         Board.__init__(self, orangecrab.BaseSoC, {"serial"})
 
     def load(self):
-        os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init; svf build/gateware/top.svf; exit\"")
+        os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
+            " svf build/gateware/top.svf; exit\"")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
 
@@ -280,12 +283,14 @@ supported_boards = {
     "nexys_video":  NexysVideo,
     "minispartan6": MiniSpartan6,
     "pipistrello":  Pipistrello,
+
     # Lattice
     "versa_ecp5":   VersaECP5,
     "ulx3s":        ULX3S,
     "hadbadge":     HADBadge,
     "orangecrab":   OrangeCrab,
     "camlink_4k":   CamLink4K,
+
     # Altera/Intel
     "de0nano":      De0Nano,
     "de10lite":     De10Lite,
@@ -298,27 +303,32 @@ def main():
     for name in supported_boards.keys():
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--board",        required=True,            help="FPGA board")
-    parser.add_argument("--build",        action="store_true",      help="Build bitstream")
-    parser.add_argument("--load",         action="store_true",      help="Load bitstream (to SRAM)")
-    parser.add_argument("--flash",        action="store_true",      help="Flash bitstream/images (to SPI Flash)")
-    parser.add_argument("--doc",          action="store_true",      help="Build documentation")
-    parser.add_argument("--local-ip",     default="192.168.1.50",   help="Local IP address")
-    parser.add_argument("--remote-ip",    default="192.168.1.100",  help="Remote IP address of TFTP server")
-    parser.add_argument("--spi-bpw",      type=int, default=8,      help="Bits per word for SPI controller")
-    parser.add_argument("--spi-sck-freq", type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--video",        default="1920x1080_60Hz", help="Video configuration")
-    parser.add_argument("--fbi",          action="store_true",      help="Generate fbi images")
+    parser.add_argument("--board",          required=True,            help="FPGA board")
+    parser.add_argument("--build",          action="store_true",      help="Build bitstream")
+    parser.add_argument("--load",           action="store_true",      help="Load bitstream (to SRAM)")
+    parser.add_argument("--flash",          action="store_true",      help="Flash bitstream/images (to SPI Flash)")
+    parser.add_argument("--doc",            action="store_true",      help="Build documentation")
+    parser.add_argument("--local-ip",       default="192.168.1.50",   help="Local IP address")
+    parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
+    parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
+    parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
+    parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
+    parser.add_argument("--fbi",            action="store_true",      help="Generate fbi images")
     args = parser.parse_args()
 
+    # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
         board_names = list(supported_boards.keys())
     else:
         args.board = args.board.lower()
         args.board = args.board.replace(" ", "_")
         board_names = [args.board]
+
+    # Board(s) iteration ---------------------------------------------------------------------------
     for board_name in board_names:
         board = supported_boards[board_name]()
+
+        # SoC parameters (and override for boards that don't support default parameters) -----------
         soc_kwargs = {}
         soc_kwargs.update(integrated_rom_size=0x8000)
         if board_name in ["de0nano"]:
@@ -327,7 +337,11 @@ def main():
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
+
+        # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
+
+        # SoC peripherals --------------------------------------------------------------------------
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
             soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
@@ -343,7 +357,7 @@ def main():
         if "switches" in board.soc_capabilities:
             soc.add_switches()
         if "spi" in board.soc_capabilities:
-            soc.add_spi(args.spi_bpw, args.spi_sck_freq)
+            soc.add_spi(args.spi_data_width, args.spi_clk_freq)
         if "i2c" in board.soc_capabilities:
             soc.add_i2c()
         if "xadc" in board.soc_capabilities:
@@ -352,38 +366,40 @@ def main():
             assert args.video in video_resolutions.keys(), "Unsupported video resolution"
             video_settings = video_resolutions[args.video]
             soc.add_framebuffer(video_settings)
-        if "icap_bit" in board.soc_capabilities:
+        if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm()
         soc.configure_boot()
 
+        # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        if args.build:
-            builder = Builder(soc, output_dir=build_dir,
-                csr_json=os.path.join(build_dir, "csr.json"))
-        else:
-            builder = Builder(soc, output_dir="build/" + board_name,
-                compile_software=True, compile_gateware=False,
-                csr_json=os.path.join(build_dir, "csr.json"))
-        builder.build()
+        builder   = Builder(soc, output_dir=build_dir, csr_json=os.path.join(build_dir, "csr.json"))
+        builder.build(run=args.build)
 
+        # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
+
+        # Machine Mode Emulator --------------------------------------------------------------------
         soc.compile_emulator(board_name)
 
+        # Flash Linux images -----------------------------------------------------------------------
         if args.fbi:
             os.system("python3 -m litex.soc.software.mkmscimg buildroot/Image -o buildroot/Image.fbi --fbi --little")
             os.system("python3 -m litex.soc.software.mkmscimg buildroot/rootfs.cpio -o buildroot/rootfs.cpio.fbi --fbi --little")
             os.system("python3 -m litex.soc.software.mkmscimg buildroot/rv32.dtb -o buildroot/rv32.dtb.fbi --fbi --little")
             os.system("python3 -m litex.soc.software.mkmscimg emulator/emulator.bin -o emulator/emulator.bin.fbi --fbi --little")
 
+        # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
             board.load()
 
+        # Flash FPGA bitstream ---------------------------------------------------------------------
         if args.flash:
             board.flash()
 
+        # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
             soc.generate_doc(board_name)
 

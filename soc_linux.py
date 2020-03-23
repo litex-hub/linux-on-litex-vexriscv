@@ -89,91 +89,102 @@ def SoCLinux(soc_cls, **kwargs):
         }}
 
         def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
+
+            # SoC ----------------------------------------------------------------------------------
             soc_cls.__init__(self,
                 cpu_type       = "vexriscv",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
                 **kwargs)
 
-            # machine mode emulator ram
-            self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000, type="cached+linker")
+            # Add linker region for machine mode emulator
+            self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000,
+                type="cached+linker")
 
+        # Leds -------------------------------------------------------------------------------------
         def add_leds(self):
             self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
             self.add_csr("leds")
 
+        # RGB Led ----------------------------------------------------------------------------------
         def add_rgb_led(self):
             rgb_led_pads = self.platform.request("rgb_led", 0)
             for n in "rgb":
                 setattr(self.submodules, "rgb_led_{}0".format(n), PWM(getattr(rgb_led_pads, n)))
                 self.add_csr("rgb_led_{}0".format(n))
 
+        # Switches ---------------------------------------------------------------------------------
         def add_switches(self):
             self.submodules.switches = GPIOIn(Cat(platform_request_all(self.platform, "user_sw")))
             self.add_csr("switches")
 
-        def add_spi(self, data_width, spi_clk_freq):
+        # SPI --------------------------------------------------------------------------------------
+        def add_spi(self, data_width, clk_freq):
             spi_pads = self.platform.request("spi")
+            self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, clk_freq)
             self.add_csr("spi")
-            self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, spi_clk_freq)
 
+        # I2C --------------------------------------------------------------------------------------
         def add_i2c(self):
             self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
             self.add_csr("i2c0")
 
+        # XADC (Xilinx only) -----------------------------------------------------------------------
         def add_xadc(self):
             self.submodules.xadc = XADC()
             self.add_csr("xadc")
 
+        # Framebuffer (Xilinx only) ----------------------------------------------------------------
         def add_framebuffer(self, video_settings):
             platform = self.platform
             assert platform.device[:4] == "xc7a"
             dram_port = self.sdram.crossbar.get_port(
-                mode="read",
-                data_width=32,
-                clock_domain="pix",
-                reverse=True)
+                mode         = "read",
+                data_width   = 32,
+                clock_domain = "pix",
+                reverse      = True)
             framebuffer = VideoOut(
-                device=platform.device,
-                pads=platform.request("hdmi_out"),
-                dram_port=dram_port)
+                device    = platform.device,
+                pads      = platform.request("hdmi_out"),
+                dram_port = dram_port)
             self.submodules.framebuffer = framebuffer
             self.add_csr("framebuffer")
 
-            framebuffer.driver.clocking.cd_pix.clk.attr.add("keep")
-            framebuffer.driver.clocking.cd_pix5x.clk.attr.add("keep")
-            platform.add_period_constraint(framebuffer.driver.clocking.cd_pix.clk, 1e9/video_settings["pix_clk"])
-            platform.add_period_constraint(framebuffer.driver.clocking.cd_pix5x.clk, 1e9/(5*video_settings["pix_clk"]))
+            clocking = framebuffer.driver.clocking
+            platform.add_period_constraint(clocking.cd_pix.clk,   1e9/video_settings["pix_clk"])
+            platform.add_period_constraint(clocking.cd_pix5x.clk, 1e9/(5*video_settings["pix_clk"]))
             platform.add_false_path_constraints(
                 self.crg.cd_sys.clk,
                 framebuffer.driver.clocking.cd_pix.clk,
                 framebuffer.driver.clocking.cd_pix5x.clk)
 
-            self.add_constant("litevideo_pix_clk", video_settings["pix_clk"])
-            self.add_constant("litevideo_h_active", video_settings["h-active"])
-            self.add_constant("litevideo_h_blanking", video_settings["h-blanking"])
-            self.add_constant("litevideo_h_sync", video_settings["h-sync"])
+            self.add_constant("litevideo_pix_clk",       video_settings["pix_clk"])
+            self.add_constant("litevideo_h_active",      video_settings["h-active"])
+            self.add_constant("litevideo_h_blanking",    video_settings["h-blanking"])
+            self.add_constant("litevideo_h_sync",        video_settings["h-sync"])
             self.add_constant("litevideo_h_front_porch", video_settings["h-front-porch"])
-            self.add_constant("litevideo_v_active", video_settings["v-active"])
-            self.add_constant("litevideo_v_blanking", video_settings["v-blanking"])
-            self.add_constant("litevideo_v_sync", video_settings["v-sync"])
+            self.add_constant("litevideo_v_active",      video_settings["v-active"])
+            self.add_constant("litevideo_v_blanking",    video_settings["v-blanking"])
+            self.add_constant("litevideo_v_sync",        video_settings["v-sync"])
             self.add_constant("litevideo_v_front_porch", video_settings["v-front-porch"])
 
+        # ICAP Bitstream (Xilinx only) -------------------------------------------------------------
         def add_icap_bitstream(self):
             self.submodules.icap_bit = ICAPBitstream();
             self.add_csr("icap_bit")
 
+        # MMCM (Xilinx only) -----------------------------------------------------------------------
         def add_mmcm(self):
             self.cd_mmcm_clkout = []
             self.submodules.mmcm = S7MMCM(speedgrade=-1)
             self.mmcm.register_clkin(self.crg.cd_sys.clk, self.clk_freq)
 
-            self.add_constant("clkout_def_freq", int(self.clk_freq))
-            self.add_constant("clkout_def_phase", int(0))
+            self.add_constant("clkout_def_freq",     int(self.clk_freq))
+            self.add_constant("clkout_def_phase",    int(0))
             self.add_constant("clkout_def_duty_num", int(50))
             self.add_constant("clkout_def_duty_den", int(100))
-            self.add_constant("mmcm_lock_timeout", int(10))
-            self.add_constant("mmcm_drdy_timeout", int(10))
+            self.add_constant("mmcm_lock_timeout",   int(10))
+            self.add_constant("mmcm_drdy_timeout",   int(10))
 
             for n in range(7):
                 self.cd_mmcm_clkout += [ClockDomain(name="cd_mmcm_clkout{}".format(n))]
@@ -184,8 +195,9 @@ def SoCLinux(soc_cls, **kwargs):
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
+        # Ethernet configuration -------------------------------------------------------------------
         def configure_ethernet(self, local_ip, remote_ip):
-            local_ip = local_ip.split(".")
+            local_ip  = local_ip.split(".")
             remote_ip = remote_ip.split(".")
 
             self.add_constant("LOCALIP1", int(local_ip[0]))
@@ -198,26 +210,31 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP3", int(remote_ip[2]))
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
+        # Boot configuration -----------------------------------------------------------------------
         def configure_boot(self):
             if hasattr(self, "spiflash"):
                 self.add_constant("FLASH_BOOT_ADDRESS", self.mem_map["spiflash"])
 
+        # DTS generation ---------------------------------------------------------------------------
         def generate_dts(self, board_name):
             json = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             subprocess.check_call(
                 "./json2dts.py {} > {}".format(json, dts), shell=True)
 
+        # DTS compilation --------------------------------------------------------------------------
         def compile_dts(self, board_name):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             dtb = os.path.join("buildroot", "rv32.dtb")
             subprocess.check_call(
                 "dtc -O dtb -o {} {}".format(dtb, dts), shell=True)
 
+        # Emulator compilation ---------------------------------------------------------------------
         def compile_emulator(self, board_name):
             os.environ["BOARD"] = board_name
             subprocess.check_call("cd emulator && make", shell=True)
 
+        # Documentation generation -----------------------------------------------------------------
         def generate_doc(self, board_name):
             from litex.soc.doc import generate_docs
             doc_dir = os.path.join("build", board_name, "doc")
