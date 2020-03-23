@@ -93,7 +93,6 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_type       = "vexriscv",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
-                max_sdram_size = 0x10000000, # Limit mapped SDRAM to 256MB for now
                 **kwargs)
 
             # machine mode emulator ram
