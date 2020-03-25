@@ -35,7 +35,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | ZCU104       | Xilinx ZynqU+       | XCZU7EV       |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps RGMII*     |   Yes* |
 | Nexys4DDR    | Xilinx Artix7       | XC7A100T      |    100MHz     | 16-bits 128MB DDR2 |  16MB QSPI*   | 100Mbps RMII       |   Yes  |
 | Nexys Video  | Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits 512MB DDR3 |  32MB QSPI*   |   1Gbps RMII*      |   Yes* |
-| miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes* |
+| miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes  |
 | Pipistrello  | Xilinx Spartan6     | XC6SLX45      |     83MHz     | 16-bits  64MB LPDDR|  16MB QSPI*   |         No         |   Yes* |
 | Versa ECP5   | Lattice ECP5        | LFE5UM5G 45F  |     75MHz     | 16-bits 128MB DDR3 |  16MB QSPI*   |   1Gbps RGMII      |   No   |
 | HADBadge     | Lattice ECP5        | LFE5U-45F     |     48MHz     |  8-bits  32MB SDR  |  16MB QSPI*   |         No         |   No   |

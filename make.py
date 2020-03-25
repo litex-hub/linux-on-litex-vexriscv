@@ -157,7 +157,7 @@ class NexysVideo(Board):
 class MiniSpartan6(Board):
     def __init__(self):
         from litex_boards.targets import minispartan6
-        Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo"})
+        Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo", "spisdcard"})
 
     def load(self):
         os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
