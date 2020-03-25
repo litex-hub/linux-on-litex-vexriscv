@@ -157,7 +157,7 @@ class NexysVideo(Board):
 class MiniSpartan6(Board):
     def __init__(self):
         from litex_boards.targets import minispartan6
-        Board.__init__(self, minispartan6.BaseSoC, {"serial"})
+        Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo"})
 
     def load(self):
         os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
@@ -335,6 +335,8 @@ def main():
             soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
+        if "usb_fifo" in board.soc_capabilities:
+            soc_kwargs.update(uart_name="usb_fifo")
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
 
