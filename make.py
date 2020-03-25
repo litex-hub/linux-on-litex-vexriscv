@@ -216,7 +216,7 @@ class HADBadge(Board):
 class OrangeCrab(Board):
     def __init__(self):
         from litex_boards.targets import orangecrab
-        Board.__init__(self, orangecrab.BaseSoC, {"serial"})
+        Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
 
     def load(self):
         os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
