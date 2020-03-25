@@ -13,7 +13,6 @@ from litex.soc.integration.soc_core import *
 from litex.soc.integration.soc_sdram import *
 from litex.soc.integration.builder import *
 from litex.soc.interconnect import wishbone
-from litex.soc.cores import uart
 
 from litedram import modules as litedram_modules
 from litedram.phy.model import SDRAMPHYModel
@@ -104,7 +103,7 @@ class SoCLinux(SoCSDRAM):
         # SoCSDRAM ----------------------------------------------------------------------------------
         SoCSDRAM.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type                 = "vexriscv", cpu_variant="linux",
-            with_uart                = False,
+            uart_name                = "sim",
             l2_reverse               = False,
             max_sdram_size           = 0x10000000, # Limit mapped SDRAM to 1GB.
             integrated_rom_size      = 0x8000,
@@ -147,12 +146,6 @@ class SoCLinux(SoCSDRAM):
             self.add_constant("MEMTEST_BUS_SIZE",  0)
             self.add_constant("MEMTEST_ADDR_SIZE", 0)
             self.add_constant("MEMTEST_DATA_SIZE", 0)
-
-        # Serial -----------------------------------------------------------------------------------
-        self.submodules.uart_phy = uart.RS232PHYModel(platform.request("serial"))
-        self.submodules.uart = uart.UART(self.uart_phy)
-        self.add_csr("uart", use_loc_if_exists=True)
-        self.add_interrupt("uart", use_loc_if_exists=True)
 
         # Ethernet ---------------------------------------------------------------------------------
         if with_ethernet:
