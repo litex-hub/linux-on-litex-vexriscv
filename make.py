@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import argparse
 import os
 
@@ -214,18 +215,14 @@ class HADBadge(Board):
 # OrangeCrab support -------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
-    def __init__(self):
+    def __init__(self, uart_name="usb_cdc"):
         from litex_boards.targets import orangecrab
-        #Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
-
-        # USB CDC requires Valenty USB:
-        # git clone https://github.com/gregdavill/valentyusb
-        # cd valentyusb
-        # git checkout hw_cdc_eptri
-        # cd ..
-        # cp -r valentyusb/valentyusb valentyusb
-        Board.__init__(self, orangecrab.BaseSoC, {"usb_cdc", "spisdcard"})
-
+        if uart_name == "usb_cdc": # FIXME: do proper install of ValentyUSB.
+            os.system("git clone https://github.com/gregdavill/valentyusb -b hw_cdc_eptri")
+            sys.path.append("valentyusb")
+            Board.__init__(self, orangecrab.BaseSoC, {"usb_cdc", "spisdcard"})
+        else:
+            Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
 
     def load(self):
         os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
