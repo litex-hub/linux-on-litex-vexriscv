@@ -175,21 +175,44 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_csr("icap_bit")
 
         # MMCM (Xilinx only) -----------------------------------------------------------------------
-        def add_mmcm(self):
+        def add_mmcm(self, nclkout):
+            if (nclkout > 7):
+                raise ValueError("nclkout cannot be above 7!")
+
             self.cd_mmcm_clkout = []
             self.submodules.mmcm = S7MMCM(speedgrade=-1)
             self.mmcm.register_clkin(self.crg.cd_sys.clk, self.clk_freq)
 
-            self.add_constant("clkout_def_freq",     int(self.clk_freq))
-            self.add_constant("clkout_def_phase",    int(0))
-            self.add_constant("clkout_def_duty_num", int(50))
-            self.add_constant("clkout_def_duty_den", int(100))
-            self.add_constant("mmcm_lock_timeout",   int(10))
-            self.add_constant("mmcm_drdy_timeout",   int(10))
-
-            for n in range(7):
+            for n in range(nclkout):
                 self.cd_mmcm_clkout += [ClockDomain(name="cd_mmcm_clkout{}".format(n))]
                 self.mmcm.create_clkout(self.cd_mmcm_clkout[n], self.clk_freq)
+
+            self.add_constant("clkout_def_freq", int(self.clk_freq))
+            self.add_constant("clkout_def_phase", int(0))
+            self.add_constant("clkout_def_duty_num", int(50))
+            self.add_constant("clkout_def_duty_den", int(100))
+            # We need to write exponent of clkout_margin to allow the driver for smaller inaccuracy
+            import numpy as np
+            exp = np.log10(self.mmcm.clkouts[0][3])
+            if exp < 0:
+                self.add_constant("clkout_margin_exp", int(abs(exp)))
+                self.add_constant("clkout_margin", int(self.mmcm.clkouts[0][3] * 10 ** abs(exp)))
+            else:
+                self.add_constant("clkout_margin", int(self.mmcm.clkouts[0][3]))
+                self.add_constant("clkout_margin_exp", int(0))
+
+            self.add_constant("nclkout", int(nclkout))
+            self.add_constant("mmcm_lock_timeout", int(10))
+            self.add_constant("mmcm_drdy_timeout", int(10))
+            self.add_constant("vco_margin", int(self.mmcm.vco_margin))
+            self.add_constant("vco_freq_range_min", int(self.mmcm.vco_freq_range[0]))
+            self.add_constant("vco_freq_range_max", int(self.mmcm.vco_freq_range[1]))
+            self.add_constant("clkfbout_mult_frange_min", int(self.mmcm.clkfbout_mult_frange[0]))
+            self.add_constant("clkfbout_mult_frange_max", int(self.mmcm.clkfbout_mult_frange[1]))
+            self.add_constant("divclk_divide_range_min", int(self.mmcm.divclk_divide_range[0]))
+            self.add_constant("divclk_divide_range_max", int(self.mmcm.divclk_divide_range[1]))
+            self.add_constant("clkout_divide_range_min", int(self.mmcm.clkout_divide_range[0]))
+            self.add_constant("clkout_divide_range_max", int(self.mmcm.clkout_divide_range[1]))
 
             self.mmcm.expose_drp()
             self.add_csr("mmcm")
