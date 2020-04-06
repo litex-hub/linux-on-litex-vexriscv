@@ -245,10 +245,10 @@ index 8a9440a97500..fad1ed4c6960 100644
  obj-$(CONFIG_ARCH_MOXART)		+= clk-moxart.o
 diff --git a/drivers/clk/clk-litex.c b/drivers/clk/clk-litex.c
 new file mode 100644
-index 000000000000..4a089d3eb9b7
+index 000000000000..5a5ea5c284f9
 --- /dev/null
 +++ b/drivers/clk/clk-litex.c
-@@ -0,0 +1,2007 @@
+@@ -0,0 +1,2006 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (c) 2020 Antmicro Ltd. <www.antmicro.com>
@@ -480,19 +480,18 @@ index 000000000000..4a089d3eb9b7
 +	return container_of(clk_hw, struct litex_clk_clkout, clk_hw);
 +}
 +
-+/* Clock control driver functions */
 +static inline void litex_clk_set_reg(struct clk_hw *clk_hw, u32 reg, u32 val)
 +{
-+	struct litex_clk_clkout *l_clk = clk_hw_to_litex_clk_clkout(clk_hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(clk_hw);
 +
-+	litex_set_reg(l_clk->base + drp[reg].offset, drp[reg].size, val);
++	litex_set_reg(lcko->base + drp[reg].offset, drp[reg].size, val);
 +}
 +
 +static inline u32 litex_clk_get_reg(struct clk_hw *clk_hw, u32 reg)
 +{
-+	struct litex_clk_clkout *l_clk = clk_hw_to_litex_clk_clkout(clk_hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(clk_hw);
 +
-+	return litex_get_reg(l_clk->base + drp[reg].offset, drp[reg].size);
++	return litex_get_reg(lcko->base + drp[reg].offset, drp[reg].size);
 +}
 +
 +static inline void litex_clk_assert_reg(struct clk_hw *clk_hw, u32 reg)
@@ -509,10 +508,10 @@ index 000000000000..4a089d3eb9b7
 +
 +static int litex_clk_wait_lock(struct clk_hw *clk_hw)
 +{
-+	struct litex_clk_clkout *l_clk;
++	struct litex_clk_clkout *lcko;
 +	u32 timeout;
 +
-+	l_clk = clk_hw_to_litex_clk_clkout(clk_hw);
++	lcko = clk_hw_to_litex_clk_clkout(clk_hw);
 +	timeout = ldev->timeout.lock;
 +
 +	/*Waiting for LOCK signal to assert in MMCM*/
@@ -521,7 +520,7 @@ index 000000000000..4a089d3eb9b7
 +		usleep_range(900, 1000);
 +	}
 +	if (timeout == 0) {
-+		pr_warn("CLKOUT%d: %s timeout", l_clk->id, __func__);
++		pr_warn("CLKOUT%d: %s timeout", lcko->id, __func__);
 +		return -ETIME;
 +	}
 +	return 0;
@@ -529,10 +528,10 @@ index 000000000000..4a089d3eb9b7
 +
 +static int litex_clk_wait_drdy(struct clk_hw *clk_hw)
 +{
-+	struct litex_clk_clkout *l_clk;
++	struct litex_clk_clkout *lcko;
 +	u32 timeout;
 +
-+	l_clk = clk_hw_to_litex_clk_clkout(clk_hw);
++	lcko = clk_hw_to_litex_clk_clkout(clk_hw);
 +	timeout = ldev->timeout.drdy;
 +
 +	/*Waiting for DRDY signal to assert in MMCM*/
@@ -541,7 +540,7 @@ index 000000000000..4a089d3eb9b7
 +		usleep_range(900, 1000);
 +	}
 +	if (timeout == 0) {
-+		pr_warn("CLKOUT%d: %s timeout", l_clk->id, __func__);
++		pr_warn("CLKOUT%d: %s timeout", lcko->id, __func__);
 +		return -ETIME;
 +	}
 +	return 0;
@@ -633,11 +632,11 @@ index 000000000000..4a089d3eb9b7
 +static int litex_clk_get_clkout_divider(struct clk_hw *hw, u32 *divider,
 +							   u32 *fract_cnt)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 +	int ret;
 +	u16 div, frac;
-+	u8 clkout_nr = l_clkout->id;
++	u8 clkout_nr = lcko->id;
 +	u8 low_time, high_time;
 +
 +	ret = litex_clk_get_DO(hw, drp_addr.clkout[clkout_nr].reg1, &div);
@@ -1080,14 +1079,14 @@ index 000000000000..4a089d3eb9b7
 +/* Returns accurate duty ratio of given clkout*/
 +int litex_clk_get_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 +	int ret;
 +	u32 divider;
 +	u16 clkout_reg1, clkout_reg2;
 +	u8 clkout_nr, high_time, edge, no_cnt, frac_en, frac_cnt;
 +
-+	clkout_nr = l_clkout->id;
++	clkout_nr = lcko->id;
 +	/* Check if divider is off */
 +	ret = litex_clk_get_DO(hw, drp_addr.clkout[clkout_nr].reg2,
 +						      &clkout_reg2);
@@ -1146,7 +1145,7 @@ index 000000000000..4a089d3eb9b7
 +{
 +	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	int even_part_high, even_part_low, odd, odd_and_frac;
-+	u8 high_duty, divider, fract_cnt;
++	u8 high_duty, divider, frac;
 +
 +	if (calc_new) {
 +		high_duty = 50;
@@ -1158,13 +1157,13 @@ index 000000000000..4a089d3eb9b7
 +	}
 +
 +	divider = lcko->config.div;
-+	fract_cnt = lcko->frac.frac;
++	frac = lcko->frac.frac;
 +
 +			/* divider / 2 */
 +	even_part_high = divider >> 1;
 +	even_part_low = even_part_high;
 +	odd = divider - even_part_high - even_part_low;
-+	odd_and_frac = (8 * odd) + fract_cnt;
++	odd_and_frac = (8 * odd) + frac;
 +
 +	lcko->div.low_time = even_part_high;
 +	if (odd_and_frac <= ODD_AND_FRAC)
@@ -1178,7 +1177,7 @@ index 000000000000..4a089d3eb9b7
 +
 +	lcko->frac.frac_wf_f = 0;
 +	if (((odd_and_frac >= 2) && (odd_and_frac <= ODD_AND_FRAC)) ||
-+				   ((fract_cnt == 1) && (divider == 2)))
++				   ((frac == 1) && (divider == 2)))
 +		lcko->frac.frac_wf_f++;
 +
 +	lcko->frac.frac_wf_r = 0;
@@ -1257,18 +1256,18 @@ index 000000000000..4a089d3eb9b7
 +/* Set duty cycle with given ratio */
 +int litex_clk_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	u16 bitset1, bitset2;
-+	u8 clkout_nr = l_clkout->id,
-+	   *edge = &l_clkout->div.edge,
-+	   *high_time = &l_clkout->div.high_time,
++	u8 clkout_nr = lcko->id,
++	   *edge = &lcko->div.edge,
++	   *high_time = &lcko->div.high_time,
 +	    high_duty = litex_clk_calc_duty_percent(duty),
-+	   *low_time = &l_clkout->div.low_time;
++	   *low_time = &lcko->div.low_time;
 +
-+	if (l_clkout->frac.frac == 0) {
++	if (lcko->frac.frac == 0) {
 +		int ret;
 +
-+		l_clkout->ts_config.duty = *duty;
++		lcko->ts_config.duty = *duty;
 +		pr_debug("set_duty: %u/%u", duty->num, duty->den);
 +		ret = litex_clk_calc_duty_normal(hw, true);
 +		if (ret != 0) {
@@ -1313,14 +1312,14 @@ index 000000000000..4a089d3eb9b7
 +	int phase, dt_calc, dt, a_per_in_octets, a_phase_in_cycles,
 +	    pm_rise_frac, pm_rise_frac_filtered, pm_fall,
 +	    pm_fall_frac, pm_fall_frac_filtered;
-+	u32 phase_offset, divider, fract_cnt;
++	u32 phase_offset, divider, frac;
 +
 +	phase_offset = lcko->ts_config.phase;
 +	divider = lcko->config.div;
-+	fract_cnt = lcko->frac.frac;
++	frac = lcko->frac.frac;
 +
 +	phase = phase_offset * 1000;
-+	a_per_in_octets = (8 * divider) + fract_cnt;
++	a_per_in_octets = (8 * divider) + frac;
 +	a_phase_in_cycles = (phase + 10) * a_per_in_octets / 360000;
 +
 +	if ((a_phase_in_cycles & FULL_BYTE) != 0)
@@ -1335,7 +1334,7 @@ index 000000000000..4a089d3eb9b7
 +	if (pm_rise_frac >= 8)
 +		pm_rise_frac_filtered -= 8;
 +
-+	pm_fall = ((divider % 2) << 2) + ((fract_cnt >> 1) & TWO_LSBITS);
++	pm_fall = ((divider % 2) << 2) + ((frac >> 1) & TWO_LSBITS);
 +	pm_fall_frac = pm_fall + pm_rise_frac;
 +	pm_fall_frac_filtered = pm_fall + pm_rise_frac -
 +					 (pm_fall_frac & F_FRAC_MASK);
@@ -1356,7 +1355,7 @@ index 000000000000..4a089d3eb9b7
 +	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	u64 period_buff;
 +	u32 post_glob_div_f, global_period,  clkout_period,
-+	    *period_offset = &lcko->ts_config.period_off;
++	    *period_off = &lcko->ts_config.period_off;
 +	u8 divider = lcko->config.div;
 +	/* ps unit */
 +
@@ -1370,9 +1369,9 @@ index 000000000000..4a089d3eb9b7
 +		int synthetic_phase, delta_p, min_p;
 +		u8 d_t, p_m;
 +
-+		*period_offset = litex_round(clkout_period * (*period_offset), 10000);
++		*period_off = litex_round(clkout_period * (*period_off), 10000);
 +
-+		if (*period_offset / global_period > DELAY_TIME_MAX)
++		if (*period_off / global_period > DELAY_TIME_MAX)
 +			return -EINVAL;
 +
 +		min_p = INT_MAX;
@@ -1383,7 +1382,7 @@ index 000000000000..4a089d3eb9b7
 +				synthetic_phase = (d_t * global_period) +
 +				((p_m * ((global_period * 100) / 8) / 100));
 +
-+				delta_p = abs(synthetic_phase - *period_offset);
++				delta_p = abs(synthetic_phase - *period_off);
 +				if (delta_p < min_p) {
 +					min_p = delta_p;
 +					lcko->phase.phase_mux = p_m;
@@ -1438,11 +1437,11 @@ index 000000000000..4a089d3eb9b7
 +static int litex_clk_get_phase_data(struct clk_hw *hw, u8 *phase_mux,
 +				       u8 *delay_time, u8 *phase_mux_f)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 +	int ret;
 +	u16 r1, r2;
-+	u8 clkout_nr = l_clkout->id;
++	u8 clkout_nr = lcko->id;
 +
 +	ret = litex_clk_get_DO(hw, drp_addr.clkout[clkout_nr].reg1, &r1);
 +	if (ret != 0)
@@ -1498,23 +1497,23 @@ index 000000000000..4a089d3eb9b7
 +/* Sets phase given in degrees on given clock output */
 +int litex_clk_set_phase(struct clk_hw *hw, int degrees)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	int ret;
 +	u16 bitset1, bitset2, reg2_mask;
-+	u8 *phase_mux = &l_clkout->phase.phase_mux,
-+	   *delay_time = &l_clkout->phase.delay_time,
-+	   *fract_cnt = &l_clkout->frac.frac,
-+	   *frac_en = &l_clkout->frac.frac_en,
-+	   *frac_wf_f = &l_clkout->frac.frac_wf_f,
-+	   *frac_wf_r = &l_clkout->frac.frac_wf_r,
-+	   *phase_mux_f = &l_clkout->frac.phase_mux_f,
-+	   clkout_nr = l_clkout->id;
++	u8 *phase_mux = &lcko->phase.phase_mux,
++	   *delay_time = &lcko->phase.delay_time,
++	   *frac = &lcko->frac.frac,
++	   *frac_en = &lcko->frac.frac_en,
++	   *frac_wf_f = &lcko->frac.frac_wf_f,
++	   *frac_wf_r = &lcko->frac.frac_wf_r,
++	   *phase_mux_f = &lcko->frac.phase_mux_f,
++	   clkout_nr = lcko->id;
 +
-+	l_clkout->ts_config.phase = degrees;
++	lcko->ts_config.phase = degrees;
 +	reg2_mask = REG2_PHASE_MASK;
 +	pr_debug("set_phase: %u deg", degrees);
 +
-+	if (*fract_cnt > 0 && degrees != 0) {
++	if (*frac > 0 && degrees != 0) {
 +		pr_err("CLKOUT%d: cannot set phase on that frequency",
 +								clkout_nr);
 +		return -ENOSYS;
@@ -1529,11 +1528,11 @@ index 000000000000..4a089d3eb9b7
 +	bitset1 = (*phase_mux << PHASE_MUX_POS);
 +	bitset2 = (*delay_time << DELAY_TIME_POS);
 +
-+	if (clkout_nr == 0 && fract_cnt > 0) {
++	if (clkout_nr == 0 && frac > 0) {
 +		u16 clkout5_reg2_bitset;
 +
 +		litex_clk_calc_duty_fract(hw, true);
-+		bitset2 |= (*fract_cnt << FRAC_POS)		|
++		bitset2 |= (*frac << FRAC_POS)		|
 +			   (*frac_en << FRAC_EN_POS)	|
 +			   (*frac_wf_r << FRAC_WF_R_POS);
 +
@@ -1720,7 +1719,7 @@ index 000000000000..4a089d3eb9b7
 +long litex_clk_round_rate(struct clk_hw *hw, unsigned long rate,
 +					     unsigned long *parent_rate)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	int ret;
 +
 +	LITEX_UNUSED(parent_rate);
@@ -1729,7 +1728,7 @@ index 000000000000..4a089d3eb9b7
 +	if (ret != 0)
 +		return -EINVAL;
 +
-+	l_clkout->ts_config.freq = rate;
++	lcko->ts_config.freq = rate;
 +
 +	ret = litex_clk_calc_all_params();
 +	if (ret != 0)
@@ -1740,18 +1739,18 @@ index 000000000000..4a089d3eb9b7
 +
 +int litex_clk_write_rate(struct clk_hw *hw)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	int ret;
 +	u16 bitset1, bitset2;
-+	u8 *divider = &l_clkout->config.div,
-+	   *edge = &l_clkout->div.edge,
-+	   *high_time = &l_clkout->div.high_time,
-+	   *low_time = &l_clkout->div.low_time,
-+	   *no_cnt = &l_clkout->div.no_cnt,
-+	   *frac = &l_clkout->frac.frac,
-+	   *frac_en = &l_clkout->frac.frac_en,
-+	   *frac_wf_f = &l_clkout->frac.frac_wf_f,
-+	   *frac_wf_r = &l_clkout->frac.frac_wf_r;
++	u8 *divider = &lcko->config.div,
++	   *edge = &lcko->div.edge,
++	   *high_time = &lcko->div.high_time,
++	   *low_time = &lcko->div.low_time,
++	   *no_cnt = &lcko->div.no_cnt,
++	   *frac = &lcko->frac.frac,
++	   *frac_en = &lcko->frac.frac_en,
++	   *frac_wf_f = &lcko->frac.frac_wf_f,
++	   *frac_wf_r = &lcko->frac.frac_wf_r;
 +
 +	bitset1 = (*high_time << HIGH_TIME_POS)	|
 +		  (*low_time << LOW_TIME_POS);
@@ -1763,11 +1762,11 @@ index 000000000000..4a089d3eb9b7
 +		  (*no_cnt << NO_CNT_POS);
 +
 +	if (*frac_en != 0) {
-+		u8 *phase_mux = &l_clkout->phase.phase_mux,
-+		   *delay_time = &l_clkout->phase.delay_time,
-+		   *phase_mux_f = &l_clkout->frac.phase_mux_f;
++		u8 *phase_mux = &lcko->phase.phase_mux,
++		   *delay_time = &lcko->phase.delay_time,
++		   *phase_mux_f = &lcko->frac.phase_mux_f;
 +
-+		l_clkout->config.phase = 0;
++		lcko->config.phase = 0;
 +		litex_clk_calc_phase_fract(hw);
 +
 +		bitset1 |= (*phase_mux << PHASE_MUX_POS);
@@ -1790,29 +1789,29 @@ index 000000000000..4a089d3eb9b7
 +		*divider, *frac, *frac_wf_r, *frac_wf_f, *frac_en,
 +		*no_cnt, *edge, *high_time, *low_time, bitset1, bitset2);
 +
-+	ret = litex_clk_set_clock(hw, l_clkout->id, REG1_FREQ_MASK, bitset1,
++	ret = litex_clk_set_clock(hw, lcko->id, REG1_FREQ_MASK, bitset1,
 +						REG2_FREQ_MASK, bitset2);
 +	if (ret != 0)
 +		return ret;
 +
-+	ldev->update_clkout[l_clkout->id] = 0;
++	ldev->update_clkout[lcko->id] = 0;
 +
 +	return 0;
 +}
 +
 +int litex_clk_update_clkouts(void)
 +{
-+	struct litex_clk_clkout *l_clkout;
++	struct litex_clk_clkout *lcko;
 +	int ret;
 +	u8 c;
 +
 +	for (c = 0; c < ldev->nclkout; c++) {
 +		if (ldev->update_clkout[c]) {
-+			l_clkout = &ldev->clkouts[c];
-+			ret = litex_clk_calc_duty_normal(&l_clkout->clk_hw, false);
++			lcko = &ldev->clkouts[c];
++			ret = litex_clk_calc_duty_normal(&lcko->clk_hw, false);
 +			if (ret != 0)
 +				return ret;
-+			ret = litex_clk_write_rate(&l_clkout->clk_hw);
++			ret = litex_clk_write_rate(&lcko->clk_hw);
 +			if (ret != 0)
 +				return ret;
 +		}
@@ -1866,17 +1865,17 @@ index 000000000000..4a089d3eb9b7
 +/* Set default clock value from device tree for given clkout*/
 +static int litex_clk_set_def_clkout(struct clk_hw *hw)
 +{
-+	struct litex_clk_clkout *l_clkout = clk_hw_to_litex_clk_clkout(hw);
++	struct litex_clk_clkout *lcko = clk_hw_to_litex_clk_clkout(hw);
 +	int ret;
 +
-+	litex_clk_round_rate(hw, l_clkout->def.freq, 0);
-+	ret = litex_clk_set_rate(hw, l_clkout->def.freq, 0);
++	litex_clk_round_rate(hw, lcko->def.freq, 0);
++	ret = litex_clk_set_rate(hw, lcko->def.freq, 0);
 +	if (ret != 0)
 +		return ret;
-+	ret = litex_clk_set_duty_cycle(hw, &l_clkout->def.duty);
++	ret = litex_clk_set_duty_cycle(hw, &lcko->def.duty);
 +	if (ret != 0)
 +		return ret;
-+	return litex_clk_set_phase(hw, l_clkout->def.phase);
++	return litex_clk_set_phase(hw, lcko->def.phase);
 +}
 +
 +static int litex_clk_set_all_def_clkouts(void)
@@ -1931,47 +1930,47 @@ index 000000000000..4a089d3eb9b7
 +}
 +
 +static int litex_clk_dts_clkout_def_read(struct device_node *child,
-+					 struct litex_clk_clkout *l_clkout)
++					 struct litex_clk_clkout *lcko)
 +{
 +	int ret;
 +
-+	ret = of_property_read_u32(child, "reg", &l_clkout->id);
++	ret = of_property_read_u32(child, "reg", &lcko->id);
 +	if (ret != 0)
 +		return -ret;
 +
-+	if (l_clkout->id > ldev->nclkout) {
++	if (lcko->id > ldev->nclkout) {
 +		pr_err("%s: Invalid CLKOUT index!", child->name);
 +		return -EINVAL;
 +	}
 +
 +	ret = of_property_read_u32(child, "litex,clock-margin",
-+						 &l_clkout->margin.m);
++						 &lcko->margin.m);
 +	if (ret != 0)
 +		return -ret;
 +	ret = of_property_read_u32(child, "litex,clock-margin-exp",
-+						 &l_clkout->margin.exp);
++						 &lcko->margin.exp);
 +	if (ret != 0)
 +		return -ret;
 +	ret = of_property_read_u32(child, "litex,clock-frequency",
-+						 &l_clkout->def.freq);
++						 &lcko->def.freq);
 +	if (ret != 0)
 +		return -ret;
 +	ret = of_property_read_u32(child, "litex,clock-phase",
-+						 &l_clkout->def.phase);
++						 &lcko->def.phase);
 +	if (ret != 0)
 +		return -ret;
 +	ret = of_property_read_u32(child, "litex,clock-duty-den",
-+						 &l_clkout->def.duty.den);
++						 &lcko->def.duty.den);
 +	if (ret != 0)
 +		return -ret;
 +	ret = of_property_read_u32(child, "litex,clock-duty-num",
-+						 &l_clkout->def.duty.num);
++						 &lcko->def.duty.num);
 +	if (ret != 0)
 +		return -ret;
-+	if (l_clkout->def.duty.den <= 0 ||
-+	    l_clkout->def.duty.num > l_clkout->def.duty.den) {
++	if (lcko->def.duty.den <= 0 ||
++	    lcko->def.duty.num > lcko->def.duty.den) {
 +		pr_err("%s: Invalid default duty! %d/%d",
-+			child->name, l_clkout->def.duty.num, l_clkout->def.duty.den);
++			child->name, lcko->def.duty.num, lcko->def.duty.den);
 +		return -EINVAL;
 +	}
 +
@@ -2012,7 +2011,7 @@ index 000000000000..4a089d3eb9b7
 +{
 +	struct device_node *child_node;
 +	struct litex_clk_range clkout_div;
-+	struct litex_clk_clkout *l_clkout;
++	struct litex_clk_clkout *lcko;
 +	int ret, i = 0;
 +
 +	ret = litex_clk_dts_clkout_ranges_read(node, &clkout_div);
@@ -2020,10 +2019,10 @@ index 000000000000..4a089d3eb9b7
 +		return ret;
 +
 +	for_each_child_of_node(node, child_node) {
-+		l_clkout = &ldev->clkouts[i];
-+		l_clkout->clkout_div = clkout_div;
++		lcko = &ldev->clkouts[i];
++		lcko->clkout_div = clkout_div;
 +
-+		ret = litex_clk_dts_clkout_def_read(child_node, l_clkout);
++		ret = litex_clk_dts_clkout_def_read(child_node, lcko);
 +		if (ret != 0)
 +			return ret;
 +		i++;
@@ -2034,26 +2033,26 @@ index 000000000000..4a089d3eb9b7
 +static int litex_clk_init_clkouts(struct device *dev, struct device_node *node)
 +{
 +	struct device_node *child_node;
-+	struct litex_clk_clkout *clkout;
++	struct litex_clk_clkout *lcko;
 +	int ret, i = 0;
 +
 +	for_each_child_of_node(node, child_node) {
 +		struct clk_init_data clkout_init;
 +
-+		clkout = &ldev->clkouts[i];
++		lcko = &ldev->clkouts[i];
 +		clkout_init.name = child_node->name;
 +		clkout_init.ops = &litex_clk_ops;
 +		clkout_init.num_parents = 1;
 +		clkout_init.parent_names = &node->name;
 +		clkout_init.flags = CLK_SET_RATE_UNGATE | CLK_GET_RATE_NOCACHE;
-+		clkout->clk_hw.init = &clkout_init;
-+		clkout->base = ldev->base;
++		lcko->clk_hw.init = &clkout_init;
++		lcko->base = ldev->base;
 +		/* mark defaults to set */
-+		clkout->ts_config.freq = clkout->def.freq;
-+		clkout->ts_config.duty = clkout->def.duty;
-+		clkout->ts_config.phase = clkout->def.phase;
++		lcko->ts_config.freq = lcko->def.freq;
++		lcko->ts_config.duty = lcko->def.duty;
++		lcko->ts_config.phase = lcko->def.phase;
 +
-+		ret = devm_clk_hw_register(dev, &clkout->clk_hw);
++		ret = devm_clk_hw_register(dev, &lcko->clk_hw);
 +		if (ret != 0) {
 +			pr_err("devm_clk_hw_register failure, %s ret: %d\n",
 +						child_node->name, ret);
@@ -2061,7 +2060,7 @@ index 000000000000..4a089d3eb9b7
 +		}
 +
 +		ret = of_clk_add_hw_provider(child_node, of_clk_hw_simple_get,
-+							     &clkout->clk_hw);
++							       &lcko->clk_hw);
 +		if (ret != 0)
 +			return ret;
 +		i++;
