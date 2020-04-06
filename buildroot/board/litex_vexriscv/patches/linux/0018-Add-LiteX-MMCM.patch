@@ -245,10 +245,10 @@ index 8a9440a97500..fad1ed4c6960 100644
  obj-$(CONFIG_ARCH_MOXART)		+= clk-moxart.o
 diff --git a/drivers/clk/clk-litex.c b/drivers/clk/clk-litex.c
 new file mode 100644
-index 000000000000..5a5ea5c284f9
+index 000000000000..f1e053abff51
 --- /dev/null
 +++ b/drivers/clk/clk-litex.c
-@@ -0,0 +1,2006 @@
+@@ -0,0 +1,2007 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (c) 2020 Antmicro Ltd. <www.antmicro.com>
@@ -469,13 +469,13 @@ index 000000000000..5a5ea5c284f9
 +/* End of copied code */
 +
 +static inline struct litex_clk_device *clk_hw_to_litex_clk_device
-+						  (struct clk_hw *clk_hw)
++						(struct clk_hw *clk_hw)
 +{
 +	return container_of(clk_hw, struct litex_clk_device, clk_hw);
 +}
 +
 +static inline struct litex_clk_clkout *clk_hw_to_litex_clk_clkout
-+						  (struct clk_hw *clk_hw)
++						(struct clk_hw *clk_hw)
 +{
 +	return container_of(clk_hw, struct litex_clk_clkout, clk_hw);
 +}
@@ -794,7 +794,7 @@ index 000000000000..5a5ea5c284f9
 + *
 + */
 +static int litex_clk_change_value(struct clk_hw *clk_hw, u16 mask, u16 bitset,
-+							  u8 clk_reg_addr)
++							 u8 clk_reg_addr)
 +{
 +	u16 DO_val, DI_val;
 +	int ret;
@@ -833,8 +833,8 @@ index 000000000000..5a5ea5c284f9
 + *
 + */
 +static int litex_clk_set_clock(struct clk_hw *clk_hw, u8 clkout_nr,
-+					u16 mask_reg1, u16 bitset_reg1,
-+					u16 mask_reg2, u16 bitset_reg2)
++				       u16 mask_reg1, u16 bitset_reg1,
++				       u16 mask_reg2, u16 bitset_reg2)
 +{
 +	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 +	int ret;
@@ -851,6 +851,7 @@ index 000000000000..5a5ea5c284f9
 +		if (ret != 0)
 +			return ret;
 +	}
++
 +	return 0;
 +}
 +
@@ -957,11 +958,11 @@ index 000000000000..5a5ea5c284f9
 +	if (ret != 0)
 +		return ret;
 +	ret = litex_clk_change_value(hw, LOCK23_MASK,
-+				(((lock >> 16) & 0x1f) << 10) | 0x1, LOCK_REG2);
++			(((lock >> 16) & 0x1f) << 10) | 0x1, LOCK_REG2);
 +	if (ret != 0)
 +		return ret;
 +	ret = litex_clk_change_value(hw, LOCK23_MASK,
-+			      (((lock >> 24) & 0x1f) << 10) | 0x3e9, LOCK_REG3);
++			(((lock >> 24) & 0x1f) << 10) | 0x3e9, LOCK_REG3);
 +	if (ret != 0)
 +		return ret;
 +	return 0;
@@ -1216,11 +1217,11 @@ index 000000000000..5a5ea5c284f9
 +	for (high_time_it = 1; high_time_it < divider; high_time_it++) {
 +		for (edge_it = 0; edge_it < 2; edge_it++) {
 +			synthetic_duty = (high_time_it * 100 + 50 * edge_it) /
-+								divider;
++								    divider;
 +			delta_d = abs(synthetic_duty - high_duty);
 +			/* check if low_time won't be above acceptable range */
 +			if (delta_d < min_d && (divider - high_time_it) <=
-+						    HIGH_LOW_TIME_REG_MAX) {
++						  HIGH_LOW_TIME_REG_MAX) {
 +				min_d = delta_d;
 +				lcko->div.high_time = high_time_it;
 +				lcko->div.low_time = divider - high_time_it;
@@ -1279,7 +1280,7 @@ index 000000000000..5a5ea5c284f9
 +		return 0;
 +	} else {
 +		pr_err("CLKOUT%d: cannot set duty cycle when fractional divider enabled!",
-+								clkout_nr);
++			clkout_nr);
 +		return -EACCES;
 +	}
 +
@@ -1515,13 +1516,13 @@ index 000000000000..5a5ea5c284f9
 +
 +	if (*frac > 0 && degrees != 0) {
 +		pr_err("CLKOUT%d: cannot set phase on that frequency",
-+								clkout_nr);
++			clkout_nr);
 +		return -ENOSYS;
 +	}
 +	ret = litex_clk_calc_phase(hw);
 +	if (ret != 0) {
 +		pr_err("CLKOUT%d: phase offset %d deg is too high for given frequency",
-+							clkout_nr, degrees);
++			clkout_nr, degrees);
 +		return ret;
 +	}
 +
@@ -2055,7 +2056,7 @@ index 000000000000..5a5ea5c284f9
 +		ret = devm_clk_hw_register(dev, &lcko->clk_hw);
 +		if (ret != 0) {
 +			pr_err("devm_clk_hw_register failure, %s ret: %d\n",
-+						child_node->name, ret);
++						     child_node->name, ret);
 +			return ret;
 +		}
 +
