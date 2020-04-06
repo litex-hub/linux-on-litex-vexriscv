@@ -1,9 +1,9 @@
 diff --git a/Documentation/devicetree/bindings/clock/litex,clock.yaml b/Documentation/devicetree/bindings/clock/litex,clock.yaml
 new file mode 100644
-index 000000000000..cd234fa4132a
+index 000000000000..0eac4a551dc0
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/clock/litex,clock.yaml
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,210 @@
 +# SPDX-License-Identifier: GPL-2.0
 +%YAML 1.2
 +---
@@ -23,7 +23,7 @@ index 000000000000..cd234fa4132a
 +
 +properties:
 +  compatible:
-+    const: litex,clock
++    const: litex,clk
 +
 +  reg:
 +    description: Base address and lengths of the register space
@@ -65,13 +65,6 @@ index 000000000000..cd234fa4132a
 +      - const: CLKOUT5
 +      - const: CLKOUT6
 +
-+  litex,nclkout:
-+    description: |
-+      Number of desired clock outputs
-+
-+        min: 1
-+        max: 7
-+
 +  litex,lock-timeout:
 +    description: |
 +      Number of ms to wait for MMCM to assert LOCK signal
@@ -88,13 +81,42 @@ index 000000000000..cd234fa4132a
 +    description: |
 +      System clock frequency
 +
++  litex,divclk-divide-min:
++    description: |
++      minimal global divider
++  litex,divclk-divide-max:
++    description: |
++      maximal global divider
++  litex,clkfbout-mult-min:
++    description: |
++      minimal global multiplier
++  litex,clkfbout-mult-max:
++    description: |
++      maximal global multiplier
++  litex,vco-freq-min:
++    description: |
++      minimal frequency after global divider and multiplier
++  litex,vco-freq-max:
++    description: |
++      maximal frequency after global divider and multiplier
++  litex,clkout-divide-min:
++    description: |
++      minimal clock output divider
++  litex,clkout-divide-max:
++    description: |
++      maximal clock output divider
++  litex,vco-margin:
++    description: |
++      tolerancy for vco frequency
++    const: 0
++
 +  CLKOUTx:
 +    description: |
 +      Child node representing configurable clock outputs of MMCM unit
 +
 +    properties:
 +      compatible:
-+        const: litex,clock
++        const: litex,clk
 +
 +      reg:
 +        description: |
@@ -103,9 +125,6 @@ index 000000000000..cd234fa4132a
 +      litex,clock-frequency:
 +        description: |
 +          default frequency in Hz for clock output
-+
-+        min: 1587000
-+        max: 100000000
 +
 +      litex,clock-phase:
 +        description: |
@@ -128,113 +147,72 @@ index 000000000000..cd234fa4132a
 +        min: 1
 +        max: 100
 +
++      litex,clock-margin:
++        description: |
++          clock output margin coefficient
++
++      litex,clock-margin-exp:
++        description: |
++          exponent for clkout margin
++          effective clkout margin shall be
++          margin * 10^(-exponent) * 100%
++
 +    required:
-+      - compatible
-+      - "#clock-cells"
-+      - clock-output-names
-+      - reg
-+      - litex,clock-frequency
-+      - litex,clock-phase
-+      - litex,clock-duty-num
-+      - litex,clock-duty-den
++      - all properties
 +
 +required:
-+  - compatible
-+  - reg
-+  - "#clock-cells"
-+  - "#address-cells"
-+  - "#size-cells"
-+  - clock-output-names
-+  - litex,nclkout
-+  - CLKOUTx
++  - all properties
 +
 +examples:
 +  - |
-+    clk0: clk@f0003000 {
-+            compatible = "litex,clk";
-+            reg = <0x0 0xf0003000 0x0 0x100>;
-+            #clock-cells =        <1>;
-+            #address-cells = <1>;
-+            #size-cells = <0>;
-+            clock-output-names = "CLKOUT0",
-+                                 "CLKOUT1",
-+                                 "CLKOUT2",
-+                                 "CLKOUT3",
-+                                 "CLKOUT4",
-+                                 "CLKOUT5",
-+                                 "CLKOUT6";
-+            litex,nclkout = <7>;
++clk0: clk@f0009800 {
++	compatible = "litex,clk";
++	reg = <0x0 0xf0009800 0x0 0x100>;
++	#clock-cells = <1>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	clock-output-names =
++			"CLKOUT0",
++			"CLKOUT1";
 +
-+            CLKOUT0: CLKOUT0 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT0";
-+                    reg = <0>;
-+                    litex,clock-frequency = <50000000>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <50>;
-+            };
++	litex,lock-timeout = <10>;
++	litex,drdy-timeout = <10>;
++	litex,sys-clock-frequency = <100000000>;
++	litex,divclk-divide-min = <1>;
++	litex,divclk-divide-max = <107>;
++	litex,clkfbout-mult-min = <2>;
++	litex,clkfbout-mult-max = <65>;
++	litex,vco-freq-min = <600000000>;
++	litex,vco-freq-max = <1200000000>;
++	litex,clkout-divide-min = <1>;
++	litex,clkout-divide-max = <129>;
++	litex,vco-margin = <0>;
 +
-+            CLKOUT1: CLKOUT1 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT1";
-+                    reg = <1>;
-+                    litex,clock-frequency = <50000000>;
-+                    litex,clock-phase = <90>;
-+                    litex,clock-duty = <50>;
-+            };
-+
-+            CLKOUT2: CLKOUT2 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT2";
-+                    reg = <2>;
-+                    litex,clock-frequency = <25000000>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <25>;
-+            };
-+
-+            CLKOUT3: CLKOUT3 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT3";
-+                    reg = <3>;
-+                    litex,clock-frequency = <12500000>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <75>;
-+            };
-+
-+            CLKOUT4: CLKOUT4 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT4";
-+                    reg = <4>;
-+                    litex,clock-frequency = <6250000>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <50>;
-+            };
-+
-+            CLKOUT5: CLKOUT5 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT5";
-+                    reg = <5>;
-+                    litex,clock-frequency = <3125000>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <50>;
-+            };
-+
-+            CLKOUT6: CLKOUT6 {
-+                    compatible = "litex,clk";
-+                    #clock-cells = <0>;
-+                    clock-output-names = "CLKOUT6";
-+                    reg = <6>;
-+                    litex,clock-frequency = <1562500>;
-+                    litex,clock-phase = <0>;
-+                    litex,clock-duty = <5>;
-+            };
-+    };
++	CLKOUT0: CLKOUT0 {
++		compatible = "litex,clk";
++		#clock-cells =	<0>;
++		clock-output-names = "CLKOUT0";
++		reg = <0>;
++		litex,clock-frequency = <100000000>;
++		litex,clock-phase = <0>;
++		litex,clock-duty-num = <50>;
++		litex,clock-duty-den = <100>;
++		litex,clock-margin = <1>;
++		litex,clock-margin-exp = <2>;
++	};
++	CLKOUT1: CLKOUT1 {
++		compatible = "litex,clk";
++		#clock-cells =	<0>;
++		clock-output-names = "CLKOUT1";
++		reg = <1>;
++		litex,clock-frequency = <100000000>;
++		litex,clock-phase = <0>;
++		litex,clock-duty-num = <50>;
++		litex,clock-duty-den = <100>;
++		litex,clock-margin = <1>;
++		litex,clock-margin-exp = <2>;
++	};
++};
 +...
 diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
 index d2f0bb5ba47e..0280f9b9bb1d 100644
