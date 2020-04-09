@@ -131,7 +131,7 @@ if "uart" in d["csr_bases"]:
 
 	# Ethernet MAC ---------------------------------------------------------------------------------
 if "ethphy" in d["csr_bases"] and "ethmac" not in d["csr_bases"]:
-        pass
+		pass
 
 if "ethphy" in d["csr_bases"] and "ethmac" in d["csr_bases"]:
 	dts += """
@@ -165,16 +165,16 @@ if "leds" in d["csr_bases"]:
 
 for name in ["rgb_led_r0", "rgb_led_g0", "rgb_led_b0"]:
 	if name in d["csr_bases"]:
-	    dts += """
+		dts += """
 		{pwm_name}: pwm@{pwm_csr_base:x} {{
-	        compatible = "litex,pwm";
-	        reg = <0x0 0x{pwm_csr_base:x} 0x0 0x24>;
-	        clock = <100000000>;
-	        #pwm-cells = <3>;
-	        status = "okay";
-	    }};
+			compatible = "litex,pwm";
+			reg = <0x0 0x{pwm_csr_base:x} 0x0 0x24>;
+			clock = <100000000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		}};
 	""".format(pwm_name=name,
-		       pwm_csr_base=d["csr_bases"][name])
+			   pwm_csr_base=d["csr_bases"][name])
 
 	# Switches -------------------------------------------------------------------------------------
 
@@ -191,46 +191,46 @@ if "switches" in d["csr_bases"]:
 	# SPI ------------------------------------------------------------------------------------------
 
 if "spi" in d["csr_bases"]:
-    aliases["spi0"] = "litespi0"
+	aliases["spi0"] = "litespi0"
 
-    dts += """
-	    litespi0: spi@{spi_csr_base:x} {{
-		    compatible = "litex,litespi";
-		    reg = <0x0 0x{spi_csr_base:x} 0x0 0x100>;
-		    status = "okay";
+	dts += """
+		litespi0: spi@{spi_csr_base:x} {{
+			compatible = "litex,litespi";
+			reg = <0x0 0x{spi_csr_base:x} 0x0 0x100>;
+			status = "okay";
 
-		    litespi,max-bpw = <8>;
-		    litespi,sck-frequency = <1000000>;
-		    litespi,num-cs = <1>;
+			litespi,max-bpw = <8>;
+			litespi,sck-frequency = <1000000>;
+			litespi,num-cs = <1>;
 
-		    #address-cells = <0x1>;
-		    #size-cells = <0x1>;
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
 
-		    spidev0: spidev@0 {{
+			spidev0: spidev@0 {{
 			compatible = "linux,spidev";
 			reg = <0 0>;
 			spi-max-frequency = <1000000>;
 			status = "okay";
-		    }};
-	    }};
-    """.format(spi_csr_base=d["csr_bases"]["spi"])
+			}};
+		}};
+	""".format(spi_csr_base=d["csr_bases"]["spi"])
 
 	# SPIFLASH ---------------------------------------------------------------------------------------
 
 if "spiflash" in d["csr_bases"]:
-    aliases["spiflash"] = "litespiflash"
+	aliases["spiflash"] = "litespiflash"
 
-    dts += """
-	    litespiflash: spiflash@{spiflash_csr_base:x} {{
-		    compatible = "litex,spiflash";
-		    reg = <0x0 0x{spiflash_csr_base:x} 0x0 0x100>;
-		    status = "okay";
+	dts += """
+		litespiflash: spiflash@{spiflash_csr_base:x} {{
+			compatible = "litex,spiflash";
+			reg = <0x0 0x{spiflash_csr_base:x} 0x0 0x100>;
+			status = "okay";
 			flash: flash@0 {{
 				compatible = "jedec,spi-nor";
 				reg = <0x0 0x0 0x0 0x{spiflash_size:x}>;
-		    }};
-	    }};
-    """.format(spiflash_csr_base=d["csr_bases"]["spiflash"], spiflash_size=d["memories"]["spiflash"]["size"])
+			}};
+		}};
+	""".format(spiflash_csr_base=d["csr_bases"]["spiflash"], spiflash_size=d["memories"]["spiflash"]["size"])
 
 	# SPISDCARD ------------------------------------------------------------------------------------
 
@@ -260,7 +260,7 @@ if False: # FIXME: Disable it for now.
 	# I2C ------------------------------------------------------------------------------------------
 
 if "i2c0" in d["csr_bases"]:
-    dts += """
+	dts += """
 		i2c0: i2c@{i2c0_csr_base:x} {{
 			compatible = "litex,i2c";
 			reg = <0x0 0x{i2c0_csr_base:x} 0x0 0x5>;
@@ -271,7 +271,7 @@ if "i2c0" in d["csr_bases"]:
 	# XADC -----------------------------------------------------------------------------------------
 
 if "xadc" in d["csr_bases"]:
-    dts += """
+	dts += """
 		hwmon0: xadc@{xadc_csr_base:x} {{
 			compatible = "litex,hwmon-xadc";
 			reg = <0x0 0x{xadc_csr_base:x} 0x0 0x20>;
@@ -282,11 +282,11 @@ if "xadc" in d["csr_bases"]:
 	# Framebuffer ----------------------------------------------------------------------------------
 
 if "framebuffer" in d["csr_bases"]:
-    # FIXME: dynamic framebuffer base and size
-    framebuffer_base   = 0xc8000000
-    framebuffer_width  = d["constants"]["litevideo_h_active"]
-    framebuffer_height = d["constants"]["litevideo_v_active"]
-    dts += """
+	# FIXME: dynamic framebuffer base and size
+	framebuffer_base   = 0xc8000000
+	framebuffer_width  = d["constants"]["litevideo_h_active"]
+	framebuffer_height = d["constants"]["litevideo_v_active"]
+	dts += """
 		framebuffer0: framebuffer@f0000000 {{
 			compatible = "simple-framebuffer";
 			reg = <0x0 0x{framebuffer_base:x} 0x0 0x{framebuffer_size:x}>;
@@ -296,13 +296,13 @@ if "framebuffer" in d["csr_bases"]:
 			format = "a8b8g8r8";
 		}};
 	""".format(framebuffer_base=framebuffer_base,
-               framebuffer_width=framebuffer_width,
-               framebuffer_height=framebuffer_height,
-               framebuffer_size=framebuffer_width*framebuffer_height*4,
-               framebuffer_stride=framebuffer_width*4)
+			   framebuffer_width=framebuffer_width,
+			   framebuffer_height=framebuffer_height,
+			   framebuffer_size=framebuffer_width*framebuffer_height*4,
+			   framebuffer_stride=framebuffer_width*4)
 
-    dma_offset = framebuffer_base - d["memories"]["main_ram"]["base"]
-    dts += """
+	dma_offset = framebuffer_base - d["memories"]["main_ram"]["base"]
+	dts += """
 		litevideo0: gpu@{litevideo_base:x} {{
 			compatible = "litex,litevideo";
 			reg = <0x0 0x{litevideo_base:x} 0x0 0x100>;
@@ -319,22 +319,22 @@ if "framebuffer" in d["csr_bases"]:
 			litevideo,dma-length = <0x{litevideo_dma_length:x}>;
 		}};
 	""".format(litevideo_base=d["csr_bases"]["framebuffer"],
-               litevideo_pixel_clock=int(d["constants"]["litevideo_pix_clk"] / 1e3),
-               litevideo_h_active=d["constants"]["litevideo_h_active"],
-               litevideo_h_blanking=d["constants"]["litevideo_h_blanking"],
-               litevideo_h_sync=d["constants"]["litevideo_h_sync"],
-               litevideo_h_front_porch=d["constants"]["litevideo_h_front_porch"],
-               litevideo_v_active=d["constants"]["litevideo_v_active"],
-               litevideo_v_blanking=d["constants"]["litevideo_v_blanking"],
-               litevideo_v_sync=d["constants"]["litevideo_v_sync"],
-               litevideo_v_front_porch=d["constants"]["litevideo_v_front_porch"],
-               litevideo_dma_offset=dma_offset,
-               litevideo_dma_length=4*framebuffer_width*framebuffer_height)
+			   litevideo_pixel_clock=int(d["constants"]["litevideo_pix_clk"] / 1e3),
+			   litevideo_h_active=d["constants"]["litevideo_h_active"],
+			   litevideo_h_blanking=d["constants"]["litevideo_h_blanking"],
+			   litevideo_h_sync=d["constants"]["litevideo_h_sync"],
+			   litevideo_h_front_porch=d["constants"]["litevideo_h_front_porch"],
+			   litevideo_v_active=d["constants"]["litevideo_v_active"],
+			   litevideo_v_blanking=d["constants"]["litevideo_v_blanking"],
+			   litevideo_v_sync=d["constants"]["litevideo_v_sync"],
+			   litevideo_v_front_porch=d["constants"]["litevideo_v_front_porch"],
+			   litevideo_dma_offset=dma_offset,
+			   litevideo_dma_length=4*framebuffer_width*framebuffer_height)
 
 	#·ICAPBitstream --------------------------------------------------------------------------------
 
 if "icap_bit" in d["csr_bases"]:
-    dts += """
+	dts += """
 		fpga0: icap@{icap_csr_base:x} {{
 			compatible = "litex,fpga-icap";
 			reg = <0x0 0x{icap_csr_base:x} 0x0 0x14>;
@@ -375,12 +375,12 @@ if "mmcm" in d["csr_bases"]:
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-output-names = "CLKOUT0",
-					     "CLKOUT1",
-					     "CLKOUT2",
-					     "CLKOUT3",
-					     "CLKOUT4",
-					     "CLKOUT5",
-					     "CLKOUT6";
+						 "CLKOUT1",
+						 "CLKOUT2",
+						 "CLKOUT3",
+						 "CLKOUT4",
+						 "CLKOUT5",
+						 "CLKOUT6";
 			litex,nclkout = <7>;
 			litex,lock-timeout = <{mmcm_lock_timeout}>;
 			litex,drdy-timeout = <{mmcm_drdy_timeout}>;
@@ -391,8 +391,8 @@ if "mmcm" in d["csr_bases"]:
 			   sys_clk = sys_clk)
 	for clkout_nr in range(7):
 		dts += add_clkout(clkout_nr, clkout_def_freq, clkout_def_phase,
-							    clkout_def_duty_num,
-							    clkout_def_duty_den)
+								clkout_def_duty_num,
+								clkout_def_duty_den)
 	dts += """
 		};"""
 dts += """
@@ -401,14 +401,14 @@ dts += """
 # Aliases -----------------------------------------------------------------------------------------
 
 if aliases:
-    dts += """
+	dts += """
 	aliases {
 """
-    for alias in aliases:
-    	dts += """
+	for alias in aliases:
+		dts += """
 	   {} = &{};
 """.format(alias, aliases[alias])
-    dts += """
+	dts += """
 	};
 """
 
