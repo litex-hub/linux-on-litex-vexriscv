@@ -232,6 +232,31 @@ if "spiflash" in d["csr_bases"]:
 	    }};
     """.format(spiflash_csr_base=d["csr_bases"]["spiflash"], spiflash_size=d["memories"]["spiflash"]["size"])
 
+	# SPISDCARD ------------------------------------------------------------------------------------
+
+if False: # FIXME: Disable it for now.
+#if "spisdcard" in d["csr_bases"]:
+	aliases["sdcard0"] = "litespisdcard0"
+
+	dts += """
+		litespisdcard0: spi@{spisdcard_csr_base:x} {{
+			compatible = "litex,litespi";
+			reg = <0x0 0x{spisdcard_csr_base:x} 0x0 0x100>;
+			status = "okay";
+
+			litespi,max-bpw = <8>;
+			litespi,sck-frequency = <1000000>;
+			litespi,num-cs = <1>;
+
+			mmc-slot@0 {{
+				compatible = "mmc-spi-slot";
+				reg = <0 0>;
+				voltage-ranges = <3300 3300>;
+				spi-max-frequency = <1000000>;
+			}};
+		}};
+	""".format(spisdcard_csr_base=d["csr_bases"]["spisdcard"])
+
 	# I2C ------------------------------------------------------------------------------------------
 
 if "i2c0" in d["csr_bases"]:
