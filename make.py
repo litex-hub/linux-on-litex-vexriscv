@@ -63,6 +63,35 @@ class ArtyA7(Arty):
         prog = OpenOCD("prog/openocd_xilinx.cfg")
         prog.load_bitstream("build/arty_a7/gateware/top.bit")
 
+class ArtyS7(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
+    def __init__(self):
+        from litex_boards.targets import artys7
+        Board.__init__(self, artys7.BaseSoC, {"serial", "spiflash", "leds", "rgb_led", "switches", "spi", "i2c", "xadc", "icap_bit", "mmcm"})
+
+    def load(self):
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog.load_bitstream("build/arty_s7/gateware/top.bit")
+
+    def flash(self):
+        flash_regions = {
+            "buildroot/Image.fbi":             "0x00000000", # Linux Image: copied to 0xc0000000 by bios
+            "buildroot/rootfs.cpio.fbi":       "0x00500000", # File System: copied to 0xc0800000 by bios
+            "buildroot/rv32.dtb.fbi":          "0x00d00000", # Device tree: copied to 0xc1000000 by bios
+            "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0x20000000 by bios
+        }
+        from litex.build.openocd import OpenOCD
+        prog = OpenOCD("prog/openocd_xilinx.cfg",
+            flash_proxy_basename="prog/bscan_spi_xc7a35t.bit")
+        prog.set_flash_proxy_dir(".")
+        for filename, base in flash_regions.items():
+            base = int(base, 16)
+            print("Flashing {} at 0x{:08x}".format(filename, base))
+            prog.flash(base, filename)
+
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
@@ -280,6 +309,7 @@ supported_boards = {
     # Xilinx
     "arty":         Arty,
     "arty_a7":      ArtyA7,
+    "arty_s7":      ArtyS7,
     "netv2":        NeTV2,
     "genesys2":     Genesys2,
     "kc705":        KC705,
