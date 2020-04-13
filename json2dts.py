@@ -344,7 +344,7 @@ if "icap_bit" in d["csr_bases"]:
 
 	# CLK ----------------------------------------------------------------------------------
 
-def add_clkout(clkout_nr, clk_f, clk_p, clk_dn, clk_dd):
+def add_clkout(clkout_nr, clk_f, clk_p, clk_dn, clk_dd, clk_margin, clk_margin_exp):
 
 	return """	CLKOUT{clkout_nr}: CLKOUT{clkout_nr} {{
 				compatible = "litex,clk";
@@ -355,17 +355,27 @@ def add_clkout(clkout_nr, clk_f, clk_p, clk_dn, clk_dd):
 				litex,clock-phase = <{clk_p}>;
 				litex,clock-duty-num = <{clk_dn}>;
 				litex,clock-duty-den = <{clk_dd}>;
+				litex,clock-margin = <{clk_margin}>;
+				litex,clock-margin-exp = <{clk_margin_exp}>;
 			}};
-		""".format(clkout_nr=clkout_nr, clk_f=clk_f, clk_p=clk_p, clk_dn=clk_dn, clk_dd=clk_dd)
+		""".format(clkout_nr=clkout_nr, clk_f=clk_f, clk_p=clk_p, clk_dn=clk_dn, clk_dd=clk_dd, clk_margin=clk_margin, clk_margin_exp=clk_margin_exp)
 
 if "mmcm" in d["csr_bases"]:
+	nclkout = d["constants"]["nclkout"]
 	clkout_def_freq = d["constants"]["clkout_def_freq"]
 	clkout_def_phase = d["constants"]["clkout_def_phase"]
 	clkout_def_duty_num = d["constants"]["clkout_def_duty_num"]
 	clkout_def_duty_den = d["constants"]["clkout_def_duty_den"]
+	clkout_margin = d["constants"]["clkout_margin"]
+	clkout_margin_exp = d["constants"]["clkout_margin_exp"]
 	mmcm_lock_timeout = d["constants"]["mmcm_lock_timeout"]
 	mmcm_drdy_timeout = d["constants"]["mmcm_drdy_timeout"]
 	sys_clk = d["constants"]["config_clock_frequency"]
+	divclk_divide_range = (d["constants"]["divclk_divide_range_min"], d["constants"]["divclk_divide_range_max"])
+	clkfbout_mult_frange = (d["constants"]["clkfbout_mult_frange_min"], d["constants"]["clkfbout_mult_frange_max"])
+	vco_freq_range = (d["constants"]["vco_freq_range_min"], d["constants"]["vco_freq_range_max"])
+	clkout_divide_range = (d["constants"]["clkout_divide_range_min"], d["constants"]["clkout_divide_range_max"])
+	vco_margin = d["constants"]["vco_margin"]
 
 	dts += """
 		clk0: clk@{mmcm_csr_base:x} {{
@@ -374,25 +384,39 @@ if "mmcm" in d["csr_bases"]:
 			#clock-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clock-output-names = "CLKOUT0",
-						 "CLKOUT1",
-						 "CLKOUT2",
-						 "CLKOUT3",
-						 "CLKOUT4",
-						 "CLKOUT5",
-						 "CLKOUT6";
-			litex,nclkout = <7>;
+			clock-output-names =
+""".format(mmcm_csr_base = d["csr_bases"]["mmcm"])
+	for clkout_nr in range(nclkout-1):
+		dts += """					"CLKOUT{clkout_nr}",
+""".format(clkout_nr = clkout_nr)
+	dts += """					"CLKOUT{nclkout}";
+""".format(nclkout = (nclkout - 1))
+	dts += """
 			litex,lock-timeout = <{mmcm_lock_timeout}>;
 			litex,drdy-timeout = <{mmcm_drdy_timeout}>;
 			litex,sys-clock-frequency = <{sys_clk}>;
-		""".format(mmcm_csr_base = d["csr_bases"]["mmcm"],
-			   mmcm_lock_timeout = mmcm_lock_timeout,
+			litex,divclk-divide-min = <{divclk_divide_range[0]}>;
+			litex,divclk-divide-max = <{divclk_divide_range[1]}>;
+			litex,clkfbout-mult-min = <{clkfbout_mult_frange[0]}>;
+			litex,clkfbout-mult-max = <{clkfbout_mult_frange[1]}>;
+			litex,vco-freq-min = <{vco_freq_range[0]}>;
+			litex,vco-freq-max = <{vco_freq_range[1]}>;
+			litex,clkout-divide-min = <{clkout_divide_range[0]}>;
+			litex,clkout-divide-max = <{clkout_divide_range[1]}>;
+			litex,vco-margin = <{vco_margin}>;
+
+		""".format(mmcm_lock_timeout = mmcm_lock_timeout,
 			   mmcm_drdy_timeout = mmcm_drdy_timeout,
-			   sys_clk = sys_clk)
-	for clkout_nr in range(7):
+			   sys_clk = sys_clk,
+			   divclk_divide_range = divclk_divide_range,
+			   clkfbout_mult_frange = clkfbout_mult_frange,
+			   vco_freq_range = vco_freq_range,
+			   clkout_divide_range = clkout_divide_range,
+			   vco_margin = vco_margin)
+	for clkout_nr in range(nclkout):
 		dts += add_clkout(clkout_nr, clkout_def_freq, clkout_def_phase,
-								clkout_def_duty_num,
-								clkout_def_duty_den)
+				  clkout_def_duty_num, clkout_def_duty_den,
+				  clkout_margin, clkout_margin_exp)
 	dts += """
 		};"""
 dts += """
