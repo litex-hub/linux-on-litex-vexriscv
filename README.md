@@ -28,6 +28,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | Name         | FPGA Family         | FPGA device   | CPU Frequency |        RAM         |    Flash      |       Ethernet     | SDCard |
 |--------------|---------------------|---------------|---------------|--------------------|---------------|--------------------|--------|
 | Arty(A7)     | Xilinx Artix7       | XC7A35T       |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    | 100Mbps MII        |   No   |
+| ArtyS7       | Xilinx Spartan7     | XC7S50        |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    |         No         |   No   |
 | NeTV2        | Xilinx Artix7       | XC7A35T       |    100MHz     | 32-bits 512MB DDR3 |  16MB QSPI*   | 100Mbps RMII       |   Yes* |
 | Genesys2     | Xilinx Kintex7      | XC7K325T      |    125MHz     | 32-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps RGMII*     |   Yes* |
 | KC705        | Xilinx Kintex7      | XC7K325T      |    125MHz     | 64-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps GMII       |   Yes* |
