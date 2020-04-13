@@ -1,0 +1,43 @@
+From de60695831b2472c3859ed4fc4c10320d7bd5abd Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul.walmsley@sifive.com>
+Date: Tue, 6 Aug 2019 18:28:33 -0700
+Subject: [PATCH 1/2] riscv: delay: use do_div() instead of __udivdi3()
+
+In preparation for removing __udivdi3() from the RISC-V
+architecture-specific files, convert its one user to use do_div().
+This avoids breaking the RV32 build after __udivdi3() is removed.
+
+This second version removes the assignment of the remainder to an
+unused temporary variable.  Thanks to Nicolas Pitre <nico@fluxnic.net>
+for the suggestion.
+
+Signed-off-by: Paul Walmsley <paul.walmsley@sifive.com>
+Cc: Nicolas Pitre <nico@fluxnic.net>
+---
+ arch/riscv/lib/delay.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/riscv/lib/delay.c b/arch/riscv/lib/delay.c
+index dce8ae24c6d3..7de7b873aace 100644
+--- a/arch/riscv/lib/delay.c
++++ b/arch/riscv/lib/delay.c
+@@ -88,10 +88,14 @@ EXPORT_SYMBOL(__delay);
+ 
+ void udelay(unsigned long usecs)
+ {
+-	unsigned long ucycles = usecs * lpj_fine * UDELAY_MULT;
++	u64 ucycles = (u64)usecs * lpj_fine * UDELAY_MULT;
++	u64 n;
+ 
+ 	if (unlikely(usecs > MAX_UDELAY_US)) {
+-		__delay((u64)usecs * riscv_timebase / 1000000ULL);
++		n = (u64)usecs * riscv_timebase;
++		do_div(n, 1000000);
++
++		__delay(n);
+ 		return;
+ 	}
+ 
+-- 
+2.26.0
+

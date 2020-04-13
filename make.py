@@ -391,7 +391,7 @@ def main():
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
         if "mmcm" in board.soc_capabilities:
-            soc.add_mmcm()
+            soc.add_mmcm(2)
         soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------
