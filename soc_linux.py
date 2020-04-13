@@ -192,8 +192,8 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("clkout_def_duty_num", int(50))
             self.add_constant("clkout_def_duty_den", int(100))
             # We need to write exponent of clkout_margin to allow the driver for smaller inaccuracy
-            import numpy as np
-            exp = np.log10(self.mmcm.clkouts[0][3])
+            from math import log10
+            exp = log10(self.mmcm.clkouts[0][3])
             if exp < 0:
                 self.add_constant("clkout_margin_exp", int(abs(exp)))
                 self.add_constant("clkout_margin", int(self.mmcm.clkouts[0][3] * 10 ** abs(exp)))
