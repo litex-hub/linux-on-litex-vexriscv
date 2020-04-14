@@ -249,6 +249,17 @@ class CamLink4K(Board):
     def load(self):
         os.system("camlink configure build/gateware/top.bit")
 
+# TrellisBoard support -----------------------------------------------------------------------------
+
+class TrellisBoard(Board):
+    def __init__(self):
+        from litex_boards.targets import trellisboard
+        Board.__init__(self, trellisboard.BaseSoC, {"serial"})
+
+    def load(self):
+        os.system("openocd -f prog/trellisboard.cfg -c \"transport select jtag; init;" +
+            " svf build/trellisboard/gateware/top.svf; exit\"")
+
 # De10Lite support ---------------------------------------------------------------------------------
 
 class De10Lite(Board):
@@ -308,6 +319,7 @@ supported_boards = {
     "hadbadge":     HADBadge,
     "orangecrab":   OrangeCrab,
     "camlink_4k":   CamLink4K,
+    "trellisboard": TrellisBoard,
 
     # Altera/Intel
     "de0nano":      De0Nano,
