@@ -198,7 +198,7 @@ class VersaECP5(Board):
 
     def load(self):
         os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
-            " svf \build/versa_ecp5/gateware/top.svf; exit\"")
+            " svf build/versa_ecp5/gateware/top.svf; exit\"")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
