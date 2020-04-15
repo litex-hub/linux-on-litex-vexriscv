@@ -47,8 +47,7 @@ class Arty(Board):
             "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0xc1100000 by bios
         }
         from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_xilinx.cfg",
-            flash_proxy_basename="prog/bscan_spi_xc7a35t.bit")
+        prog = OpenOCD("prog/openocd_xilinx.cfg", flash_proxy_basename="bscan_spi_xc7a35t.bit")
         prog.set_flash_proxy_dir(".")
         for filename, base in flash_regions.items():
             base = int(base, 16)
