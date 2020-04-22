@@ -259,6 +259,28 @@ class TrellisBoard(Board):
         os.system("openocd -f prog/trellisboard.cfg -c \"transport select jtag; init;" +
             " svf build/trellisboard/gateware/top.svf; exit\"")
 
+# ECPIX5 support -----------------------------------------------------------------------------------
+
+class ECPIX5(Board):
+    def __init__(self):
+        from litex_boards.targets import ecpix5
+        Board.__init__(self, ecpix5.BaseSoC, {"serial"})
+
+    def load(self):
+        f = open("openocd.cfg", "w")
+        f.write(
+    """
+    interface ftdi
+    ftdi_vid_pid 0x0403 0x6010
+    ftdi_channel 0
+    ftdi_layout_init 0x00e8 0x60eb
+    reset_config none
+    adapter_khz 25000
+    jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
+    """)
+        f.close()
+        os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf build/ecpix5/gateware/top.svf; exit\"")
+
 # De10Lite support ---------------------------------------------------------------------------------
 
 class De10Lite(Board):
@@ -319,6 +341,7 @@ supported_boards = {
     "orangecrab":   OrangeCrab,
     "camlink_4k":   CamLink4K,
     "trellisboard": TrellisBoard,
+    "ecpix5":       ECPIX5,
 
     # Altera/Intel
     "de0nano":      De0Nano,
