@@ -225,12 +225,12 @@ class HADBadge(Board):
 # OrangeCrab support -------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
-    def __init__(self, uart_name="usb_cdc"):
+    def __init__(self, uart_name="usb_acm"):
         from litex_boards.targets import orangecrab
-        if uart_name == "usb_cdc": # FIXME: do proper install of ValentyUSB.
+        if uart_name == "usb_acm": # FIXME: do proper install of ValentyUSB.
             os.system("git clone https://github.com/gregdavill/valentyusb -b hw_cdc_eptri")
             sys.path.append("valentyusb")
-            Board.__init__(self, orangecrab.BaseSoC, {"usb_cdc", "spisdcard"})
+            Board.__init__(self, orangecrab.BaseSoC, {"usb_acm", "spisdcard"})
         else:
             Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
 
@@ -389,8 +389,8 @@ def main():
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
         if "usb_fifo" in board.soc_capabilities:
             soc_kwargs.update(uart_name="usb_fifo")
-        if "usb_cdc" in board.soc_capabilities:
-            soc_kwargs.update(uart_name="usb_cdc")
+        if "usb_acm" in board.soc_capabilities:
+            soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
 
