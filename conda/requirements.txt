@@ -1,5 +1,8 @@
 -e git+https://github.com/m-labs/migen@master#egg=migen
 -e git+https://github.com/enjoy-digital/litex@master#egg=litex
+-e git+https://github.com/litex-hub/pythondata-software-compiler_rt@master#egg=pythondata-software-compiler_rt
+-e git+https://github.com/litex-hub/pythondata-cpu-vexriscv@master#egg=pythondata-cpu-vexriscv
+-e git+https://github.com/litex-hub/pythondata-misc-tapcfg@master#egg=pythondata-misc-tapcfg
 -e git+https://github.com/enjoy-digital/liteeth@master#egg=liteeth
 -e git+https://github.com/enjoy-digital/litedram@master#egg=litedram
 -e git+https://github.com/enjoy-digital/litesdcard@master#egg=litesdcard
