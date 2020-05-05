@@ -404,7 +404,7 @@ def main():
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, output_dir=build_dir, csr_json=os.path.join(build_dir, "csr.json"))
+        builder   = Builder(soc, output_dir=build_dir, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
