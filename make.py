@@ -35,8 +35,7 @@ class Arty(Board):
             "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm"})
 
     def load(self):
-        from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty/gateware/top.bit")
 
     def flash(self):
@@ -46,8 +45,7 @@ class Arty(Board):
             "buildroot/rv32.dtb.fbi":          "0x00d00000", # Device tree: copied to 0xc1000000 by bios
             "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0xc1100000 by bios
         }
-        from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_xilinx.cfg", flash_proxy_basename="bscan_spi_xc7a35t.bit")
+        prog = self.platform.create_programmer()
         prog.set_flash_proxy_dir(".")
         for filename, base in flash_regions.items():
             base = int(base, 16)
@@ -58,8 +56,7 @@ class ArtyA7(Arty):
     SPIFLASH_DUMMY_CYCLES = 7
 
     def load(self):
-        from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty_a7/gateware/top.bit")
 
 class ArtyS7(Arty):
@@ -84,8 +81,7 @@ class NeTV2(Board):
         Board.__init__(self, netv2.BaseSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
 
     def load(self):
-        from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_netv2_rpi.cfg")
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/netv2/gateware/top.bit")
 
 # Genesys2 support ---------------------------------------------------------------------------------
@@ -96,8 +92,7 @@ class Genesys2(Board):
         Board.__init__(self, genesys2.BaseSoC, {"serial", "ethernet"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/genesys2/gateware/top.bit")
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -108,8 +103,7 @@ class KC705(Board):
         Board.__init__(self, kc705.BaseSoC, {"serial", "ethernet", "leds", "xadc"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/kc705/gateware/top.bit")
 
 
@@ -121,8 +115,7 @@ class KCU105(Board):
         Board.__init__(self, kcu105.BaseSoC, {"serial", "ethernet"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/kcu105/gateware/top.bit")
 
 
@@ -134,8 +127,7 @@ class ZCU104(Board):
         Board.__init__(self, zcu104.BaseSoC, {"serial"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/zcu104/gateware/top.bit")
 
 
@@ -147,8 +139,7 @@ class Nexys4DDR(Board):
         Board.__init__(self, nexys4ddr.BaseSoC, {"serial", "spisdcard", "ethernet"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -159,8 +150,7 @@ class NexysVideo(Board):
         Board.__init__(self, nexys_video.BaseSoC, {"serial", "framebuffer"})
 
     def load(self):
-        from litex.build.xilinx import VivadoProgrammer
-        prog = VivadoProgrammer()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/nexys_video/gateware/top.bit")
 
 # MiniSpartan6 support -----------------------------------------------------------------------------
@@ -171,8 +161,8 @@ class MiniSpartan6(Board):
         Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo", "spisdcard"})
 
     def load(self):
-        os.system("xc3sprog -c ftdi build/minispartan6/gateware/top.bit")
-
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/minispartan6/gateware/top.bit")
 
 # Pipistrello support ------------------------------------------------------------------------------
 
@@ -182,8 +172,8 @@ class Pipistrello(Board):
         Board.__init__(self, pipistrello.BaseSoC, {"serial"})
 
     def load(self):
-        os.system("fpgaprog -f build/pipistrello/gateware/top.bit")
-
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/pipistrello/gateware/top.bit")
 
 # Versa ECP5 support -------------------------------------------------------------------------------
 
@@ -196,8 +186,8 @@ class VersaECP5(Board):
         Board.__init__(self, versa_ecp5.BaseSoC, {"serial", "ethernet", "spiflash"})
 
     def load(self):
-        os.system("openocd -f prog/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
-            " svf build/versa_ecp5/gateware/top.svf; exit\"")
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/versa_ecp5/gateware/top.svf")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -207,7 +197,8 @@ class ULX3S(Board):
         Board.__init__(self, ulx3s.BaseSoC, {"serial", "spisdcard"})
 
     def load(self):
-        os.system("ujprog build/ulx3s/gateware/top.svf")
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/ulx3s/gateware/top.svf")
 
 # HADBadge support ---------------------------------------------------------------------------------
 
@@ -234,10 +225,6 @@ class OrangeCrab(Board):
         else:
             Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
 
-    def load(self):
-        os.system("openocd -f openocd/ecp5-versa5g.cfg -c \"transport select jtag; init;" +
-            " svf build/gateware/top.svf; exit\"")
-
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
@@ -256,8 +243,8 @@ class TrellisBoard(Board):
         Board.__init__(self, trellisboard.BaseSoC, {"serial"})
 
     def load(self):
-        os.system("openocd -f prog/trellisboard.cfg -c \"transport select jtag; init;" +
-            " svf build/trellisboard/gateware/top.svf; exit\"")
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/trellisboard/gateware/top.svf")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
@@ -267,19 +254,8 @@ class ECPIX5(Board):
         Board.__init__(self, ecpix5.BaseSoC, {"serial"})
 
     def load(self):
-        f = open("openocd.cfg", "w")
-        f.write(
-    """
-    interface ftdi
-    ftdi_vid_pid 0x0403 0x6010
-    ftdi_channel 0
-    ftdi_layout_init 0x00e8 0x60eb
-    reset_config none
-    adapter_khz 25000
-    jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
-    """)
-        f.close()
-        os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf build/ecpix5/gateware/top.svf; exit\"")
+        prog = self.platform.create_programmer()
+        prog.load_bitstream("build/ecpix5/gateware/top.svf")
 
 # De10Lite support ---------------------------------------------------------------------------------
 
@@ -289,8 +265,7 @@ class De10Lite(Board):
         Board.__init__(self, de10lite.BaseSoC, {"serial"})
 
     def load(self):
-        from litex.build.altera import USBBlaster
-        prog = USBBlaster()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/de10lite/gateware/top.sof")
 
 # De10Nano support ----------------------------------------------------------------------------------
@@ -301,8 +276,7 @@ class De10Nano(Board):
         Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "spisdcard", "leds", "switches"})
 
     def load(self):
-        from litex.build.altera import USBBlaster
-        prog = USBBlaster()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/de10nano/gateware/top.sof")
 
 # De0Nano support ----------------------------------------------------------------------------------
@@ -313,8 +287,7 @@ class De0Nano(Board):
         Board.__init__(self, de0nano.BaseSoC, {"serial"})
 
     def load(self):
-        from litex.build.altera import USBBlaster
-        prog = USBBlaster()
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/de0nano/gateware/top.sof")
 
 # Main ---------------------------------------------------------------------------------------------
@@ -396,6 +369,7 @@ def main():
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
+        board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------
         if "spiflash" in board.soc_capabilities:
