@@ -380,8 +380,8 @@ def main():
             soc.add_spi_sdcard()
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
-        if "leds" in board.soc_capabilities:
-            soc.add_leds()
+        #if "leds" in board.soc_capabilities:
+        #    soc.add_leds()
         if "rgb_led" in board.soc_capabilities:
             soc.add_rgb_led()
         if "switches" in board.soc_capabilities:
