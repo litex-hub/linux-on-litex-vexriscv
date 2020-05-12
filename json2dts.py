@@ -422,6 +422,33 @@ if "mmcm" in d["csr_bases"]:
 dts += """
 	};"""
 
+	# MMC --------------------------------------------------------------------------------------
+if "sdcore" in d["csr_bases"]:
+	dts += """
+		mmc0: mmc@{mmc_csr_base:x} {{
+			compatible = "litex,mmc";
+			bus-width = <4>;
+			reg = <
+				0 0x{sdphy_csr_base:x} 0 0x100
+				0 0x{sdcore_csr_base:x} 0 0x100
+				0 0x{sddatareader_csr_base:x} 0 0x100
+				0 0x{sddatawriter_csr_base:x} 0 0x100
+				0 0x{sdread_csr_base:x} 0 0x200
+				0 0x{sdwrite_csr_base:x} 0 0x200
+				0 0x{sdtimer_csr_base:x} 0 0x100
+			>;
+			clocks = <&CLKOUT0>;
+			status = "okay";
+		}};
+	""".format(mmc_csr_base=d["csr_bases"]["sdcore"],
+			sdphy_csr_base=d["csr_bases"]["sdphy"],
+			sdcore_csr_base=d["csr_bases"]["sdcore"],
+			sddatareader_csr_base=d["csr_bases"]["sddatareader"],
+			sddatawriter_csr_base=d["csr_bases"]["sddatawriter"],
+			sdread_csr_base=d["memories"]["sdread"]["base"],
+			sdwrite_csr_base=d["memories"]["sdwrite"]["base"],
+			sdtimer_csr_base=d["csr_bases"]["sdtimer"])
+
 # Aliases -----------------------------------------------------------------------------------------
 
 if aliases:
