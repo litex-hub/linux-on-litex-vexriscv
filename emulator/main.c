@@ -8,7 +8,6 @@
 #include <uart.h>
 #include <console.h>
 
-#include <hw/flags.h>
 #include <generated/csr.h>
 #include <generated/mem.h>
 
