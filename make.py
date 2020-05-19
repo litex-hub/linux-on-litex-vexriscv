@@ -251,7 +251,7 @@ class TrellisBoard(Board):
 class ECPIX5(Board):
     def __init__(self):
         from litex_boards.targets import ecpix5
-        Board.__init__(self, ecpix5.BaseSoC, {"serial"})
+        Board.__init__(self, ecpix5.BaseSoC, {"serial", "ethernet"})
 
     def load(self):
         prog = self.platform.create_programmer()
