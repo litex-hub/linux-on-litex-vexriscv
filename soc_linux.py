@@ -6,6 +6,7 @@ import subprocess
 from migen import *
 
 from litex.soc.interconnect import wishbone
+from litex.soc.interconnect.csr import *
 
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
@@ -16,6 +17,16 @@ from litex.soc.cores.icap import ICAPBitstream
 from litex.soc.cores.clock import S7MMCM
 
 from litevideo.output import VideoOut
+
+from migen.build.generic_platform import Pins, IOStandard, Subsignal
+from litex.build.generic_platform import *
+
+from litesdcard.phy import SDPHY
+from litesdcard.clocker import SDClockerS7
+from litesdcard.core import SDCore
+from litesdcard.data import SDDataReader, SDDataWriter
+from litex.soc.cores.timer import Timer
+from litex.soc.interconnect import wishbone
 
 # Predefined values --------------------------------------------------------------------------------
 
@@ -83,7 +94,9 @@ def SoCLinux(soc_cls, **kwargs):
             "timer0":     1,
         }}
         mem_map = {**soc_cls.mem_map, **{
-            "ethmac":       0xb0000000,
+            "ethmac":       0xb0000000, # len: 0x2000
+            "sdread":       0xb0002000, # len: 0x200
+            "sdwrite":      0xb0002200, # len: 0x200
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
         }}
@@ -186,6 +199,7 @@ def SoCLinux(soc_cls, **kwargs):
             for n in range(nclkout):
                 self.cd_mmcm_clkout += [ClockDomain(name="cd_mmcm_clkout{}".format(n))]
                 self.mmcm.create_clkout(self.cd_mmcm_clkout[n], self.clk_freq)
+            self.mmcm.clock_domains.cd_mmcm_clkout = self.cd_mmcm_clkout
 
             self.add_constant("clkout_def_freq", int(self.clk_freq))
             self.add_constant("clkout_def_phase", int(0))
@@ -218,6 +232,66 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_csr("mmcm")
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
+
+        def add_mmc_sdcard(self, sd_card_freq, memory_size = 512, memory_width = 32):
+            _sd_io = [
+                    ("sdcard", 0,
+                        Subsignal("data", Pins("D15 J17 J18 E15")),
+                        Subsignal("cmd", Pins("E16")),
+                        Subsignal("clk", Pins("C15")),
+                        Subsignal("cd", Pins("K15")),
+                        IOStandard("LVCMOS33"), Misc("SLEW=FAST")
+                    )
+                    ]
+
+            self.platform.add_extension(_sd_io)
+
+            sdcard_pads = self.platform.request('sdcard')
+
+            self.cd_mmcm_clkout[0].name = "sd"
+            self.mmcm.clock_domains.cd_sd_fb = self.cd_sd_fb = ClockDomain()
+
+            self.submodules.sdphy = SDPHY(sdcard_pads, self.platform.device)
+            self.add_csr("sdphy")
+            self.submodules.sdcore = SDCore(self.sdphy, csr_data_width=8)
+            self.add_csr("sdcore")
+            self.submodules.sdtimer = Timer()
+            self.add_csr("sdtimer")
+
+            # SD Card data reader
+
+            sdread_mem = Memory(memory_width, memory_size//4)
+            sdread_sram = FullMemoryWE()(wishbone.SRAM(sdread_mem, read_only=True))
+            self.submodules += sdread_sram
+
+            self.add_wb_slave(self.mem_map["sdread"], sdread_sram.bus, memory_size)
+            self.add_memory_region("sdread", self.mem_map["sdread"], memory_size)
+
+            sdread_port = sdread_sram.mem.get_port(write_capable=True);
+            self.specials += sdread_port
+            self.submodules.sddatareader = SDDataReader(port=sdread_port, endianness=self.cpu.endianness)
+            self.add_csr("sddatareader")
+            self.comb += self.sdcore.source.connect(self.sddatareader.sink),
+
+            # SD Card data writer
+
+            sdwrite_mem = Memory(memory_width, memory_size//4)
+            sdwrite_sram = FullMemoryWE()(wishbone.SRAM(sdwrite_mem, read_only=False))
+            self.submodules += sdwrite_sram
+
+            self.add_wb_slave(self.mem_map["sdwrite"], sdwrite_sram.bus, memory_size)
+            self.add_memory_region("sdwrite", self.mem_map["sdwrite"], memory_size)
+
+            sdwrite_port = sdwrite_sram.mem.get_port(write_capable=False, async_read=True, mode=READ_FIRST);
+            self.specials += sdwrite_port
+            self.submodules.sddatawriter = SDDataWriter(port=sdwrite_port, endianness=self.cpu.endianness)
+            self.add_csr("sddatawriter")
+            self.comb += self.sddatawriter.source.connect(self.sdcore.sink),
+
+            self.platform.add_period_constraint(self.cd_mmcm_clkout[0].clk, 1e9/sd_card_freq)
+            self.cd_mmcm_clkout[0].clk.attr.add("keep")
+            self.platform.add_false_path_constraints(
+                    self.cd_mmcm_clkout[0].clk)
 
         # Ethernet configuration -------------------------------------------------------------------
         def configure_ethernet(self, local_ip, remote_ip):

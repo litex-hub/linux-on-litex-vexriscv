@@ -32,7 +32,7 @@ class Arty(Board):
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led",
-            "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm"})
+            "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm", "mmc_sdcard"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -339,6 +339,7 @@ def main():
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
     parser.add_argument("--fbi",            action="store_true",      help="Generate fbi images")
+    parser.add_argument("--mmc-sdcard-freq",type=int, default=25e6,   help="MMC sdcard frequency")
     args = parser.parse_args()
 
     # Board(s) selection ---------------------------------------------------------------------------
@@ -355,7 +356,7 @@ def main():
 
         # SoC parameters (and override for boards that don't support default parameters) -----------
         soc_kwargs = {}
-        soc_kwargs.update(integrated_rom_size=0x8000)
+        soc_kwargs.update(integrated_rom_size=0x10000)
         if board_name in ["de0nano"]:
             soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
@@ -400,6 +401,8 @@ def main():
             soc.add_icap_bitstream()
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
+        if "mmc_sdcard" in board.soc_capabilities:
+            soc.add_mmc_sdcard(args.mmc_sdcard_freq)
         soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------
