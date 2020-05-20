@@ -32,7 +32,7 @@ class Arty(Board):
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led",
-            "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm", "mmc_sdcard"})
+            "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm", "sdcard"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -339,7 +339,7 @@ def main():
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
     parser.add_argument("--fbi",            action="store_true",      help="Generate fbi images")
-    parser.add_argument("--mmc-sdcard-freq",type=int, default=25e6,   help="MMC sdcard frequency")
+    parser.add_argument("--sdcard-freq",    type=int, default=25e6,   help="SDCard frequency")
     args = parser.parse_args()
 
     # Board(s) selection ---------------------------------------------------------------------------
@@ -373,12 +373,19 @@ def main():
         board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------
+        if "mmcm" in board.soc_capabilities:
+            soc.add_mmcm(2)
         if "spiflash" in board.soc_capabilities:
             soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
             soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
+        if "sdcard" in board.soc_capabilities:
+            if board_name in ["arty", "arty_a7"]:
+                from litex_boards.platforms.arty import _sdcard_pmod_io
+                board.platform.add_extension(_sdcard_pmod_io)
+            soc.add_sdcard(args.sdcard_freq)
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         #if "leds" in board.soc_capabilities:
@@ -399,10 +406,6 @@ def main():
             soc.add_framebuffer(video_settings)
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
-        if "mmcm" in board.soc_capabilities:
-            soc.add_mmcm(2)
-        if "mmc_sdcard" in board.soc_capabilities:
-            soc.add_mmc_sdcard(args.mmc_sdcard_freq)
         soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------

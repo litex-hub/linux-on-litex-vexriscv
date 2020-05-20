@@ -233,20 +233,8 @@ def SoCLinux(soc_cls, **kwargs):
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
-        def add_mmc_sdcard(self, sd_card_freq, memory_size = 512, memory_width = 32):
-            _sd_io = [
-                    ("sdcard", 0,
-                        Subsignal("data", Pins("D15 J17 J18 E15")),
-                        Subsignal("cmd", Pins("E16")),
-                        Subsignal("clk", Pins("C15")),
-                        Subsignal("cd", Pins("K15")),
-                        IOStandard("LVCMOS33"), Misc("SLEW=FAST")
-                    )
-                    ]
-
-            self.platform.add_extension(_sd_io)
-
-            sdcard_pads = self.platform.request('sdcard')
+        def add_sdcard(self, sd_card_freq, memory_size=512, memory_width=32):
+            sdcard_pads = self.platform.request("sdcard")
 
             self.cd_mmcm_clkout[0].name = "sd"
             self.mmcm.clock_domains.cd_sd_fb = self.cd_sd_fb = ClockDomain()
