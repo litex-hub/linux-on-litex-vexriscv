@@ -147,7 +147,7 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.BaseSoC, {"serial", "framebuffer"})
+        Board.__init__(self, nexys_video.BaseSoC, {"usb_fifo", "framebuffer"})
 
     def load(self):
         prog = self.platform.create_programmer()
