@@ -65,17 +65,17 @@ class Supervisor(Module, AutoCSR):
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
-class SoCLinux(SoCSDRAM):
-    csr_map = {**SoCSDRAM.csr_map, **{
+class SoCLinux(SoCCore):
+    csr_map = {**SoCCore.csr_map, **{
         "ctrl":       0,
         "uart":       2,
         "timer0":     3,
     }}
-    interrupt_map = {**SoCSDRAM.interrupt_map, **{
+    interrupt_map = {**SoCCore.interrupt_map, **{
         "uart":       0,
         "timer0":     1,
     }}
-    mem_map = {**SoCSDRAM.mem_map, **{
+    mem_map = {**SoCCore.mem_map, **{
         "ethmac":       0xb0000000,
         "spiflash":     0xd0000000,
         "csr":          0xf0000000,
@@ -100,8 +100,8 @@ class SoCLinux(SoCSDRAM):
                 "emulator/emulator.bin": "0x01100000",
                 }, "little")
 
-        # SoCSDRAM ----------------------------------------------------------------------------------
-        SoCSDRAM.__init__(self, platform, clk_freq=sys_clk_freq,
+        # SoCCore ----------------------------------------------------------------------------------
+        SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type                 = "vexriscv", cpu_variant="linux",
             uart_name                = "sim",
             l2_reverse               = False,
@@ -138,10 +138,12 @@ class SoCLinux(SoCSDRAM):
                 clk_freq  = sdram_clk_freq,
                 verbosity = sdram_verbosity,
                 init      = ram_init)
-            self.register_sdram(
-                self.sdrphy,
-                sdram_module.geom_settings,
-                sdram_module.timing_settings)
+            self.add_sdram("sdram",
+                phy                     = self.sdrphy,
+                module                  = sdram_module,
+                origin                  = self.mem_map["main_ram"],
+                size                    = 0x10000000, # Limit mapped SDRAM to 1GB.
+                l2_cache_reverse        = False)
             # FIXME: skip memtest to avoid corrupting memory
             self.add_constant("MEMTEST_BUS_SIZE",  0)
             self.add_constant("MEMTEST_ADDR_SIZE", 0)
