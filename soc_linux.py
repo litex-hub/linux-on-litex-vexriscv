@@ -241,7 +241,7 @@ def SoCLinux(soc_cls, **kwargs):
 
             self.submodules.sdphy = SDPHY(sdcard_pads, self.platform.device)
             self.add_csr("sdphy")
-            self.submodules.sdcore = SDCore(self.sdphy, csr_data_width=8)
+            self.submodules.sdcore = SDCore(self.sdphy)
             self.add_csr("sdcore")
             self.submodules.sdtimer = Timer()
             self.add_csr("sdtimer")
