@@ -233,7 +233,7 @@ def SoCLinux(soc_cls, **kwargs):
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
-        def add_sdcard(self, sd_card_freq, memory_size=512, memory_width=32):
+        def add_a7_sdcard(self, sd_card_freq, memory_size=512, memory_width=32):
             sdcard_pads = self.platform.request("sdcard")
 
             self.cd_mmcm_clkout[0].name = "sd"

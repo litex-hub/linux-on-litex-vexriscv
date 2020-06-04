@@ -385,7 +385,9 @@ def main():
             if board_name in ["arty", "arty_a7"]:
                 from litex_boards.platforms.arty import _sdcard_pmod_io
                 board.platform.add_extension(_sdcard_pmod_io)
-            soc.add_sdcard(args.sdcard_freq)
+                soc.add_a7_sdcard(args.sdcard_freq)
+            else:
+                soc.add_sdcard()
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         #if "leds" in board.soc_capabilities:
