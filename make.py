@@ -225,6 +225,11 @@ class OrangeCrab(Board):
         else:
             Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
 
+    def load(self):
+        os.system("cp build/orangecrab/gateware/top.bit build/orangecrab/gateware/top.dfu")
+        os.system("dfu-suffix -v 1209 -p 5bf0 -a build/orangecrab/gateware/top.dfu")
+        os.system("dfu-util --download build/orangecrab/gateware/top.dfu")
+
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
