@@ -82,8 +82,21 @@ dts += """
 		device_type = "memory";
 		reg = <0x0 0x{main_ram_base:x} 0x1 0x{main_ram_size:x}>;
 	}};
+
+	reserved-memory {{
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		ranges;
+
+		vexriscv_emulator@{emulator_base:x} {{
+			reg = <0x0 0x{emulator_base:x} 0x0 0x{emulator_size:x}>;
+		}};
+	}};
+                                                                                
 """.format(main_ram_base=d["memories"]["main_ram"]["base"],
-		   main_ram_size=d["memories"]["main_ram"]["size"])
+		   main_ram_size=d["memories"]["main_ram"]["size"],
+		   emulator_base=d["memories"]["emulator"]["base"],
+		   emulator_size=d["memories"]["emulator"]["size"])
 
 # SoC ----------------------------------------------------------------------------------------------
 
