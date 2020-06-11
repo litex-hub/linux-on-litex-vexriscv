@@ -238,28 +238,17 @@ The images should load and you should see Linux booting :)
 
 Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
 
-### Load the Linux images over TFTP
-For boards that have Ethernet,  the Linux images can be loaded over TFTP. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
+### Load the Linux images over Ethernet
+For boards with Ethernet support, the Linux images can be loaded over TFTP. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
 
 Once the bistream is loaded, the board you try to retrieve the files on the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
 
-The images should load and you should see Linux booting :)
+The images will be loaded to RAM and you should see Linux booting :)
 
-### Load the Linux images to SPI-Flash
-For boards that have SPI Flash (and enough space on it to store the images), the Linux images can be written to
-SPI Flash and directly loaded during boot.
+### Load the Linux images to SDCard
+For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your SDCard root directory (with a FAT16 or FAT32 partition).
 
-To flash the bitstream and linux images to you board, run:
-```sh
-$ ./make.py --board=XXYY --fbi --flash
-```
-
-When done, reload the FPGA of the board with:
-```sh
-$ ./make.py --board=XXYY --load
-```
-
-The system should run the LiteX BIOS, copy the images from SPI Flash to RAM and boot Linux :)
+The images will be loaded to RAM and you should see Linux booting :)
 
 ## Generating the Linux binaries (optional)
 ```sh

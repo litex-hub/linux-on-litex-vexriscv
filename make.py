@@ -38,20 +38,6 @@ class Arty(Board):
         prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty/gateware/top.bit")
 
-    def flash(self):
-        flash_regions = {
-            "buildroot/Image.fbi":             "0x00000000", # Linux Image: copied to 0xc0000000 by bios
-            "buildroot/rootfs.cpio.fbi":       "0x00500000", # File System: copied to 0xc0800000 by bios
-            "buildroot/rv32.dtb.fbi":          "0x00d00000", # Device tree: copied to 0xc1000000 by bios
-            "emulator/emulator.bin.fbi":       "0x00e00000", # MM Emulator: copied to 0xc1100000 by bios
-        }
-        prog = self.platform.create_programmer()
-        prog.set_flash_proxy_dir(".")
-        for filename, base in flash_regions.items():
-            base = int(base, 16)
-            print("Flashing {} at 0x{:08x}".format(filename, base))
-            prog.flash(base, filename)
-
 class ArtyA7(Arty):
     SPIFLASH_DUMMY_CYCLES = 7
 
@@ -343,7 +329,6 @@ def main():
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
-    parser.add_argument("--fbi",            action="store_true",      help="Generate fbi images")
     parser.add_argument("--sdcard-freq",    type=int, default=25e6,   help="SDCard frequency")
     args = parser.parse_args()
 
@@ -426,13 +411,6 @@ def main():
 
         # Machine Mode Emulator --------------------------------------------------------------------
         soc.compile_emulator(board_name)
-
-        # Flash Linux images -----------------------------------------------------------------------
-        if args.fbi:
-            os.system("python3 -m litex.soc.software.mkmscimg buildroot/Image -o buildroot/Image.fbi --fbi --little")
-            os.system("python3 -m litex.soc.software.mkmscimg buildroot/rootfs.cpio -o buildroot/rootfs.cpio.fbi --fbi --little")
-            os.system("python3 -m litex.soc.software.mkmscimg buildroot/rv32.dtb -o buildroot/rv32.dtb.fbi --fbi --little")
-            os.system("python3 -m litex.soc.software.mkmscimg emulator/emulator.bin -o emulator/emulator.bin.fbi --fbi --little")
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
