@@ -263,7 +263,7 @@ class De10Lite(Board):
 class De10Nano(Board):
     def __init__(self):
         from litex_boards.targets import de10nano
-        Board.__init__(self, de10nano.MiSTerSDRAMSoC, {"serial", "spisdcard", "leds", "switches"})
+        Board.__init__(self, de10nano.BaseSoC, {"serial", "spisdcard", "leds", "switches"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -350,6 +350,8 @@ def main():
             soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
+        if board_name in ["de10nano"]:
+            soc_kwargs.update(with_mister_sdram=True)
         if "usb_fifo" in board.soc_capabilities:
             soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
