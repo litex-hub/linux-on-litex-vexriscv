@@ -59,3 +59,6 @@ SECTIONS
 }
 
 PROVIDE(_fstack = ORIGIN(emulator) + LENGTH(emulator) - 4);
+
+PROVIDE(_fdata_rom = LOADADDR(.data));
+PROVIDE(_edata_rom = LOADADDR(.data) + SIZEOF(.data));
