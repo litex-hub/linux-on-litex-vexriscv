@@ -92,7 +92,7 @@ dts += """
 			reg = <0x0 0x{emulator_base:x} 0x0 0x{emulator_size:x}>;
 		}};
 	}};
-                                                                                
+
 """.format(main_ram_base=d["memories"]["main_ram"]["base"],
 		   main_ram_size=d["memories"]["main_ram"]["size"],
 		   emulator_base=d["memories"]["emulator"]["base"],
@@ -448,7 +448,6 @@ if "sdcore" in d["csr_bases"]:
 				0 0x{sddatawriter_csr_base:x} 0 0x100
 				0 0x{sdread_csr_base:x} 0 0x200
 				0 0x{sdwrite_csr_base:x} 0 0x200
-				0 0x{sdtimer_csr_base:x} 0 0x100
 			>;
 			clocks = <&CLKOUT0>;
 			status = "okay";
@@ -459,8 +458,7 @@ if "sdcore" in d["csr_bases"]:
 			sddatareader_csr_base=d["csr_bases"]["sddatareader"],
 			sddatawriter_csr_base=d["csr_bases"]["sddatawriter"],
 			sdread_csr_base=d["memories"]["sdread"]["base"],
-			sdwrite_csr_base=d["memories"]["sdwrite"]["base"],
-			sdtimer_csr_base=d["csr_bases"]["sdtimer"])
+			sdwrite_csr_base=d["memories"]["sdwrite"]["base"])
 
 # Aliases -----------------------------------------------------------------------------------------
 
