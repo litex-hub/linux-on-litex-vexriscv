@@ -21,8 +21,8 @@ dts = """
 /dts-v1/;
 
 / {
-	#address-cells = <0x2>;
-	#size-cells = <0x2>;
+	#address-cells = <1>;
+	#size-cells    = <1>;
 	compatible = "enjoy-digital,litex-vexriscv-soclinux";
 	model = "VexRiscv SoCLinux";
 """
@@ -47,8 +47,8 @@ dts += """
 
 dts += """
 	cpus {{
-		#address-cells = <0x1>;
-		#size-cells = <0x0>;
+		#address-cells = <1>;
+		#size-cells    = <0>;
 		timebase-frequency = <{sys_clk_freq}>;
 
 		cpu@0 {{
@@ -80,16 +80,16 @@ dts += """
 dts += """
 	memory@{main_ram_base:x} {{
 		device_type = "memory";
-		reg = <0x0 0x{main_ram_base:x} 0x1 0x{main_ram_size:x}>;
+		reg = <0x{main_ram_base:x} 0x{main_ram_size:x}>;
 	}};
 
 	reserved-memory {{
-		#address-cells = <0x02>;
-		#size-cells = <0x02>;
+		#address-cells = <1>;
+		#size-cells    = <1>;
 		ranges;
 
 		vexriscv_emulator@{emulator_base:x} {{
-			reg = <0x0 0x{emulator_base:x} 0x0 0x{emulator_size:x}>;
+			reg = <0x{emulator_base:x} 0x{emulator_size:x}>;
 		}};
 	}};
 
@@ -102,8 +102,8 @@ dts += """
 
 dts += """
 	soc {
-		#address-cells = <0x2>;
-		#size-cells = <0x2>;
+		#address-cells = <1>;
+		#size-cells    = <1>;
 		compatible = "simple-bus";
 		ranges;
 """
@@ -124,7 +124,7 @@ dts += """
 dts += """
 		soc_ctrl0: soc_controller@{soc_ctrl_csr_base:x} {{
 			compatible = "litex,soc_controller";
-			reg = <0x0 0x{soc_ctrl_csr_base:x} 0x0 0xc>;
+			reg = <0x{soc_ctrl_csr_base:x} 0xc>;
 			status = "okay";
 		}};
 	""".format(soc_ctrl_csr_base=d["csr_bases"]["ctrl"])
@@ -137,7 +137,7 @@ if "uart" in d["csr_bases"]:
 		liteuart0: serial@{uart_csr_base:x} {{
 			device_type = "serial";
 			compatible = "litex,liteuart";
-			reg = <0x0 0x{uart_csr_base:x} 0x0 0x100>;
+			reg = <0x{uart_csr_base:x} 0x100>;
 			status = "okay";
 		}};
 	""".format(uart_csr_base=d["csr_bases"]["uart"])
@@ -150,9 +150,9 @@ if "ethphy" in d["csr_bases"] and "ethmac" in d["csr_bases"]:
 	dts += """
 		mac0: mac@{ethmac_csr_base:x} {{
 			compatible = "litex,liteeth";
-			reg = <0x0 0x{ethmac_csr_base:x} 0x0 0x7c
-				0x0 0x{ethphy_csr_base:x} 0x0 0x0a
-				0x0 0x{ethmac_mem_base:x} 0x0 0x2000>;
+			reg = <0x{ethmac_csr_base:x} 0x7c
+				0x{ethphy_csr_base:x} 0x0a
+				0x{ethmac_mem_base:x} 0x2000>;
 			tx-fifo-depth = <{ethmac_tx_slots}>;
 			rx-fifo-depth = <{ethmac_rx_slots}>;
 		}};
@@ -168,7 +168,7 @@ if "leds" in d["csr_bases"]:
 	dts += """
 		leds: gpio@{leds_csr_base:x} {{
 			compatible = "litex,gpio";
-			reg = <0x0 0x{leds_csr_base:x} 0x0 0x4>;
+			reg = <0x{leds_csr_base:x} 0x4>;
 			litex,direction = "out";
 			status = "disabled";
 		}};
@@ -181,7 +181,7 @@ for name in ["rgb_led_r0", "rgb_led_g0", "rgb_led_b0"]:
 		dts += """
 		{pwm_name}: pwm@{pwm_csr_base:x} {{
 			compatible = "litex,pwm";
-			reg = <0x0 0x{pwm_csr_base:x} 0x0 0x24>;
+			reg = <0x{pwm_csr_base:x} 0x24>;
 			clock = <100000000>;
 			#pwm-cells = <3>;
 			status = "okay";
@@ -195,7 +195,7 @@ if "switches" in d["csr_bases"]:
 	dts += """
 		switches: gpio@{switches_csr_base:x} {{
 			compatible = "litex,gpio";
-			reg = <0x0 0x{switches_csr_base:x} 0x0 0x4>;
+			reg = <0x{switches_csr_base:x} 0x4>;
 			litex,direction = "in";
 			status = "disabled";
 		}};
@@ -209,21 +209,21 @@ if "spi" in d["csr_bases"]:
 	dts += """
 		litespi0: spi@{spi_csr_base:x} {{
 			compatible = "litex,litespi";
-			reg = <0x0 0x{spi_csr_base:x} 0x0 0x100>;
+			reg = <0x{spi_csr_base:x} 0x100>;
 			status = "okay";
 
 			litespi,max-bpw = <8>;
 			litespi,sck-frequency = <1000000>;
 			litespi,num-cs = <1>;
 
-			#address-cells = <0x1>;
-			#size-cells = <0x1>;
+			#address-cells = <1>;
+			#size-cells    = <1>;
 
 			spidev0: spidev@0 {{
-			compatible = "linux,spidev";
-			reg = <0 0>;
-			spi-max-frequency = <1000000>;
-			status = "okay";
+				compatible = "linux,spidev";
+				reg = <0>;
+				spi-max-frequency = <1000000>;
+				status = "okay";
 			}};
 		}};
 	""".format(spi_csr_base=d["csr_bases"]["spi"])
@@ -236,36 +236,38 @@ if "spiflash" in d["csr_bases"]:
 	dts += """
 		litespiflash: spiflash@{spiflash_csr_base:x} {{
 			compatible = "litex,spiflash";
-			reg = <0x0 0x{spiflash_csr_base:x} 0x0 0x100>;
-			status = "okay";
+			reg = <0x{spiflash_csr_base:x} 0x100>;
 			flash: flash@0 {{
 				compatible = "jedec,spi-nor";
-				reg = <0x0 0x0 0x0 0x{spiflash_size:x}>;
+				reg = <0x0 0x{spiflash_size:x}>;
 			}};
 		}};
 	""".format(spiflash_csr_base=d["csr_bases"]["spiflash"], spiflash_size=d["memories"]["spiflash"]["size"])
 
 	# SPISDCARD ------------------------------------------------------------------------------------
 
-if False: # FIXME: Disable it for now.
-#if "spisdcard" in d["csr_bases"]:
+if "spisdcard" in d["csr_bases"]:
 	aliases["sdcard0"] = "litespisdcard0"
 
 	dts += """
-		litespisdcard0: spi@{spisdcard_csr_base:x} {{
+		litespi0: spi@{spisdcard_csr_base:x} {{
 			compatible = "litex,litespi";
-			reg = <0x0 0x{spisdcard_csr_base:x} 0x0 0x100>;
+			reg = <0x{spisdcard_csr_base:x} 0x100>;
 			status = "okay";
 
 			litespi,max-bpw = <8>;
-			litespi,sck-frequency = <1000000>;
+			litespi,sck-frequency = <1500000>;
 			litespi,num-cs = <1>;
+
+			#address-cells = <1>;
+			#size-cells    = <1>;
 
 			mmc-slot@0 {{
 				compatible = "mmc-spi-slot";
-				reg = <0 0>;
+			    reg = <0>;
 				voltage-ranges = <3300 3300>;
-				spi-max-frequency = <1000000>;
+				spi-max-frequency = <1500000>;
+			    status = "okay";
 			}};
 		}};
 	""".format(spisdcard_csr_base=d["csr_bases"]["spisdcard"])
@@ -276,7 +278,7 @@ if "i2c0" in d["csr_bases"]:
 	dts += """
 		i2c0: i2c@{i2c0_csr_base:x} {{
 			compatible = "litex,i2c";
-			reg = <0x0 0x{i2c0_csr_base:x} 0x0 0x5>;
+			reg = <0x{i2c0_csr_base:x} 0x5>;
 			status = "okay";
 		}};
 """.format(i2c0_csr_base=d["csr_bases"]["i2c0"])
@@ -287,7 +289,7 @@ if "xadc" in d["csr_bases"]:
 	dts += """
 		hwmon0: xadc@{xadc_csr_base:x} {{
 			compatible = "litex,hwmon-xadc";
-			reg = <0x0 0x{xadc_csr_base:x} 0x0 0x20>;
+			reg = <0x{xadc_csr_base:x} 0x20>;
 			status = "okay";
 		}};
 """.format(xadc_csr_base=d["csr_bases"]["xadc"])
@@ -302,7 +304,7 @@ if "framebuffer" in d["csr_bases"]:
 	dts += """
 		framebuffer0: framebuffer@f0000000 {{
 			compatible = "simple-framebuffer";
-			reg = <0x0 0x{framebuffer_base:x} 0x0 0x{framebuffer_size:x}>;
+			reg = <0x{framebuffer_base:x} 0x{framebuffer_size:x}>;
 			width = <{framebuffer_width}>;
 			height = <{framebuffer_height}>;
 			stride = <{framebuffer_stride}>;
@@ -318,7 +320,7 @@ if "framebuffer" in d["csr_bases"]:
 	dts += """
 		litevideo0: gpu@{litevideo_base:x} {{
 			compatible = "litex,litevideo";
-			reg = <0x0 0x{litevideo_base:x} 0x0 0x100>;
+			reg = <0x{litevideo_base:x} 0x100>;
 			litevideo,pixel-clock = <{litevideo_pixel_clock}>;
 			litevideo,h-active = <{litevideo_h_active}>;
 			litevideo,h-blanking = <{litevideo_h_blanking}>;
@@ -350,7 +352,7 @@ if "icap_bit" in d["csr_bases"]:
 	dts += """
 		fpga0: icap@{icap_csr_base:x} {{
 			compatible = "litex,fpga-icap";
-			reg = <0x0 0x{icap_csr_base:x} 0x0 0x14>;
+			reg = <0x{icap_csr_base:x} 0x14>;
 			status = "okay";
 		}};
 """.format(icap_csr_base=d["csr_bases"]["icap_bit"])
@@ -393,7 +395,7 @@ if "mmcm" in d["csr_bases"]:
 	dts += """
 		clk0: clk@{mmcm_csr_base:x} {{
 			compatible = "litex,clk";
-			reg = <0x0 0x{mmcm_csr_base:x} 0x0 0x100>;
+			reg = <0x{mmcm_csr_base:x} 0x100>;
 			#clock-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -432,22 +434,20 @@ if "mmcm" in d["csr_bases"]:
 				  clkout_margin, clkout_margin_exp)
 	dts += """
 		};"""
-dts += """
-	};"""
 
-	# MMC --------------------------------------------------------------------------------------
+	# SDCARD --------------------------------------------------------------------------------------
 if "sdcore" in d["csr_bases"]:
 	dts += """
 		mmc0: mmc@{mmc_csr_base:x} {{
 			compatible = "litex,mmc";
 			bus-width = <4>;
 			reg = <
-				0 0x{sdphy_csr_base:x} 0 0x100
-				0 0x{sdcore_csr_base:x} 0 0x100
-				0 0x{sddatareader_csr_base:x} 0 0x100
-				0 0x{sddatawriter_csr_base:x} 0 0x100
-				0 0x{sdread_csr_base:x} 0 0x200
-				0 0x{sdwrite_csr_base:x} 0 0x200
+				0x{sdphy_csr_base:x} 0x100
+				0x{sdcore_csr_base:x} 0x100
+				0x{sddatareader_csr_base:x} 0x100
+				0x{sddatawriter_csr_base:x} 0x100
+				0x{sdread_csr_base:x} 0x200
+				0x{sdwrite_csr_base:x} 0x200
 			>;
 			clocks = <&CLKOUT0>;
 			status = "okay";
@@ -459,6 +459,9 @@ if "sdcore" in d["csr_bases"]:
 			sddatawriter_csr_base=d["csr_bases"]["sddatawriter"],
 			sdread_csr_base=d["memories"]["sdread"]["base"],
 			sdwrite_csr_base=d["memories"]["sdwrite"]["base"])
+
+dts += """
+	};"""
 
 # Aliases -----------------------------------------------------------------------------------------
 
