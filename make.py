@@ -364,6 +364,10 @@ def main():
         board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------
+        if board_name in ["arty", "arty_a7"]:
+            from litex_boards.platforms.arty import _sdcard_pmod_io
+            board.platform.add_extension(_sdcard_pmod_io)
+
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
         if "spiflash" in board.soc_capabilities:
@@ -373,9 +377,7 @@ def main():
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
-            if board_name in ["arty", "arty_a7"]:
-                from litex_boards.platforms.arty import _sdcard_pmod_io
-                board.platform.add_extension(_sdcard_pmod_io)
+            if "mmcm" in board.soc_capabilities:
                 soc.add_a7_sdcard(args.sdcard_freq)
             else:
                 soc.add_sdcard()
