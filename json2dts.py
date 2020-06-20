@@ -250,7 +250,7 @@ if "spisdcard" in d["csr_bases"]:
 	aliases["sdcard0"] = "litespisdcard0"
 
 	dts += """
-		litespi0: spi@{spisdcard_csr_base:x} {{
+		litespisdcard0: spi@{spisdcard_csr_base:x} {{
 			compatible = "litex,litespi";
 			reg = <0x{spisdcard_csr_base:x} 0x100>;
 			status = "okay";
