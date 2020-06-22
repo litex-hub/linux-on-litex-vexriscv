@@ -19,7 +19,7 @@ from litedram.phy.model import SDRAMPHYModel
 from litex.tools.litex_sim import sdram_module_nphases, get_sdram_phy_settings
 
 from liteeth.phy.model import LiteEthPHYModel
-from liteeth.core.mac import LiteEthMAC
+from liteeth.mac import LiteEthMAC
 
 # IOs ----------------------------------------------------------------------------------------------
 
