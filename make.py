@@ -64,7 +64,7 @@ class NeTV2(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import netv2
-        Board.__init__(self, netv2.BaseSoC, {"serial", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
+        Board.__init__(self, netv2.BaseSoC, {"serial", "spisdcard", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -75,7 +75,7 @@ class NeTV2(Board):
 class Genesys2(Board):
     def __init__(self):
         from litex_boards.targets import genesys2
-        Board.__init__(self, genesys2.BaseSoC, {"serial", "ethernet"})
+        Board.__init__(self, genesys2.BaseSoC, {"serial", "spisdcard", "ethernet"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -86,7 +86,7 @@ class Genesys2(Board):
 class KC705(Board):
     def __init__(self):
         from litex_boards.targets import kc705
-        Board.__init__(self, kc705.BaseSoC, {"serial", "ethernet", "leds", "xadc"})
+        Board.__init__(self, kc705.BaseSoC, {"serial", "spisdcard", "ethernet", "leds", "xadc"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -98,7 +98,7 @@ class KC705(Board):
 class KCU105(Board):
     def __init__(self):
         from litex_boards.targets import kcu105
-        Board.__init__(self, kcu105.BaseSoC, {"serial", "ethernet"})
+        Board.__init__(self, kcu105.BaseSoC, {"serial", "spisdcard", "ethernet"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -133,7 +133,7 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.BaseSoC, {"usb_fifo", "framebuffer"})
+        Board.__init__(self, nexys_video.BaseSoC, {"usb_fifo", "spisdcard", "framebuffer"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -230,7 +230,7 @@ class CamLink4K(Board):
 class TrellisBoard(Board):
     def __init__(self):
         from litex_boards.targets import trellisboard
-        Board.__init__(self, trellisboard.BaseSoC, {"serial"})
+        Board.__init__(self, trellisboard.BaseSoC, {"serial", "spisdcard"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -350,6 +350,8 @@ def main():
             soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
+        if board_name in ["kcu105"]:
+            soc_kwargs.update(uart_baudrate=115200) # FIXME
         if board_name in ["de10nano"]:
             soc_kwargs.update(with_mister_sdram=True)
         if "usb_fifo" in board.soc_capabilities:
