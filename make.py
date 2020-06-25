@@ -230,7 +230,7 @@ class CamLink4K(Board):
 class TrellisBoard(Board):
     def __init__(self):
         from litex_boards.targets import trellisboard
-        Board.__init__(self, trellisboard.BaseSoC, {"serial", "spisdcard"})
+        Board.__init__(self, trellisboard.BaseSoC, {"serial", "sdcard"})
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -328,7 +328,6 @@ def main():
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
-    parser.add_argument("--sdcard-freq",    type=int, default=25e6,   help="SDCard frequency")
     args = parser.parse_args()
 
     # Board(s) selection ---------------------------------------------------------------------------
@@ -379,10 +378,7 @@ def main():
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
-            if "mmcm" in board.soc_capabilities:
-                soc.add_a7_sdcard(args.sdcard_freq)
-            else:
-                soc.add_sdcard()
+            soc.add_sdcard()
         if "ethernet" in board.soc_capabilities:
             soc.configure_ethernet(local_ip=args.local_ip, remote_ip=args.remote_ip)
         #if "leds" in board.soc_capabilities:

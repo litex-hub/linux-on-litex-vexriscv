@@ -444,21 +444,12 @@ if "sdcore" in d["csr_bases"]:
 			reg = <
 				0x{sdphy_csr_base:x} 0x100
 				0x{sdcore_csr_base:x} 0x100
-				0x{sddatareader_csr_base:x} 0x100
-				0x{sddatawriter_csr_base:x} 0x100
-				0x{sdread_csr_base:x} 0x200
-				0x{sdwrite_csr_base:x} 0x200
 			>;
-			clocks = <&CLKOUT0>;
 			status = "okay";
 		}};
 	""".format(mmc_csr_base=d["csr_bases"]["sdcore"],
 			sdphy_csr_base=d["csr_bases"]["sdphy"],
-			sdcore_csr_base=d["csr_bases"]["sdcore"],
-			sddatareader_csr_base=d["csr_bases"]["sddatareader"],
-			sddatawriter_csr_base=d["csr_bases"]["sddatawriter"],
-			sdread_csr_base=d["memories"]["sdread"]["base"],
-			sdwrite_csr_base=d["memories"]["sdwrite"]["base"])
+			sdcore_csr_base=d["csr_bases"]["sdcore"])
 
 dts += """
 	};"""
