@@ -344,8 +344,11 @@ def main():
 
         # SoC parameters (and override for boards that don't support default parameters) -----------
         soc_kwargs = {}
-        soc_kwargs.update(integrated_rom_size=0x10000)
-        if board_name in ["de0nano", "orangecrab"]:
+        soc_kwargs.update(integrated_rom_size=0xa000)
+        if board_name in ["de0nano"]:
+            soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
+        if board_name in ["orangecrab"]:
+            soc_kwargs.update(sys_clk_freq=64e6)
             soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
         if board_name in ["kc705"]:
             soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
