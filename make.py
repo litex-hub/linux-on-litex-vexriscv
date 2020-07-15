@@ -13,6 +13,7 @@ kB = 1024
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
+    soc_kwargs = {}
     def __init__(self, soc_cls, soc_capabilities):
         self.soc_cls = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -40,7 +41,6 @@ class Arty(Board):
 
 class ArtyA7(Arty):
     SPIFLASH_DUMMY_CYCLES = 7
-
     def load(self):
         prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty_a7/gateware/top.bit")
@@ -84,6 +84,7 @@ class Genesys2(Board):
 # KC705 support ---------------------------------------------------------------------------------
 
 class KC705(Board):
+    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
     def __init__(self):
         from litex_boards.targets import kc705
         Board.__init__(self, kc705.BaseSoC, {"serial", "spisdcard", "ethernet", "leds", "xadc"})
@@ -96,6 +97,7 @@ class KC705(Board):
 # KCU105 support -----------------------------------------------------------------------------------
 
 class KCU105(Board):
+    soc_kwargs = {"uart_baudrate": 115.2e3} # FIXME: understand why not working with more.
     def __init__(self):
         from litex_boards.targets import kcu105
         Board.__init__(self, kcu105.BaseSoC, {"serial", "spisdcard", "ethernet"})
@@ -202,6 +204,11 @@ class HADBadge(Board):
 # OrangeCrab support -------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
+    soc_kwargs = {
+        "sys_clk_freq": 64e6,          # Increase sys_clk_freq to 64MHz (48MHz default).
+        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
+		"integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+    }
     def __init__(self, uart_name="usb_acm"):
         from litex_boards.targets import orangecrab
         if uart_name == "usb_acm": # FIXME: do proper install of ValentyUSB.
@@ -261,6 +268,7 @@ class De10Lite(Board):
 # De10Nano support ----------------------------------------------------------------------------------
 
 class De10Nano(Board):
+    soc_kwargs = {"with_mister_sdram": True} # Add MiSTer SDRAM extension.
     def __init__(self):
         from litex_boards.targets import de10nano
         Board.__init__(self, de10nano.BaseSoC, {"serial", "spisdcard", "leds", "switches"})
@@ -272,6 +280,7 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
+    soc_kwargs = {"l2_size": 2048} # Reduce l2_size (Not enough blockrams).
     def __init__(self):
         from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, {"serial"})
@@ -342,30 +351,17 @@ def main():
     for board_name in board_names:
         board = supported_boards[board_name]()
 
-        # SoC parameters (and override for boards that don't support default parameters) -----------
-        soc_kwargs = {}
-        soc_kwargs.update(integrated_rom_size=0x10000)
-        if board_name in ["de0nano"]:
-            soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
-        if board_name in ["orangecrab"]:
-            soc_kwargs.update(sys_clk_freq=64e6)
-            soc_kwargs.update(l2_size=2048) # Not enough blockrams for default l2_size of 8192
-            soc_kwargs.update(integrated_rom_size=0xa000)
-        if board_name in ["kc705"]:
-            soc_kwargs.update(uart_baudrate=500e3) # Set UART baudrate to 500KBauds since 1Mbauds not supported
-        if board_name in ["kcu105"]:
-            soc_kwargs.update(uart_baudrate=115200) # FIXME
-        if board_name in ["de10nano"]:
-            soc_kwargs.update(with_mister_sdram=True)
+        # SoC parameters ---------------------------------------------------------------------------
+        board.soc_kwargs.update(integrated_rom_size=0x10000)
         if "usb_fifo" in board.soc_capabilities:
-            soc_kwargs.update(uart_name="usb_fifo")
+            board.soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
-            soc_kwargs.update(uart_name="usb_acm")
+            board.soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
-            soc_kwargs.update(with_ethernet=True)
+            board.soc_kwargs.update(with_ethernet=True)
 
         # SoC creation -----------------------------------------------------------------------------
-        soc = SoCLinux(board.soc_cls, **soc_kwargs)
+        soc = SoCLinux(board.soc_cls, **board.soc_kwargs)
         board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------
