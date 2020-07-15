@@ -144,6 +144,7 @@ class NexysVideo(Board):
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
 class MiniSpartan6(Board):
+    soc_kwargs = {"sdram_sys2x": True} # Use HalfRate SDRAM PHY.
     def __init__(self):
         from litex_boards.targets import minispartan6
         Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo", "spisdcard"})
