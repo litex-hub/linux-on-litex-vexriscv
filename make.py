@@ -14,12 +14,14 @@ kB = 1024
 
 class Board:
     soc_kwargs = {}
-    def __init__(self, soc_cls, soc_capabilities):
+    def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
+        self.bitstream_ext    = bitstream_ext
 
-    def load(self):
-        raise NotImplementedError
+    def load(self, filename):
+        prog = self.platform.create_programmer()
+        prog.load_bitstream(filename)
 
     def flash(self):
         raise NotImplementedError
@@ -51,17 +53,10 @@ class Arty(Board):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/arty/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 class ArtyA7(Arty):
     SPIFLASH_DUMMY_CYCLES = 7
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/arty_a7/gateware/top.bit")
 
 class ArtyS7(Arty):
     def __init__(self):
@@ -84,11 +79,7 @@ class ArtyS7(Arty):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/arty_s7/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # NeTV2 support ------------------------------------------------------------------------------------
 
@@ -111,11 +102,7 @@ class NeTV2(Board):
             "framebuffer",
             # Monitoring
             "xadc",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/netv2/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # Genesys2 support ---------------------------------------------------------------------------------
 
@@ -128,11 +115,7 @@ class Genesys2(Board):
             "ethernet",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/genesys2/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # KC705 support ---------------------------------------------------------------------------------
 
@@ -150,12 +133,7 @@ class KC705(Board):
             "leds",
             # Monitoring
             "xadc",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/kc705/gateware/top.bit")
-
+        }, bitstream_ext=".bit")
 
 # KCU105 support -----------------------------------------------------------------------------------
 
@@ -169,12 +147,7 @@ class KCU105(Board):
             "ethernet",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/kcu105/gateware/top.bit")
-
+        }, bitstream_ext=".bit")
 
 # ZCU104 support -----------------------------------------------------------------------------------
 
@@ -184,12 +157,7 @@ class ZCU104(Board):
         Board.__init__(self, zcu104.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/zcu104/gateware/top.bit")
-
+        }, bitstream_ext=".bit")
 
 # Nexys4DDR support --------------------------------------------------------------------------------
 
@@ -202,11 +170,7 @@ class Nexys4DDR(Board):
             "ethernet",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/nexys4ddr/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
 
@@ -220,11 +184,7 @@ class NexysVideo(Board):
             "spisdcard",
             # Video
             "framebuffer",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/nexys_video/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
@@ -240,11 +200,7 @@ class MiniSpartan6(Board):
             "usb_fifo",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/minispartan6/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # Pipistrello support ------------------------------------------------------------------------------
 
@@ -254,11 +210,7 @@ class Pipistrello(Board):
         Board.__init__(self, pipistrello.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/pipistrello/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # Versa ECP5 support -------------------------------------------------------------------------------
 
@@ -274,11 +226,7 @@ class VersaECP5(Board):
             "ethernet",
             # Storage
             "spiflash",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/versa_ecp5/gateware/top.svf")
+        }, bitstream_ext=".svf")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -290,11 +238,7 @@ class ULX3S(Board):
             "serial",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/ulx3s/gateware/top.svf")
+        }, bitstream_ext=".svf")
 
 # HADBadge support ---------------------------------------------------------------------------------
 
@@ -309,10 +253,10 @@ class HADBadge(Board):
             "serial",
             # Storage
             "spiflash",
-        })
+        }, bitstream_ext=".bit")
 
-    def load(self):
-        os.system("dfu-util --alt 2 --download build/hadbadge/gateware/top.bit --reset")
+    def load(self, filename):
+        os.system("dfu-util --alt 2 --download {} --reset".format(filename))
 
 # OrangeCrab support -------------------------------------------------------------------------------
 
@@ -331,11 +275,7 @@ class OrangeCrab(Board):
             "usb_acm",
             # Storage
             "spisdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/orangecrab/gateware/top.bit")
+        }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
 
@@ -345,10 +285,10 @@ class CamLink4K(Board):
         Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        })
+        }, bitstream_ext=".bit")
 
-    def load(self):
-        os.system("camlink configure build/gateware/top.bit")
+    def load(self, filename):
+        os.system("camlink configure {}".format(filename))
 
 # TrellisBoard support -----------------------------------------------------------------------------
 
@@ -360,11 +300,7 @@ class TrellisBoard(Board):
             "serial",
             # Storage
             "sdcard",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/trellisboard/gateware/top.svf")
+        }, bitstream_ext=".svf")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
@@ -375,11 +311,7 @@ class ECPIX5(Board):
             # Communication
             "serial",
             "ethernet",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/ecpix5/gateware/top.svf")
+        }, bitstream_ext=".svf")
 
 # De10Lite support ---------------------------------------------------------------------------------
 
@@ -389,11 +321,7 @@ class De10Lite(Board):
         Board.__init__(self, de10lite.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/de10lite/gateware/top.sof")
+        }, bitstream_ext=".sof")
 
 # De10Nano support ----------------------------------------------------------------------------------
 
@@ -409,11 +337,7 @@ class De10Nano(Board):
             # GPIOs
             "leds",
             "switches",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/de10nano/gateware/top.sof")
+        }, bitstream_ext=".sof")
 
 # De0Nano support ----------------------------------------------------------------------------------
 
@@ -424,11 +348,7 @@ class De0Nano(Board):
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        })
-
-    def load(self):
-        prog = self.platform.create_programmer()
-        prog.load_bitstream("build/de0nano/gateware/top.sof")
+        }, bitstream_ext=".sof")
 
 # Main ---------------------------------------------------------------------------------------------
 
@@ -556,11 +476,7 @@ def main():
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
-            board.load()
-
-        # Flash FPGA bitstream ---------------------------------------------------------------------
-        if args.flash:
-            board.flash()
+            board.load(filename=os.path.join(build_dir, "gateware", "top" + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
