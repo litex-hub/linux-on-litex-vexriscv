@@ -83,6 +83,15 @@
 #define SBI_REMOTE_SFENCE_VMA      6
 #define SBI_REMOTE_SFENCE_VMA_ASID 7
 #define SBI_SHUTDOWN               8
+#define SBI_EXT_BASE               16
+
+#define SBI_EXT_SPEC_VERSION       0
+#define SBI_EXT_IMPL_ID            1
+#define SBI_EXT_IMPL_VERSION       2
+#define SBI_EXT_PROBE_EXTENSION    3
+#define SBI_EXT_GET_MVENDORID      4
+#define SBI_EXT_GET_MARCHID        5
+#define SBI_EXT_GET_MIMPID         6
 
 #define csr_swap(csr, val)					\
 ({								\
