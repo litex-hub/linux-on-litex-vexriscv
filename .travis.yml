@@ -4,7 +4,7 @@ python: "3.6"
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install verilator libevent-dev libjson-c-dev dtc
+  - sudo apt-get -y install verilator libevent-dev libjson-c-dev device-tree-compiler
   - pip install pexpect
 
 install:
@@ -12,9 +12,9 @@ install:
   - cd ~/
   - wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
   - python3 litex_setup.py init install
- - ./make.py --help
- - if [[ -v SDRAM_MODULE ]]; then git clone --depth 1 https://github.com/litex-hub/linux-on-litex-vexriscv-prebuilt.git; fi
- - if [[ -v SDRAM_MODULE ]]; then cp -R linux-on-litex-vexriscv-prebuilt/buildroot ./; fi
+  - cd $TRAVIS_BUILD_DIR
+  - if [[ -v SDRAM_MODULE ]]; then git clone --depth 1 https://github.com/litex-hub/linux-on-litex-vexriscv-prebuilt.git; fi
+  - if [[ -v SDRAM_MODULE ]]; then cp -R linux-on-litex-vexriscv-prebuilt/buildroot ./; fi
 
 before_script:
   # Get RISC-V toolchain
@@ -28,7 +28,6 @@ script:
 
 env:
  # ----- BOARDS -----
- # TOOLCHAIN=vivado
  - BOARD=Arty
  - BOARD=NeTV2
  - BOARD=Genesys2
@@ -36,30 +35,22 @@ env:
  - BOARD=KCU105
  - BOARD=Nexys4DDR
  - BOARD="Nexys Video"
- # TOOLCHAIN=ise
  - BOARD=miniSpartan6
  - BOARD=Pipistrello
- # TOOLCHAIN=nextpnr-ecp5
  - BOARD="Versa ECP5"
  - BOARD=ULX3S
  - BOARD=OrangeCrab
  - BOARD="CamLink 4K"
- # TOOLCHAIN=quartus
  - BOARD=De0Nano
  - BOARD=De10Lite
- # TOOLCHAIN=libero
- #- BOARD=Avalanche
 
  # ----- SIMULATIONS -----
  - SDRAM_MODULE=IS42S16160
  - SDRAM_MODULE=IS42S16320
- #- SDRAM_MODULE=MT48LC4M16  # Too small for Linux
  - SDRAM_MODULE=MT48LC16M16
  - SDRAM_MODULE=AS4C16M16
  - SDRAM_MODULE=AS4C32M16
  - SDRAM_MODULE=AS4C32M8
- #- SDRAM_MODULE=M12L64322A  # Too small for Linux
- #- SDRAM_MODULE=M12L16161A  # Too small for Linux
  - SDRAM_MODULE=MT46V32M16
  - SDRAM_MODULE=MT46H32M16
  - SDRAM_MODULE=MT46H32M32
