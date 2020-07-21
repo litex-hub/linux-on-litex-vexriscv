@@ -1,24 +1,26 @@
-language: minimal
+language: python
+dist: bionic
+python: "3.6"
 
-git:
-  submodules: false
-
-dist: xenial
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install verilator libevent-dev libjson-c-dev dtc
+  - pip install pexpect
 
 install:
- - cp conda/environment.yml environment.yml
- - cp conda/requirements.txt requirements.txt
- - wget -c https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
- - chmod a+x Miniconda3-latest-Linux-x86_64.sh
- - ./Miniconda3-latest-Linux-x86_64.sh -p ~/conda -b -f
- - ~/conda/bin/conda init bash
- - source ~/.bashrc
- - conda env create --file environment.yml
- - conda activate linux-on-litex-vexriscv
- - conda info
+  # Get Migen / LiteX / Cores
+  - cd ~/
+  - wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
+  - python3 litex_setup.py init install
  - ./make.py --help
  - if [[ -v SDRAM_MODULE ]]; then git clone --depth 1 https://github.com/litex-hub/linux-on-litex-vexriscv-prebuilt.git; fi
  - if [[ -v SDRAM_MODULE ]]; then cp -R linux-on-litex-vexriscv-prebuilt/buildroot ./; fi
+
+before_script:
+  # Get RISC-V toolchain
+  - wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6.tar.gz
+  - tar -xvf riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6.tar.gz
+  - export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-20171231-x86_64-linux-centos6/bin/
 
 script:
  - if [[ -v BOARD        ]]; then ./make.py --board="$BOARD"; fi
