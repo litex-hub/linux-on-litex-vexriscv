@@ -349,6 +349,37 @@ static uint32_t vexriscv_read_instruction(uint32_t pc){
 	return i;
 }
 
+static uint32_t vexriscv_sbi_ext(uint32_t fid, uint32_t extid){
+	switch (fid) {
+		case SBI_EXT_SPEC_VERSION:
+			return 0x00000001;
+		case SBI_EXT_IMPL_ID:
+			return 0;
+		case SBI_EXT_IMPL_VERSION:
+			return 0;
+		case SBI_EXT_PROBE_EXTENSION:
+			break;
+		case SBI_EXT_GET_MVENDORID:
+			return 0;
+		case SBI_EXT_GET_MARCHID:
+			return 0;
+		case SBI_EXT_GET_MIMPID:
+			return 0;
+		default:
+			return 0;
+	}
+
+	/* sbi_probe_extension() */
+	switch (extid) {
+		case SBI_CONSOLE_PUTCHAR:
+		case SBI_CONSOLE_GETCHAR:
+		case SBI_SET_TIMER:
+		case SBI_EXT_BASE:
+			return 1;
+		default:
+			return 0;
+	}
+}
 
 __attribute__((used)) void vexriscv_machine_mode_trap(void) {
 	int32_t cause = csr_read(mcause);
@@ -517,7 +548,14 @@ __attribute__((used)) void vexriscv_machine_mode_trap(void) {
 						csr_clear(sip, MIP_STIP);
 						csr_write(mepc, csr_read(mepc) + 4);
 					} break;
-					default: litex_stop(); break;
+					case SBI_EXT_BASE: {
+						vexriscv_write_register(10, vexriscv_sbi_ext(a0, a1));
+						csr_write(mepc, csr_read(mepc) + 4);
+					} break;
+					default: {
+						vexriscv_write_register(10, -2); /* SBI_ERR_NOT_SUPPORTED */
+						csr_write(mepc, csr_read(mepc) + 4);
+					} break;
 				}
 			} break;
 			default: litex_stop(); break;
