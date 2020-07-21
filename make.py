@@ -15,7 +15,7 @@ kB = 1024
 class Board:
     soc_kwargs = {}
     def __init__(self, soc_cls, soc_capabilities):
-        self.soc_cls = soc_cls
+        self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
 
     def load(self):
@@ -32,8 +32,26 @@ class Arty(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import arty
-        Board.__init__(self, arty.BaseSoC, {"serial", "ethernet", "spiflash", "leds", "rgb_led",
-            "switches", "spi", "i2c", "xadc", "icap_bitstream", "mmcm", "sdcard"})
+        Board.__init__(self, arty.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+            "sdcard",
+            # GPIOs
+            "leds",
+            "rgb_led",
+            "switches",
+            # Buses
+            "spi",
+            "i2c",
+            # Monitoring
+            "xadc",
+            # 7-Series specific
+            "mmcm",
+            "icap_bitstream",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -48,12 +66,29 @@ class ArtyA7(Arty):
 class ArtyS7(Arty):
     def __init__(self):
         from litex_boards.targets import arty_s7
-        Board.__init__(self, arty_s7.BaseSoC, {"serial", "spiflash", "leds", "rgb_led", "switches",
-            "spi", "i2c", "xadc", "icap_bit", "mmcm"})
+        Board.__init__(self, arty_s7.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spiflash",
+            "sdcard",
+            # GPIOs
+            "leds",
+            "rgb_led",
+            "switches",
+            # Buses
+            "spi",
+            "i2c",
+            # Monitoring
+            "xadc",
+            # 7-Series specific
+            "mmcm",
+            "icap_bitstream",
+        })
 
     def load(self):
         from litex.build.openocd import OpenOCD
-        prog = OpenOCD("prog/openocd_xilinx.cfg")
+        prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty_s7/gateware/top.bit")
 
 # NeTV2 support ------------------------------------------------------------------------------------
@@ -64,7 +99,20 @@ class NeTV2(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import netv2
-        Board.__init__(self, netv2.BaseSoC, {"serial", "spisdcard", "ethernet", "framebuffer", "spiflash", "leds", "xadc"})
+        Board.__init__(self, netv2.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+            "spisdcard",
+            # GPIOs
+            "leds",
+            # Video
+            "framebuffer",
+            # Monitoring
+            "xadc",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -75,7 +123,13 @@ class NeTV2(Board):
 class Genesys2(Board):
     def __init__(self):
         from litex_boards.targets import genesys2
-        Board.__init__(self, genesys2.BaseSoC, {"serial", "spisdcard", "ethernet"})
+        Board.__init__(self, genesys2.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -87,7 +141,17 @@ class KC705(Board):
     soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
     def __init__(self):
         from litex_boards.targets import kc705
-        Board.__init__(self, kc705.BaseSoC, {"serial", "spisdcard", "ethernet", "leds", "xadc"})
+        Board.__init__(self, kc705.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spisdcard",
+            # GPIOs
+            "leds",
+            # Monitoring
+            "xadc",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -100,7 +164,13 @@ class KCU105(Board):
     soc_kwargs = {"uart_baudrate": 115.2e3} # FIXME: understand why not working with more.
     def __init__(self):
         from litex_boards.targets import kcu105
-        Board.__init__(self, kcu105.BaseSoC, {"serial", "spisdcard", "ethernet"})
+        Board.__init__(self, kcu105.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -112,7 +182,10 @@ class KCU105(Board):
 class ZCU104(Board):
     def __init__(self):
         from litex_boards.targets import zcu104
-        Board.__init__(self, zcu104.BaseSoC, {"serial"})
+        Board.__init__(self, zcu104.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -124,7 +197,13 @@ class ZCU104(Board):
 class Nexys4DDR(Board):
     def __init__(self):
         from litex_boards.targets import nexys4ddr
-        Board.__init__(self, nexys4ddr.BaseSoC, {"serial", "spisdcard", "ethernet"})
+        Board.__init__(self, nexys4ddr.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -135,7 +214,14 @@ class Nexys4DDR(Board):
 class NexysVideo(Board):
     def __init__(self):
         from litex_boards.targets import nexys_video
-        Board.__init__(self, nexys_video.BaseSoC, {"usb_fifo", "spisdcard", "framebuffer"})
+        Board.__init__(self, nexys_video.BaseSoC, soc_capabilities={
+            # Communication
+            "usb_fifo",
+            # Storage
+            "spisdcard",
+            # Video
+            "framebuffer",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -150,7 +236,12 @@ class MiniSpartan6(Board):
     }
     def __init__(self):
         from litex_boards.targets import minispartan6
-        Board.__init__(self, minispartan6.BaseSoC, {"usb_fifo", "spisdcard"})
+        Board.__init__(self, minispartan6.BaseSoC, soc_capabilities={
+            # Communication
+            "usb_fifo",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -161,7 +252,10 @@ class MiniSpartan6(Board):
 class Pipistrello(Board):
     def __init__(self):
         from litex_boards.targets import pipistrello
-        Board.__init__(self, pipistrello.BaseSoC, {"serial"})
+        Board.__init__(self, pipistrello.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -175,7 +269,13 @@ class VersaECP5(Board):
     SPIFLASH_DUMMY_CYCLES = 11
     def __init__(self):
         from litex_boards.targets import versa_ecp5
-        Board.__init__(self, versa_ecp5.BaseSoC, {"serial", "ethernet", "spiflash"})
+        Board.__init__(self, versa_ecp5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -186,7 +286,12 @@ class VersaECP5(Board):
 class ULX3S(Board):
     def __init__(self):
         from litex_boards.targets import ulx3s
-        Board.__init__(self, ulx3s.BaseSoC, {"serial", "spisdcard"})
+        Board.__init__(self, ulx3s.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -200,7 +305,12 @@ class HADBadge(Board):
     SPIFLASH_DUMMY_CYCLES = 8
     def __init__(self):
         from litex_boards.targets import hadbadge
-        Board.__init__(self, hadbadge.BaseSoC, {"serial", "spiflash"})
+        Board.__init__(self, hadbadge.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spiflash",
+        })
 
     def load(self):
         os.system("dfu-util --alt 2 --download build/hadbadge/gateware/top.bit --reset")
@@ -213,14 +323,16 @@ class OrangeCrab(Board):
         "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
 		"integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
-    def __init__(self, uart_name="usb_acm"):
+    def __init__(self):
         from litex_boards.targets import orangecrab
-        if uart_name == "usb_acm": # FIXME: do proper install of ValentyUSB.
-            os.system("git clone https://github.com/gregdavill/valentyusb -b hw_cdc_eptri")
-            sys.path.append("valentyusb")
-            Board.__init__(self, orangecrab.BaseSoC, {"usb_acm", "spisdcard"})
-        else:
-            Board.__init__(self, orangecrab.BaseSoC, {"serial", "spisdcard"})
+        os.system("git clone https://github.com/gregdavill/valentyusb -b hw_cdc_eptri")
+        sys.path.append("valentyusb") # FIXME: do proper install of ValentyUSB.
+        Board.__init__(self, orangecrab.BaseSoC, soc_capabilities={
+            # Communication
+            "usb_acm",
+            # Storage
+            "spisdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -231,7 +343,10 @@ class OrangeCrab(Board):
 class CamLink4K(Board):
     def __init__(self):
         from litex_boards.targets import camlink_4k
-        Board.__init__(self, camlink_4k.BaseSoC, {"serial"})
+        Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
 
     def load(self):
         os.system("camlink configure build/gateware/top.bit")
@@ -241,7 +356,12 @@ class CamLink4K(Board):
 class TrellisBoard(Board):
     def __init__(self):
         from litex_boards.targets import trellisboard
-        Board.__init__(self, trellisboard.BaseSoC, {"serial", "sdcard"})
+        Board.__init__(self, trellisboard.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -252,7 +372,11 @@ class TrellisBoard(Board):
 class ECPIX5(Board):
     def __init__(self):
         from litex_boards.targets import ecpix5
-        Board.__init__(self, ecpix5.BaseSoC, {"serial", "ethernet"})
+        Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -263,7 +387,10 @@ class ECPIX5(Board):
 class De10Lite(Board):
     def __init__(self):
         from litex_boards.targets import de10lite
-        Board.__init__(self, de10lite.BaseSoC, {"serial"})
+        Board.__init__(self, de10lite.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -275,7 +402,15 @@ class De10Nano(Board):
     soc_kwargs = {"with_mister_sdram": True} # Add MiSTer SDRAM extension.
     def __init__(self):
         from litex_boards.targets import de10nano
-        Board.__init__(self, de10nano.BaseSoC, {"serial", "spisdcard", "leds", "switches"})
+        Board.__init__(self, de10nano.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spisdcard",
+            # GPIOs
+            "leds",
+            "switches",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
@@ -287,7 +422,10 @@ class De0Nano(Board):
     soc_kwargs = {"l2_size": 2048} # Reduce l2_size (Not enough blockrams).
     def __init__(self):
         from litex_boards.targets import de0nano
-        Board.__init__(self, de0nano.BaseSoC, {"serial"})
+        Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
 
     def load(self):
         prog = self.platform.create_programmer()
