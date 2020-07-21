@@ -87,7 +87,6 @@ class ArtyS7(Arty):
         })
 
     def load(self):
-        from litex.build.openocd import OpenOCD
         prog = self.platform.create_programmer()
         prog.load_bitstream("build/arty_s7/gateware/top.bit")
 
