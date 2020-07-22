@@ -246,9 +246,11 @@ Once the bistream is loaded, the board you try to retrieve the files on the TFTP
 The images will be loaded to RAM and you should see Linux booting :)
 
 ### Load the Linux images to SDCard
-For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your SDCard root directory (with a FAT16 or FAT32 partition).
+For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your SDCard root directory (with a FAT partition).
 
 The images will be loaded to RAM and you should see Linux booting :)
+
+> **Note**: For more information about the possible ways to load application code to the CPU with LiteX, please have a look at the LiteX's [wiki](https://github.com/enjoy-digital/litex/wiki/Load-Application-Code-To-CPU).
 
 ## Generating the Linux binaries (optional)
 ```sh
