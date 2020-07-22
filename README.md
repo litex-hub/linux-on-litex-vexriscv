@@ -252,6 +252,9 @@ The images will be loaded to RAM and you should see Linux booting :)
 
 > **Note**: For more information about the possible ways to load application code to the CPU with LiteX, please have a look at the LiteX's [wiki](https://github.com/enjoy-digital/litex/wiki/Load-Application-Code-To-CPU).
 
+### Configure/Use the peripherals
+Please visit the [HOWTO](https://github.com/litex-hub/linux-on-litex-vexriscv/blob/master/HOWTO.md) document to learn how to configure and use the peripherals from Linux.
+
 ## Generating the Linux binaries (optional)
 ```sh
 $ git clone http://github.com/buildroot/buildroot
