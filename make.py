@@ -111,7 +111,7 @@ class Genesys2(Board):
         from litex_boards.targets import genesys2
         Board.__init__(self, genesys2.BaseSoC, soc_capabilities={
             # Communication
-            "serial",
+            "usb_fifo",
             "ethernet",
             # Storage
             "sdcard",
