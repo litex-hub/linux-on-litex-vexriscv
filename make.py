@@ -95,7 +95,7 @@ class NeTV2(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             # Video
@@ -114,7 +114,7 @@ class Genesys2(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ class KC705(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             # Monitoring
@@ -169,7 +169,7 @@ class Nexys4DDR(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ class NexysVideo(Board):
             # Communication
             "usb_fifo",
             # Storage
-            "spisdcard",
+            "sdcard",
             # Video
             "framebuffer",
         }, bitstream_ext=".bit")
