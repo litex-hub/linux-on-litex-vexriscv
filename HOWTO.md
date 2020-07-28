@@ -1,3 +1,12 @@
+## Regenerate all the default configurations
+
+Install Java and SBT, then run : 
+
+```sh
+./generate.py
+```
+
+
 ## HOWTO:
 This document describes how to configure and use the periperals of your board from Linux.
 

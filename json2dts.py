@@ -37,11 +37,10 @@ dts += """
 	}};
 """.format(
 		main_ram_base=d["memories"]["main_ram"]["base"],
-		main_ram_size=d["memories"]["main_ram"]["size"],
 		main_ram_size_mb=d["memories"]["main_ram"]["size"]//mB,
 
-		linux_initrd_start=d["memories"]["main_ram"]["base"] + 8*mB,
-		linux_initrd_end=d["memories"]["main_ram"]["base"] + 16*mB)
+		linux_initrd_start=d["memories"]["main_ram"]["base"] + 16*mB,
+		linux_initrd_end=d["memories"]["main_ram"]["base"] + 24*mB)
 
 # CPU ----------------------------------------------------------------------------------------------
 
@@ -50,8 +49,12 @@ dts += """
 		#address-cells = <1>;
 		#size-cells    = <0>;
 		timebase-frequency = <{sys_clk_freq}>;
+""".format(sys_clk_freq=int(50e6) if "sim" in d["constants"] else d["constants"]["config_clock_frequency"])
 
-		cpu@0 {{
+cpus = range(int(d["constants"]["config_cpu_count"]))
+for cpu in cpus:
+	dts += """
+		cpu@{cpu} {{
 			clock-frequency = <0x0>;
 			compatible = "spinalhdl,vexriscv", "sifive,rocket0", "riscv";
 			d-cache-block-size = <0x40>;
@@ -66,14 +69,23 @@ dts += """
 			i-tlb-sets = <0x1>;
 			i-tlb-size = <0x20>;
 			mmu-type = "riscv,sv32";
-			reg = <0x0>;
+			reg = <{cpu}>;
 			riscv,isa = "rv32ima";
 			sifive,itim = <0x1>;
 			status = "okay";
 			tlb-split;
+			L{irq}: interrupt-controller {{
+				#interrupt-cells = <0x00000001>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			}};
 		}};
-	}};
-""".format(sys_clk_freq=int(50e6) if "sim" in d["constants"] else d["constants"]["config_clock_frequency"])
+""".format(cpu=cpu, irq=cpu)
+
+dts += """
+	};
+"""
+
 
 # Memory -------------------------------------------------------------------------------------------
 
@@ -88,15 +100,15 @@ dts += """
 		#size-cells    = <1>;
 		ranges;
 
-		vexriscv_emulator@{emulator_base:x} {{
-			reg = <0x{emulator_base:x} 0x{emulator_size:x}>;
+		vexriscv_emulator@{opensbi_base:x} {{
+			reg = <0x{opensbi_base:x} 0x{opensbi_size:x}>;
 		}};
 	}};
 
 """.format(main_ram_base=d["memories"]["main_ram"]["base"],
 		   main_ram_size=d["memories"]["main_ram"]["size"],
-		   emulator_base=d["memories"]["emulator"]["base"],
-		   emulator_size=d["memories"]["emulator"]["size"])
+		   opensbi_base=d["memories"]["opensbi"]["base"],
+		   opensbi_size=d["memories"]["opensbi"]["size"])
 
 # SoC ----------------------------------------------------------------------------------------------
 
@@ -108,16 +120,20 @@ dts += """
 		ranges;
 """
 
-# Interrupt controller
+	# PLIC -------------------------------------------------------------------------------
 
 dts += """
-		intc0: interrupt-controller {
-			interrupt-controller;
+		plic: interrupt-controller@{plic_base:x} {{
+			compatible = "sifive,plic-1.0.0", "sifive,fu540-c000-plic";
+			reg = <0x{plic_base:x} 0x400000>;
 			#interrupt-cells = <1>;
-			compatible = "vexriscv,intc0";
-			status = "okay";
-		};
-"""
+			interrupt-controller;
+			interrupts-extended = <
+				{cpu_mapping}>;
+			riscv,ndev = <32>;
+		}};
+	""".format(	plic_base=d["memories"]["plic"]["base"],
+				cpu_mapping="\n\t\t\t\t".join(["&L{} 11 &L{} 9".format(cpu, cpu) for cpu in cpus]))
 
 	# SoC Controller -----------------------------------------------------------------------------------
 

@@ -264,15 +264,23 @@ $ make
 ```
 The binaries are located in *output/images/*.
 
-## Generating the VexRiscv Linux variant (optional)
-Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
-
-Clone the VexRiscv repository and generate the Linux variant:
+## Generating the opensbi binary (optional)
 ```sh
-$ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
-$ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPluginConfig=linux-minimal"
+$ git clone https://github.com/SpinalHDL/opensbi.git --branch litex
+$ cd opensbi
+$ export CROSS_COMPILE=riscv-none-embed-  # xPack toolchain
+$ export PLATFORM_RISCV_XLEN=32
+$ make PLATFORM=litex/vexriscv clean
+$ make PLATFORM=litex/vexriscv -j$(nproc) LITEX_BUILD=../build/sim LITEX_INSTALL=FOLDER_OF_litex_setup.py
 ```
-The Linux variant is the *VexRiscv.v* file.
+
+The binary will be located at *build/platform/litex/vexriscv/firmware/fw_jump.bin*.
+
+## Generating the VexRiscv Linux variant (optional)
+
+If the VexRiscv configuration you ask isn't already generated, you will need to install java and SBT on your machine to enable their local on demande generation.
+
+To install java and SBT see Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
 
 ## Udev rules (optional)
 Not needed but can make loading/flashing bitstreams easier:

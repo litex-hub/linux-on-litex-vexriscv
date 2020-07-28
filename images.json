@@ -1,6 +1,6 @@
 {
-	"buildroot/Image":        "0x40000000",
-	"buildroot/rootfs.cpio":  "0x40800000",
-	"buildroot/rv32.dtb":     "0x41000000",
-	"emulator/emulator.bin":  "0x41100000"
+	"buildroot/Image":    "0x40000000",
+	"buildroot/rv32.dtb": "0x40ef0000",
+	"buildroot/rootfs.cpio": "0x41000000",
+	"opensbi/build/platform/litex/vexriscv/firmware/fw_jump.bin": "0x40f00000"
 }

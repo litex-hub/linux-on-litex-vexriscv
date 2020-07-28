@@ -4,6 +4,7 @@ import sys
 import argparse
 import os
 
+from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
 
 from soc_linux import SoCLinux, video_resolutions
@@ -398,7 +399,10 @@ def main():
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
+    VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
+
+    VexRiscvSMP.args_read(args)
 
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
@@ -470,9 +474,6 @@ def main():
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
-
-        # Machine Mode Emulator --------------------------------------------------------------------
-        soc.compile_emulator(board_name)
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:

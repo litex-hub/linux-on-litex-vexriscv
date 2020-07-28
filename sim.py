@@ -2,6 +2,8 @@
 
 import argparse
 
+from litex.soc.cores.cpu import VexRiscvSMP
+from litex.soc.integration.soc import SoCRegion
 from migen import *
 
 from litex.build.generic_platform import *
@@ -94,15 +96,15 @@ class SoCLinux(SoCCore):
         ram_init = []
         if init_memories:
             ram_init = get_mem_data({
-                "buildroot/Image":       "0x00000000",
-                "buildroot/rootfs.cpio": "0x00800000",
-                "buildroot/rv32.dtb":    "0x01000000",
-                "emulator/emulator.bin": "0x01100000",
-                }, "little")
+                "buildroot/Image": "0x00000000",
+                "buildroot/rv32.dtb": "0x00ef0000",
+                "buildroot/rootfs.cpio": "0x01000000",
+                "opensbi/build/platform/litex/vexriscv/firmware/fw_jump.bin": "0x00f00000"
+            }, "little")
 
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
-            cpu_type                 = "vexriscv", cpu_variant="linux",
+            cpu_type                 = "vexriscv_smp", cpu_variant="linux",
             uart_name                = "sim",
             l2_reverse               = False,
             max_sdram_size           = 0x10000000, # Limit mapped SDRAM to 1GB.
@@ -111,6 +113,12 @@ class SoCLinux(SoCCore):
             integrated_main_ram_init = [] if (with_sdram or not init_memories) else ram_init)
         self.add_constant("SIM", None)
 
+        # PLIC ------------------------------------------------------------------------------------
+        self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0C00000, size=0x400000, cached=False))
+
+        # CLINT ------------------------------------------------------------------------------------
+        self.bus.add_slave("clint", self.cpu.cbus, region=SoCRegion(origin=0xf0010000, size=0x10000, cached=False))
+
         # Supervisor -------------------------------------------------------------------------------
         self.submodules.supervisor = Supervisor()
         self.add_csr("supervisor")
@@ -118,9 +126,9 @@ class SoCLinux(SoCCore):
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = CRG(platform.request("sys_clk"))
 
-        # Machine mode emulator RAM ----------------------------------------------------------------
-        self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000, type="cached+linker")
-        self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["emulator"].origin)
+        # Opensbi RAM ----------------------------------------------------------------
+        self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
+        self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["opensbi"].origin)
 
         # SDRAM ------------------------------------------------------------------------------------
         if with_sdram:
@@ -148,6 +156,8 @@ class SoCLinux(SoCCore):
             self.add_constant("MEMTEST_BUS_SIZE",  0)
             self.add_constant("MEMTEST_ADDR_SIZE", 0)
             self.add_constant("MEMTEST_DATA_SIZE", 0)
+            self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
+
 
         # Ethernet ---------------------------------------------------------------------------------
         if with_ethernet:
@@ -173,10 +183,6 @@ class SoCLinux(SoCCore):
         dtb = os.path.join("buildroot", "rv32.dtb")
         os.system("dtc -O dtb -o {} {}".format(dtb, dts))
 
-    def compile_emulator(self, board_name):
-        os.environ["BOARD"] = board_name
-        os.system("cd emulator && make")
-
 # Build --------------------------------------------------------------------------------------------
 
 def main():
@@ -192,8 +198,10 @@ def main():
     parser.add_argument("--trace-start",          default=0,               help="cycle to start VCD tracing")
     parser.add_argument("--trace-end",            default=-1,              help="cycle to end VCD tracing")
     parser.add_argument("--opt-level",            default="O3",            help="compilation optimization level")
+    VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
+    VexRiscvSMP.args_read(args)
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
     if args.with_ethernet:
@@ -226,7 +234,6 @@ def main():
             os.chdir("..")
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
-            soc.compile_emulator(board_name)
 
 
 if __name__ == "__main__":
