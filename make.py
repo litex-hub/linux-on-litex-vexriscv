@@ -311,6 +311,8 @@ class ECPIX5(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "sdcard",
         }, bitstream_ext=".svf")
 
 # De10Lite support ---------------------------------------------------------------------------------
