@@ -85,7 +85,6 @@ class SoCLinux(SoCCore):
 
     def __init__(self,
         init_memories         = False,
-        with_sdram            = False,
         sdram_module          = "MT48LC16M16",
         sdram_data_width      = 32,
         sdram_verbosity       = 0,
@@ -109,8 +108,8 @@ class SoCLinux(SoCCore):
             l2_reverse               = False,
             max_sdram_size           = 0x10000000, # Limit mapped SDRAM to 1GB.
             integrated_rom_size      = 0x8000,
-            integrated_main_ram_size = 0x00000000 if with_sdram else 0x02000000, # 32MB
-            integrated_main_ram_init = [] if (with_sdram or not init_memories) else ram_init)
+            integrated_main_ram_size = 0x00000000,
+            integrated_main_ram_init = [])
         self.add_constant("SIM", None)
 
         # PLIC ------------------------------------------------------------------------------------
@@ -131,32 +130,31 @@ class SoCLinux(SoCCore):
         self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["opensbi"].origin)
 
         # SDRAM ------------------------------------------------------------------------------------
-        if with_sdram:
-            sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
-            sdram_module_cls = getattr(litedram_modules, sdram_module)
-            sdram_rate       = "1:{}".format(sdram_module_nphases[sdram_module_cls.memtype])
-            sdram_module     = sdram_module_cls(sdram_clk_freq, sdram_rate)
-            phy_settings     = get_sdram_phy_settings(
-                memtype    = sdram_module.memtype,
-                data_width = sdram_data_width,
-                clk_freq   = sdram_clk_freq)
-            self.submodules.sdrphy = SDRAMPHYModel(
-                module    = sdram_module,
-                settings  = phy_settings,
-                clk_freq  = sdram_clk_freq,
-                verbosity = sdram_verbosity,
-                init      = ram_init)
-            self.add_sdram("sdram",
-                phy                     = self.sdrphy,
-                module                  = sdram_module,
-                origin                  = self.mem_map["main_ram"],
-                size                    = 0x10000000, # Limit mapped SDRAM to 1GB.
-                l2_cache_reverse        = False)
-            # FIXME: skip memtest to avoid corrupting memory
-            self.add_constant("MEMTEST_BUS_SIZE",  0)
-            self.add_constant("MEMTEST_ADDR_SIZE", 0)
-            self.add_constant("MEMTEST_DATA_SIZE", 0)
-            self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
+        sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
+        sdram_module_cls = getattr(litedram_modules, sdram_module)
+        sdram_rate       = "1:{}".format(sdram_module_nphases[sdram_module_cls.memtype])
+        sdram_module     = sdram_module_cls(sdram_clk_freq, sdram_rate)
+        phy_settings     = get_sdram_phy_settings(
+            memtype    = sdram_module.memtype,
+            data_width = sdram_data_width,
+            clk_freq   = sdram_clk_freq)
+        self.submodules.sdrphy = SDRAMPHYModel(
+            module    = sdram_module,
+            settings  = phy_settings,
+            clk_freq  = sdram_clk_freq,
+            verbosity = sdram_verbosity,
+            init      = ram_init)
+        self.add_sdram("sdram",
+            phy                     = self.sdrphy,
+            module                  = sdram_module,
+            origin                  = self.mem_map["main_ram"],
+            size                    = 0x10000000, # Limit mapped SDRAM to 1GB.
+            l2_cache_reverse        = False)
+        # FIXME: skip memtest to avoid corrupting memory
+        self.add_constant("MEMTEST_BUS_SIZE",  0)
+        self.add_constant("MEMTEST_ADDR_SIZE", 0)
+        self.add_constant("MEMTEST_DATA_SIZE", 0)
+        self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
 
 
         # Ethernet ---------------------------------------------------------------------------------
@@ -209,7 +207,6 @@ def main():
 
     for i in range(2):
         soc = SoCLinux(i!=0,
-            with_sdram            = args.with_sdram,
             sdram_module          = args.sdram_module,
             sdram_data_width      = int(args.sdram_data_width),
             sdram_verbosity       = int(args.sdram_verbosity),
