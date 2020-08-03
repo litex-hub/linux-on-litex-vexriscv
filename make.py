@@ -418,16 +418,17 @@ def main():
         board = supported_boards[board_name]()
 
         # SoC parameters ---------------------------------------------------------------------------
-        board.soc_kwargs.update()
+        soc_kwargs = Board.soc_kwargs
+        soc_kwargs.update(board.soc_kwargs)
         if "usb_fifo" in board.soc_capabilities:
-            board.soc_kwargs.update(uart_name="usb_fifo")
+            soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
-            board.soc_kwargs.update(uart_name="usb_acm")
+            soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
-            board.soc_kwargs.update(with_ethernet=True)
+            soc_kwargs.update(with_ethernet=True)
 
         # SoC creation -----------------------------------------------------------------------------
-        soc = SoCLinux(board.soc_cls, **board.soc_kwargs)
+        soc = SoCLinux(board.soc_cls, **soc_kwargs)
         board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------
