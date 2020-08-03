@@ -13,7 +13,7 @@ kB = 1024
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
-    soc_kwargs = {}
+    soc_kwargs = {"integrated_rom_size": 0x10000}
     def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -264,7 +264,7 @@ class OrangeCrab(Board):
     soc_kwargs = {
         "sys_clk_freq": 64e6,          # Increase sys_clk_freq to 64MHz (48MHz default).
         "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
-		"integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -344,7 +344,10 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
-    soc_kwargs = {"l2_size": 2048} # Reduce l2_size (Not enough blockrams).
+    soc_kwargs = {
+        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
+        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+    }
     def __init__(self):
         from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
@@ -415,7 +418,7 @@ def main():
         board = supported_boards[board_name]()
 
         # SoC parameters ---------------------------------------------------------------------------
-        board.soc_kwargs.update(integrated_rom_size=0x10000)
+        board.soc_kwargs.update()
         if "usb_fifo" in board.soc_capabilities:
             board.soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
