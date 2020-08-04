@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 
 from migen import *
 
@@ -20,6 +21,8 @@ from litex.tools.litex_sim import sdram_module_nphases, get_sdram_phy_settings
 
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.mac import LiteEthMAC
+
+from litex.tools.litex_json2dts import generate_dts
 
 # IOs ----------------------------------------------------------------------------------------------
 
@@ -164,9 +167,12 @@ class SoCLinux(SoCCore):
             self.add_interrupt("ethmac")
 
     def generate_dts(self, board_name):
-        json = os.path.join("build", board_name, "csr.json")
+        json_src = os.path.join("build", board_name, "csr.json")
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-        os.system("./json2dts.py {} > {}".format(json, dts))
+
+        with open(json_src) as json_file, open(dts, "w") as dts_file:
+            dts_content = generate_dts(json.load(json_file))
+            dts_file.write(dts_content)
 
     def compile_dts(self, board_name):
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
