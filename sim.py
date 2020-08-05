@@ -95,10 +95,10 @@ class SoCLinux(SoCCore):
         ram_init = []
         if init_memories:
             ram_init = get_mem_data({
-                "buildroot/Image": "0x00000000",
-                "buildroot/rv32.dtb": "0x00ef0000",
+                "buildroot/Image":       "0x00000000",
+                "buildroot/rv32.dtb":    "0x00ef0000",
                 "buildroot/rootfs.cpio": "0x01000000",
-                "opensbi/build/platform/litex/vexriscv/firmware/fw_jump.bin": "0x00f00000"
+                "opensbi/opensbi.bin":   "0x00f00000"
             }, "little")
 
         # SoCCore ----------------------------------------------------------------------------------

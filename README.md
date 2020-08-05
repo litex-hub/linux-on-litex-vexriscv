@@ -264,7 +264,7 @@ $ make
 ```
 The binaries are located in *output/images/*.
 
-## Generating the opensbi binary (optional)
+## Generating the OpenSBI binary (optional)
 ```sh
 $ git clone https://github.com/SpinalHDL/opensbi.git --branch litex
 $ cd opensbi

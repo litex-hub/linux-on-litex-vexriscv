@@ -1,6 +1,6 @@
 {
-	"Image":        "0x40000000",
-	"rootfs.cpio":  "0x40800000",
-	"rv32.dtb":     "0x41000000",
-	"emulator.bin":  "0x41100000"
+	"Image":       "0x40000000",
+	"rv32.dtb":    "0x40ef0000",
+	"rootfs.cpio": "0x41000000",
+	"opensbi.bin": "0x40f00000"
 }
