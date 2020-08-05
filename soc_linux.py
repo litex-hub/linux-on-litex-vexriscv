@@ -106,6 +106,7 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_type       = "vexriscv_smp",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
+                l2_cache_size  = 0,
                 max_sdram_size = 0x40000000, # Limit mapped SDRAM to 1GB.
                 **kwargs)
             self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
