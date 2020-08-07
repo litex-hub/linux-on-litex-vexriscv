@@ -93,8 +93,6 @@ def SoCLinux(soc_cls, **kwargs):
         }}
         mem_map = {**soc_cls.mem_map, **{
             "ethmac":       0xb0000000, # len: 0x2000
-            "sdread":       0xb0002000, # len: 0x200
-            "sdwrite":      0xb0002200, # len: 0x200
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
         }}
@@ -111,11 +109,11 @@ def SoCLinux(soc_cls, **kwargs):
                 **kwargs)
             self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
 
-            # Add linker region for machine mode emulator
+            # Add linker region for OpenSBI
             self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
 
             # PLIC ------------------------------------------------------------------------------------
-            self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0C00000, size=0x400000, cached=False))
+            self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0c00000, size=0x400000, cached=False))
 
             # CLINT ------------------------------------------------------------------------------------
             self.bus.add_slave("clint", self.cpu.cbus, region=SoCRegion(origin=0xf0010000, size=0x10000, cached=False))
