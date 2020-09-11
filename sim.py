@@ -229,7 +229,6 @@ def main():
             trace_start = int(args.trace_start),
             trace_end   = int(args.trace_end))
         if i == 0:
-            os.chdir("..")
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
             soc.compile_emulator(board_name)
