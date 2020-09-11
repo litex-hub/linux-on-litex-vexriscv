@@ -262,7 +262,7 @@ class HADBadge(Board):
 
 class OrangeCrab(Board):
     soc_kwargs = {
-        "sys_clk_freq": 64e6,          # Increase sys_clk_freq to 64MHz (48MHz default).
+        "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
         "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
         "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
