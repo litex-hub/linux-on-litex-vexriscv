@@ -129,7 +129,7 @@ class KC705(Board):
             "ethernet",
             # Storage
             "sdcard",
-            "sata",
+            #"sata",
             # GPIOs
             "leds",
             # Monitoring
