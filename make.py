@@ -129,6 +129,7 @@ class KC705(Board):
             "ethernet",
             # Storage
             "sdcard",
+            "sata",
             # GPIOs
             "leds",
             # Monitoring
@@ -429,6 +430,8 @@ def main():
             soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
+        if "sata" in board.soc_capabilities:
+            soc_kwargs.update(with_sata=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
