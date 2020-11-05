@@ -259,6 +259,7 @@ Please visit the [HOWTO](https://github.com/litex-hub/linux-on-litex-vexriscv/bl
 ```sh
 $ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
+$ git reset --hard 88a268354daaaa6422ed875ad8c580dbaf1d81a1
 $ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_defconfig
 $ make
 ```
