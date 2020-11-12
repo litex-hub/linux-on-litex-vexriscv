@@ -360,7 +360,8 @@ class De0Nano(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
-        "l2_size":      1024,          # Reduce l2_size (Not enough blockrams).
+        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
+        "integrated_sram_size": 0x800,
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
     }
     def __init__(self):
