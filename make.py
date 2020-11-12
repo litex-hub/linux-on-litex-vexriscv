@@ -356,7 +356,7 @@ class De0Nano(Board):
             "serial",
         }, bitstream_ext=".sof")
 
-# qmtech EP4CE15 support ----------------------------------------------------------------------------------
+# QMTECH EP4CE15 support ---------------------------------------------------------------------------
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
@@ -365,8 +365,8 @@ class Qmtech_EP4CE15(Board):
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
     }
     def __init__(self):
-        from litex_boards.targets import qmtech_EP4CE15
-        Board.__init__(self, qmtech_EP4CE15.BaseSoC, soc_capabilities={
+        from litex_boards.targets import qmtech_ep4ce15
+        Board.__init__(self, qmtech_ep4ce15.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # "leds",
