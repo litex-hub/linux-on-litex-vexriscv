@@ -30,6 +30,16 @@ class Board:
 # Xilinx Boards
 #---------------------------------------------------------------------------------------------------
 
+# Acorn CLE 215+ support ---------------------------------------------------------------------------
+
+class AcornCLE215(Board):
+    def __init__(self):
+        from litex_boards.targets import acorn_cle_215
+        Board.__init__(self, acorn_cle_215.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        }, bitstream_ext=".bit")
+
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
@@ -217,6 +227,18 @@ class Pipistrello(Board):
             "serial",
         }, bitstream_ext=".bit")
 
+# XCU1525 support ----------------------------------------------------------------------------------
+
+class XCU1525(Board):
+    def __init__(self):
+        from litex_boards.targets import xcu1525
+        Board.__init__(self, xcu1525.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sata",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -390,18 +412,20 @@ class Qmtech_EP4CE15(Board):
 
 supported_boards = {
     # Xilinx
-    "arty":         Arty,
-    "arty_a7":      ArtyA7,
-    "arty_s7":      ArtyS7,
-    "netv2":        NeTV2,
-    "genesys2":     Genesys2,
-    "kc705":        KC705,
-    "kcu105":       KCU105,
-    "zcu104":       ZCU104,
-    "nexys4ddr":    Nexys4DDR,
-    "nexys_video":  NexysVideo,
-    "minispartan6": MiniSpartan6,
-    "pipistrello":  Pipistrello,
+    "acorn_cle_215": AcornCLE215,
+    "arty":          Arty,
+    "arty_a7":       ArtyA7,
+    "arty_s7":       ArtyS7,
+    "netv2":         NeTV2,
+    "genesys2":      Genesys2,
+    "kc705":         KC705,
+    "kcu105":        KCU105,
+    "zcu104":        ZCU104,
+    "nexys4ddr":     Nexys4DDR,
+    "nexys_video":   NexysVideo,
+    "minispartan6":  MiniSpartan6,
+    "pipistrello":   Pipistrello,
+    "xcu1525":       XCU1525,
 
     # Lattice
     "versa_ecp5":   VersaECP5,

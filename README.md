@@ -27,6 +27,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 | Name         | FPGA Family         | FPGA device   | CPU Frequency |        RAM         |    Flash      |       Ethernet     | SDCard |
 |--------------|---------------------|---------------|---------------|--------------------|---------------|--------------------|--------|
+| Acorn CLE215+| Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits   1GB DDR3 |  16MB QSPI*   |         No         |   No   |
 | Arty(A7)     | Xilinx Artix7       | XC7A35T       |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    | 100Mbps MII        |   No   |
 | ArtyS7       | Xilinx Spartan7     | XC7S50        |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    |         No         |   No   |
 | NeTV2        | Xilinx Artix7       | XC7A35T       |    100MHz     | 32-bits 512MB DDR3 |  16MB QSPI*   | 100Mbps RMII       |   Yes  |
@@ -38,6 +39,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | Nexys Video  | Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits 512MB DDR3 |  32MB QSPI*   |   1Gbps RMII*      |   Yes  |
 | miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes  |
 | Pipistrello  | Xilinx Spartan6     | XC6SLX45      |     83MHz     | 16-bits  64MB LPDDR|  16MB QSPI*   |         No         |   Yes* |
+| XCU1525      | Xilinx Ultrascale+  | XCVU9P        |    125MHz     | 64-bits  4GB DDR4  |      No       |         No         |   No   |
 | Versa ECP5   | Lattice ECP5        | LFE5UM5G 45F  |     75MHz     | 16-bits 128MB DDR3 |  16MB QSPI*   |   1Gbps RGMII      |   No   |
 | HADBadge     | Lattice ECP5        | LFE5U-45F     |     48MHz     |  8-bits  32MB SDR  |  16MB QSPI*   |         No         |   No   |
 | ULX3S        | Lattice ECP5        | LFE5U 45F     |     50MHz     | 16-bits  32MB SDR  |   4MB QSPI*   |         No         |   Yes  |
