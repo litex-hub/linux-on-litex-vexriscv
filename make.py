@@ -38,6 +38,8 @@ class AcornCLE215(Board):
         Board.__init__(self, acorn_cle_215.BaseSoC, soc_capabilities={
             # Communication
             "serial",
+            # Storage
+            "sata",
         }, bitstream_ext=".bit")
 
 # Arty support -------------------------------------------------------------------------------------
