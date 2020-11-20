@@ -14,7 +14,7 @@ kB = 1024
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
-    soc_kwargs = {}
+    soc_kwargs = {"integrated_rom_size": 0x10000}
     def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -26,6 +26,22 @@ class Board:
 
     def flash(self):
         raise NotImplementedError
+
+#---------------------------------------------------------------------------------------------------
+# Xilinx Boards
+#---------------------------------------------------------------------------------------------------
+
+# Acorn CLE 215+ support ---------------------------------------------------------------------------
+
+class AcornCLE215(Board):
+    def __init__(self):
+        from litex_boards.targets import acorn_cle_215
+        Board.__init__(self, acorn_cle_215.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sata",
+        }, bitstream_ext=".bit")
 
 # Arty support -------------------------------------------------------------------------------------
 
@@ -130,6 +146,7 @@ class KC705(Board):
             "ethernet",
             # Storage
             "sdcard",
+            #"sata",
             # GPIOs
             "leds",
             # Monitoring
@@ -213,6 +230,22 @@ class Pipistrello(Board):
             "serial",
         }, bitstream_ext=".bit")
 
+# XCU1525 support ----------------------------------------------------------------------------------
+
+class XCU1525(Board):
+    def __init__(self):
+        from litex_boards.targets import xcu1525
+        Board.__init__(self, xcu1525.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sata",
+        }, bitstream_ext=".bit")
+
+#---------------------------------------------------------------------------------------------------
+# Lattice Boards
+#---------------------------------------------------------------------------------------------------
+
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
@@ -263,9 +296,9 @@ class HADBadge(Board):
 
 class OrangeCrab(Board):
     soc_kwargs = {
-        "sys_clk_freq": 64e6,          # Increase sys_clk_freq to 64MHz (48MHz default).
+        "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
         "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
-		"integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -312,7 +345,13 @@ class ECPIX5(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "sdcard",
         }, bitstream_ext=".svf")
+
+#---------------------------------------------------------------------------------------------------
+# Intel Boards
+#---------------------------------------------------------------------------------------------------
 
 # De10Lite support ---------------------------------------------------------------------------------
 
@@ -324,7 +363,7 @@ class De10Lite(Board):
             "serial",
         }, bitstream_ext=".sof")
 
-# De10Nano support ----------------------------------------------------------------------------------
+# De10Nano support ---------------------------------------------------------------------------------
 
 class De10Nano(Board):
     soc_kwargs = {"with_mister_sdram": True} # Add MiSTer SDRAM extension.
@@ -343,7 +382,10 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
-    soc_kwargs = {"l2_size": 2048} # Reduce l2_size (Not enough blockrams).
+    soc_kwargs = {
+        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
+        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+    }
     def __init__(self):
         from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
@@ -351,22 +393,42 @@ class De0Nano(Board):
             "serial",
         }, bitstream_ext=".sof")
 
-# Main ---------------------------------------------------------------------------------------------
+# QMTECH EP4CE15 support ---------------------------------------------------------------------------
+
+class Qmtech_EP4CE15(Board):
+    soc_kwargs = {
+        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
+        "integrated_sram_size": 0x800,
+        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_ep4ce15
+        Board.__init__(self, qmtech_ep4ce15.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # "leds",
+        }, bitstream_ext=".sof")
+
+#---------------------------------------------------------------------------------------------------
+# Build
+#---------------------------------------------------------------------------------------------------
 
 supported_boards = {
     # Xilinx
-    "arty":         Arty,
-    "arty_a7":      ArtyA7,
-    "arty_s7":      ArtyS7,
-    "netv2":        NeTV2,
-    "genesys2":     Genesys2,
-    "kc705":        KC705,
-    "kcu105":       KCU105,
-    "zcu104":       ZCU104,
-    "nexys4ddr":    Nexys4DDR,
-    "nexys_video":  NexysVideo,
-    "minispartan6": MiniSpartan6,
-    "pipistrello":  Pipistrello,
+    "acorn_cle_215": AcornCLE215,
+    "arty":          Arty,
+    "arty_a7":       ArtyA7,
+    "arty_s7":       ArtyS7,
+    "netv2":         NeTV2,
+    "genesys2":      Genesys2,
+    "kc705":         KC705,
+    "kcu105":        KCU105,
+    "zcu104":        ZCU104,
+    "nexys4ddr":     Nexys4DDR,
+    "nexys_video":   NexysVideo,
+    "minispartan6":  MiniSpartan6,
+    "pipistrello":   Pipistrello,
+    "xcu1525":       XCU1525,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -381,6 +443,8 @@ supported_boards = {
     "de0nano":      De0Nano,
     "de10lite":     De10Lite,
     "de10nano":     De10Nano,
+
+    "qmtech_ep4ce15":      Qmtech_EP4CE15,
 }
 
 def main():
@@ -390,6 +454,7 @@ def main():
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--board",          required=True,            help="FPGA board")
+    parser.add_argument("--device",         default=None,             help="FPGA device")
     parser.add_argument("--build",          action="store_true",      help="Build bitstream")
     parser.add_argument("--load",           action="store_true",      help="Load bitstream (to SRAM)")
     parser.add_argument("--flash",          action="store_true",      help="Flash bitstream/images (to SPI Flash)")
@@ -417,16 +482,21 @@ def main():
         board = supported_boards[board_name]()
 
         # SoC parameters ---------------------------------------------------------------------------
-        board.soc_kwargs.update(integrated_rom_size=0x10000)
+        soc_kwargs = Board.soc_kwargs
+        soc_kwargs.update(board.soc_kwargs)
+        if args.device is not None:
+            soc_kwargs.update(device=args.device)
         if "usb_fifo" in board.soc_capabilities:
-            board.soc_kwargs.update(uart_name="usb_fifo")
+            soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
-            board.soc_kwargs.update(uart_name="usb_acm")
+            soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
-            board.soc_kwargs.update(with_ethernet=True)
+            soc_kwargs.update(with_ethernet=True)
+        if "sata" in board.soc_capabilities:
+            soc_kwargs.update(with_sata=True)
 
         # SoC creation -----------------------------------------------------------------------------
-        soc = SoCLinux(board.soc_cls, **board.soc_kwargs)
+        soc = SoCLinux(board.soc_cls, **soc_kwargs)
         board.platform = soc.platform
 
         # SoC peripherals --------------------------------------------------------------------------

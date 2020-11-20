@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import subprocess
 
 from litex.soc.cores.cpu import VexRiscvSMP
@@ -100,6 +101,7 @@ def SoCLinux(soc_cls, **kwargs):
         def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------
+            kwargs["csr_data_width"] = 8
             soc_cls.__init__(self,
                 cpu_type       = "vexriscv_smp",
                 cpu_variant    = cpu_variant,
