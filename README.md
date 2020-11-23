@@ -79,9 +79,10 @@ $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
 $ chmod +x litex_setup.py
-$ ./litex_setup.py init
-$ sudo ./litex_setup.py install
+$ ./litex_setup.py init install --user (--user to install to user directory)
 ```
+For more information, please visit: https://github.com/enjoy-digital/litex/wiki/Installation
+
 ## Installing a RISC-V toolchain
 ```sh
 $ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
