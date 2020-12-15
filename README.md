@@ -64,16 +64,8 @@ $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
 $ cd linux-on-litex-vexriscv
 ```
 
-## Pre-built Bitstreams/Linux images
-Pre-built bistreams for the supported board and pre-built Linux images can be found in the [linux-on-litex-vexriscv-prebuilt](https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt) repository and allow doing
-tests without the need to compile anything.
-
-To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
-and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
-```sh
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
-$ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
-```
+## Pre-built Bitstreams and Linux/OpenSBI images
+Pre-built bistreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
 
 ## Installing LiteX
 ```sh
