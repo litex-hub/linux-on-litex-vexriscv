@@ -71,7 +71,7 @@ tests without the need to compile anything.
 To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
 and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
 ```sh
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt --branch vexriscv-smp
+$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
 $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```
 
@@ -79,9 +79,10 @@ $ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
 $ chmod +x litex_setup.py
-$ ./litex_setup.py init
-$ sudo ./litex_setup.py install
+$ ./litex_setup.py init install --user (--user to install to user directory)
 ```
+For more information, please visit: https://github.com/enjoy-digital/litex/wiki/Installation
+
 ## Installing a RISC-V toolchain
 ```sh
 $ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
@@ -210,9 +211,9 @@ Built-in commands:
 | FPGA family       |      Toolchain        |
 |-------------------|-----------------------|
 | Xilinx Ultrascale |      Vivado           |
-| Xilinx 7-Series   |      Vivado           |
+| Xilinx 7-Series   |   Vivado/SymbiFlow*   |
 | Xilinx Spartan6   |        ISE            |
-| Lattice ECP5      | Yosys/Trellis/Nextpnr |
+| Lattice ECP5      | Yosys+Trellis+Nextpnr |
 | Altera Cyclone4   |    Quartus Prime      |
 
 Once installed, build the bitstream with:
@@ -226,6 +227,12 @@ To load the bitstream to you board, run:
 $ ./make.py --board=XXYY --load
 ```
 > **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
+
+> **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
+> ```
+> ./make.py --board=arty --toolchain=symbiflow --build
+> ```
+
 ### Load the Linux images over Serial
 All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
 
@@ -269,12 +276,9 @@ The binaries are located in *output/images/*.
 
 ## Generating the OpenSBI binary (optional)
 ```sh
-$ git clone https://github.com/SpinalHDL/opensbi.git --branch litex
+$ git clone https://github.com/litex-hub/opensbi --branch 0.8-linux-on-litex-vexriscv
 $ cd opensbi
-$ export CROSS_COMPILE=riscv-none-embed-  # xPack toolchain
-$ export PLATFORM_RISCV_XLEN=32
-$ make PLATFORM=litex/vexriscv clean
-$ make PLATFORM=litex/vexriscv -j$(nproc) LITEX_BUILD=../build/sim LITEX_INSTALL=FOLDER_OF_litex_setup.py
+$ make CROSS_COMPILE=riscv-none-embed- PLATFORM=litex/vexriscv
 ```
 
 The binary will be located at *build/platform/litex/vexriscv/firmware/fw_jump.bin*.
