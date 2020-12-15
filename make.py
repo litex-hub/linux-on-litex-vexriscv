@@ -302,7 +302,7 @@ class OrangeCrab(Board):
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
-        os.system("git clone https://github.com/gregdavill/valentyusb -b hw_cdc_eptri")
+        os.system("git clone https://github.com/litex-hub/valentyusb -b hw_cdc_eptri")
         sys.path.append("valentyusb") # FIXME: do proper install of ValentyUSB.
         Board.__init__(self, orangecrab.BaseSoC, soc_capabilities={
             # Communication
