@@ -105,8 +105,8 @@ class SoCLinux(SoCCore):
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type                 = "vexriscv_smp", cpu_variant="linux",
             uart_name                = "sim",
-            l2_reverse               = False,
-            max_sdram_size           = 0x10000000, # Limit mapped SDRAM to 1GB.
+            l2_cache_size            = 0,
+            max_sdram_size           = 0x40000000, # Limit mapped SDRAM to 1GB.
             integrated_rom_size      = 0x8000,
             integrated_main_ram_size = 0x00000000,
             integrated_main_ram_init = [])
@@ -228,7 +228,6 @@ def main():
             trace_start = int(args.trace_start),
             trace_end   = int(args.trace_end))
         if i == 0:
-            os.chdir("..")
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
 
