@@ -210,13 +210,13 @@ Built-in commands:
 
 Once installed, build the bitstream with:
 ```sh
-$ ./make.py --board=XXYY --build
+$ ./make.py --board=XXYY --cpu-count=X --build
 ```
 
 ### Load the FPGA bitstream
 To load the bitstream to you board, run:
 ```sh
-$ ./make.py --board=XXYY --load
+$ ./make.py --board=XXYY --cpu-count=X --load
 ```
 > **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
 
