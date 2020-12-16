@@ -4,6 +4,8 @@ import os
 import json
 import subprocess
 
+from litex.soc.cores.cpu import VexRiscvSMP
+from litex.soc.integration.soc import SoCRegion
 from migen import *
 
 from litex.soc.interconnect import wishbone
@@ -94,8 +96,6 @@ def SoCLinux(soc_cls, **kwargs):
         }}
         mem_map = {**soc_cls.mem_map, **{
             "ethmac":       0xb0000000, # len: 0x2000
-            "sdread":       0xb0002000, # len: 0x200
-            "sdwrite":      0xb0002200, # len: 0x200
             "spiflash":     0xd0000000,
             "csr":          0xf0000000,
         }}
@@ -105,15 +105,22 @@ def SoCLinux(soc_cls, **kwargs):
             # SoC ----------------------------------------------------------------------------------
             kwargs["csr_data_width"] = 8
             soc_cls.__init__(self,
-                cpu_type       = "vexriscv",
+                cpu_type       = "vexriscv_smp",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
+                l2_size        = 0,
                 max_sdram_size = 0x40000000, # Limit mapped SDRAM to 1GB.
                 **kwargs)
+            self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
 
-            # Add linker region for machine mode emulator
-            self.add_memory_region("emulator", self.mem_map["main_ram"] + 0x01100000, 0x4000,
-                type="cached+linker")
+            # Add linker region for OpenSBI
+            self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
+
+            # PLIC ------------------------------------------------------------------------------------
+            self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0c00000, size=0x400000, cached=False))
+
+            # CLINT ------------------------------------------------------------------------------------
+            self.bus.add_slave("clint", self.cpu.cbus, region=SoCRegion(origin=0xf0010000, size=0x10000, cached=False))
 
         # Leds -------------------------------------------------------------------------------------
         def add_leds(self):
@@ -268,11 +275,6 @@ def SoCLinux(soc_cls, **kwargs):
             dtb = os.path.join("buildroot", "rv32.dtb")
             subprocess.check_call(
                 "dtc -O dtb -o {} {}".format(dtb, dts), shell=True)
-
-        # Emulator compilation ---------------------------------------------------------------------
-        def compile_emulator(self, board_name):
-            os.environ["BOARD"] = board_name
-            subprocess.check_call("cd emulator && make", shell=True)
 
         # Documentation generation -----------------------------------------------------------------
         def generate_doc(self, board_name):

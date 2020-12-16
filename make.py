@@ -4,6 +4,7 @@ import sys
 import argparse
 import os
 
+from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
 
 from soc_linux import SoCLinux, video_resolutions
@@ -208,7 +209,6 @@ class NexysVideo(Board):
 class MiniSpartan6(Board):
     soc_kwargs = {
         "sdram_sys2x":  True, # Use HalfRate SDRAM PHY.
-        "l2_size":      2048, # Reduce l2_size (Not enough blockrams).
     }
     def __init__(self):
         from litex_boards.targets import minispartan6
@@ -296,8 +296,6 @@ class HADBadge(Board):
 class OrangeCrab(Board):
     soc_kwargs = {
         "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
-        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
-        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -307,7 +305,7 @@ class OrangeCrab(Board):
             # Communication
             "usb_acm",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
@@ -382,7 +380,6 @@ class De10Nano(Board):
 
 class De0Nano(Board):
     soc_kwargs = {
-        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
     }
     def __init__(self):
@@ -396,7 +393,6 @@ class De0Nano(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
-        "l2_size":      2048,          # Reduce l2_size (Not enough blockrams).
         "integrated_sram_size": 0x800,
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
     }
@@ -464,7 +460,10 @@ def main():
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
+    VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
+
+    VexRiscvSMP.args_read(args)
 
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
@@ -543,9 +542,6 @@ def main():
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
         soc.compile_dts(board_name)
-
-        # Machine Mode Emulator --------------------------------------------------------------------
-        soc.compile_emulator(board_name)
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:

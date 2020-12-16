@@ -64,16 +64,8 @@ $ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
 $ cd linux-on-litex-vexriscv
 ```
 
-## Pre-built Bitstreams/Linux images
-Pre-built bistreams for the supported board and pre-built Linux images can be found in the [linux-on-litex-vexriscv-prebuilt](https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt) repository and allow doing
-tests without the need to compile anything.
-
-To get the pre-built bitstreams/images, clone the prebuilt repository near the linux-on-litex-vexriscv repository
-and copy all the files from prebuilt directory to the linux-on-litex-vexriscv directory:
-```sh
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv-prebuilt
-$ cp -r linux-on-litex-vexriscv-prebuilt/* linux-on-litex-vexriscv
-```
+## Pre-built Bitstreams and Linux/OpenSBI images
+Pre-built bistreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
 
 ## Installing LiteX
 ```sh
@@ -218,13 +210,13 @@ Built-in commands:
 
 Once installed, build the bitstream with:
 ```sh
-$ ./make.py --board=XXYY --build
+$ ./make.py --board=XXYY --cpu-count=X --build
 ```
 
 ### Load the FPGA bitstream
 To load the bitstream to you board, run:
 ```sh
-$ ./make.py --board=XXYY --load
+$ ./make.py --board=XXYY --cpu-count=X --load
 ```
 > **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
 
@@ -238,7 +230,7 @@ All the boards support Serial loading of the Linux images and this is the only w
 
 To load the Linux images over Serial, use the [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
 ```sh
-$ lxterm --images=images.json /dev/ttyUSBX --speed=1e6 --no-crc
+$ lxterm --images=images.json /dev/ttyUSBX --speed=1e6
 ```
 The images should load and you should see Linux booting :)
 
@@ -275,15 +267,20 @@ $ make
 ```
 The binaries are located in *output/images/*.
 
-## Generating the VexRiscv Linux variant (optional)
-Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
-
-Clone the VexRiscv repository and generate the Linux variant:
+## Generating the OpenSBI binary (optional)
 ```sh
-$ git clone http://github.com/enjoy-digital/Vexriscv-verilog --recursive
-$ sbt "runMain vexriscv.GenCoreDefault --externalInterruptArray=true --csrPluginConfig=linux-minimal"
+$ git clone https://github.com/litex-hub/opensbi --branch 0.8-linux-on-litex-vexriscv
+$ cd opensbi
+$ make CROSS_COMPILE=riscv-none-embed- PLATFORM=litex/vexriscv
 ```
-The Linux variant is the *VexRiscv.v* file.
+
+The binary will be located at *build/platform/litex/vexriscv/firmware/fw_jump.bin*.
+
+## Generating the VexRiscv Linux variant (optional)
+
+If the VexRiscv configuration you ask isn't already generated, you will need to install java and SBT on your machine to enable their local on demande generation.
+
+To install java and SBT see Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
 
 ## Udev rules (optional)
 Not needed but can make loading/flashing bitstreams easier:
