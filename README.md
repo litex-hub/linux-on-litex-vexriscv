@@ -11,7 +11,7 @@
 
                    Copyright (c) 2019-2020, Linux on LiteX VexRiscv Developers
 ```
-[![](https://travis-ci.com/litex-hub/linux-on-litex-vexriscv.svg?branch=master)](https://travis-ci.com/litex-hub/linux-on-litex-vexriscv) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
+[![](https://github.com/litex-hub/linux-on-litex-vexriscv/workflows/ci/badge.svg)](https://github.com/litex-hub/linux-on-litex-vexriscv/actions) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
 > **Note:** Tested on Ubuntu 18.04.
 
 ## Intro:
