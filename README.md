@@ -19,6 +19,8 @@ In this repository, we experiment running Linux with [VexRiscv](https://github.c
 
 This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new possibilities and complement each other**. Results shown here are the results of a productive collaboration between open-source communities.
 
+<p align="center"><img src="https://user-images.githubusercontent.com/1450143/102530175-39e2a880-40a1-11eb-80cd-bea7c6cdf49b.png" width="500"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/1450143/102530313-68f91a00-40a1-11eb-9f97-199e33828bcb.JPG" width="500"></p>
 
 ## Demo:
 [![asciicast](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF.svg)](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF)
