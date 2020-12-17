@@ -1,0 +1,39 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      # Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Install Tools
+      - name: Install Tools
+        run: |
+          sudo apt-get install wget build-essential python3 verilator libevent-dev libjson-c-dev device-tree-compiler
+          pip3 install setuptools
+          pip3 install requests
+          pip3 install pexpect
+
+      # Install (n)Migen / LiteX / Cores
+      - name: Install LiteX
+        run: |
+          wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
+          python3 litex_setup.py init install --user
+
+      # Install RISC-V GCC
+      - name: Install RISC-V GCC
+        run: |
+          wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
+          python3 litex_setup.py gcc
+          sudo mkdir /usr/local/riscv
+          sudo cp -r $PWD/../riscv64-*/* /usr/local/riscv
+
+      # Test
+      - name: Run Tests
+        run: |
+          export PATH=/usr/local/riscv/bin:$PATH
+          ./make.py --board=arty
