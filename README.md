@@ -230,7 +230,7 @@ All the boards support Serial loading of the Linux images and this is the only w
 
 To load the Linux images over Serial, use the [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
 ```sh
-$ lxterm --images=images.json /dev/ttyUSBX --speed=1e6
+$ lxterm --images=images/boot.json /dev/ttyUSBX --speed=1e6
 ```
 The images should load and you should see Linux booting :)
 
@@ -241,14 +241,14 @@ The images should load and you should see Linux booting :)
 Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
 
 ### Load the Linux images over Ethernet
-For boards with Ethernet support, the Linux images can be loaded over TFTP. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
+For boards with Ethernet support, the Linux images can be loaded over TFTP. You need to copy the files from *images* directory to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
 
 Once the bistream is loaded, the board you try to retrieve the files on the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
 
 The images will be loaded to RAM and you should see Linux booting :)
 
 ### Load the Linux images to SDCard
-For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files in *buildroot* directory and *emulator/emulator.bin* to your SDCard root directory (with a FAT partition).
+For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files from *images* directory to your SDCard root directory (with a FAT partition).
 
 The images will be loaded to RAM and you should see Linux booting :)
 

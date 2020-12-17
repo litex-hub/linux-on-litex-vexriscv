@@ -268,7 +268,7 @@ def SoCLinux(soc_cls, **kwargs):
         # DTS compilation --------------------------------------------------------------------------
         def compile_dts(self, board_name):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-            dtb = os.path.join("buildroot", "rv32.dtb")
+            dtb = os.path.join("images", "rv32.dtb")
             subprocess.check_call(
                 "dtc -O dtb -o {} {}".format(dtb, dts), shell=True)
 
