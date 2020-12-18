@@ -296,6 +296,7 @@ class HADBadge(Board):
 class OrangeCrab(Board):
     soc_kwargs = {
         "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
+        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
