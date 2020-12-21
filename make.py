@@ -57,7 +57,7 @@ class Arty(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "sdcard",
+            "spisdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -83,7 +83,7 @@ class ArtyS7(Arty):
             "serial",
             # Storage
             "spiflash",
-            "sdcard",
+            "spisdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -112,7 +112,7 @@ class NeTV2(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "sdcard",
+            "spisdcard",
             # GPIOs
             "leds",
             # Video
@@ -131,7 +131,7 @@ class Genesys2(Board):
             "usb_fifo",
             "ethernet",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".bit")
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ class KC705(Board):
             "serial",
             "ethernet",
             # Storage
-            "sdcard",
+            "spisdcard",
             #"sata",
             # GPIOs
             "leds",
@@ -187,7 +187,7 @@ class Nexys4DDR(Board):
             "serial",
             "ethernet",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -199,7 +199,7 @@ class NexysVideo(Board):
             # Communication
             "usb_fifo",
             # Storage
-            "sdcard",
+            "spisdcard",
             # Video
             "framebuffer",
         }, bitstream_ext=".bit")
@@ -306,7 +306,7 @@ class OrangeCrab(Board):
             # Communication
             "usb_acm",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
@@ -331,7 +331,7 @@ class TrellisBoard(Board):
             # Communication
             "serial",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".svf")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ class ECPIX5(Board):
             "serial",
             "ethernet",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".svf")
 
 #---------------------------------------------------------------------------------------------------
