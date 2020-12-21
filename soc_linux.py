@@ -27,6 +27,8 @@ from litex.build.generic_platform import *
 from litesdcard.phy import SDPHY
 from litesdcard.core import SDCore
 
+from litex.tools.litex_json2dts import generate_dts
+
 # Predefined values --------------------------------------------------------------------------------
 
 video_resolutions = {
@@ -260,10 +262,12 @@ def SoCLinux(soc_cls, **kwargs):
 
         # DTS generation ---------------------------------------------------------------------------
         def generate_dts(self, board_name):
-            json = os.path.join("build", board_name, "csr.json")
+            json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-            subprocess.check_call(
-                "./json2dts.py {} > {}".format(json, dts), shell=True)
+
+            with open(json_src) as json_file, open(dts, "w") as dts_file:
+                dts_content = generate_dts(json.load(json_file))
+                dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------
         def compile_dts(self, board_name):
