@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import argparse
 
 from litex.soc.cores.cpu import VexRiscvSMP
@@ -19,9 +20,12 @@ from litex.soc.interconnect import wishbone
 from litedram import modules as litedram_modules
 from litedram.phy.model import SDRAMPHYModel
 from litex.tools.litex_sim import sdram_module_nphases, get_sdram_phy_settings
+from litedram.core.controller import ControllerSettings
 
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.mac import LiteEthMAC
+
+from litex.tools.litex_json2dts import generate_dts
 
 # IOs ----------------------------------------------------------------------------------------------
 
@@ -69,51 +73,57 @@ class Supervisor(Module, AutoCSR):
 
 class SoCLinux(SoCCore):
     csr_map = {**SoCCore.csr_map, **{
-        "ctrl":       0,
-        "uart":       2,
-        "timer0":     3,
+        "ctrl":   0,
+        "uart":   2,
+        "timer0": 3,
     }}
     interrupt_map = {**SoCCore.interrupt_map, **{
-        "uart":       0,
-        "timer0":     1,
+        "uart":   0,
+        "timer0": 1,
     }}
     mem_map = {**SoCCore.mem_map, **{
-        "ethmac":       0xb0000000,
-        "spiflash":     0xd0000000,
-        "csr":          0xf0000000,
+        "ethmac":   0xb0000000,
+        "spiflash": 0xd0000000,
+        "csr":      0xf0000000,
     }}
 
     def __init__(self,
-        init_memories         = False,
-        sdram_module          = "MT48LC16M16",
-        sdram_data_width      = 32,
-        sdram_verbosity       = 0,
-        with_ethernet         = False):
+        init_memories    = False,
+        sdram_module     = "MT48LC16M16",
+        sdram_data_width = 32,
+        sdram_verbosity  = 0,
+        with_ethernet    = False):
         platform     = Platform()
         sys_clk_freq = int(1e6)
 
         ram_init = []
         if init_memories:
             ram_init = get_mem_data({
-                "buildroot/Image":       "0x00000000",
-                "buildroot/rv32.dtb":    "0x00ef0000",
-                "buildroot/rootfs.cpio": "0x01000000",
-                "opensbi/opensbi.bin":   "0x00f00000"
+                "images/Image":       "0x00000000",
+                "images/rv32.dtb":    "0x00ef0000",
+                "images/rootfs.cpio": "0x01000000",
+                "images/opensbi.bin": "0x00f00000"
             }, "little")
+
+        # CRG --------------------------------------------------------------------------------------
+        self.submodules.crg = CRG(platform.request("sys_clk"))
 
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
-            cpu_type                 = "vexriscv_smp", cpu_variant="linux",
-            uart_name                = "sim",
-            l2_cache_size            = 0,
-            max_sdram_size           = 0x40000000, # Limit mapped SDRAM to 1GB.
+            cpu_type                 = "vexriscv_smp",
+            cpu_variant              = "linux",
+            csr_data_width           = 8,
             integrated_rom_size      = 0x8000,
-            integrated_main_ram_size = 0x00000000,
-            integrated_main_ram_init = [])
-        self.add_constant("SIM", None)
+            uart_name                = "sim")
+        self.add_constant("SIM")
+        self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
+
+        # Add linker region for OpenSBI
+        self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
+        self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["opensbi"].origin)
 
         # PLIC ------------------------------------------------------------------------------------
-        self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0C00000, size=0x400000, cached=False))
+        self.bus.add_slave("plic", self.cpu.plicbus, region=SoCRegion(origin=0xf0c00000, size=0x400000, cached=False))
 
         # CLINT ------------------------------------------------------------------------------------
         self.bus.add_slave("clint", self.cpu.cbus, region=SoCRegion(origin=0xf0010000, size=0x10000, cached=False))
@@ -121,13 +131,6 @@ class SoCLinux(SoCCore):
         # Supervisor -------------------------------------------------------------------------------
         self.submodules.supervisor = Supervisor()
         self.add_csr("supervisor")
-
-        # CRG --------------------------------------------------------------------------------------
-        self.submodules.crg = CRG(platform.request("sys_clk"))
-
-        # Opensbi RAM ----------------------------------------------------------------
-        self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
-        self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["opensbi"].origin)
 
         # SDRAM ------------------------------------------------------------------------------------
         sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
@@ -145,17 +148,11 @@ class SoCLinux(SoCCore):
             verbosity = sdram_verbosity,
             init      = ram_init)
         self.add_sdram("sdram",
-            phy                     = self.sdrphy,
-            module                  = sdram_module,
-            origin                  = self.mem_map["main_ram"],
-            size                    = 0x10000000, # Limit mapped SDRAM to 1GB.
-            l2_cache_reverse        = False)
-        # FIXME: skip memtest to avoid corrupting memory
-        self.add_constant("MEMTEST_BUS_SIZE",  0)
-        self.add_constant("MEMTEST_ADDR_SIZE", 0)
-        self.add_constant("MEMTEST_DATA_SIZE", 0)
-        self.add_constant("config_cpu_count", VexRiscvSMP.cpu_count) # for dts generation
-
+            phy           = self.sdrphy,
+            module        = sdram_module,
+            origin        = self.mem_map["main_ram"],
+            l2_cache_size = 0)
+        self.add_constant("SDRAM_TEST_DISABLE") # Skip SDRAM test to avoid corrupting pre-initialized contents.
 
         # Ethernet ---------------------------------------------------------------------------------
         if with_ethernet:
@@ -172,13 +169,15 @@ class SoCLinux(SoCCore):
             self.add_interrupt("ethmac")
 
     def generate_dts(self, board_name):
-        json = os.path.join("build", board_name, "csr.json")
+        json_src = os.path.join("build", board_name, "csr.json")
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-        os.system("./json2dts.py {} > {}".format(json, dts))
+        with open(json_src) as json_file, open(dts, "w") as dts_file:
+            dts_content = generate_dts(json.load(json_file))
+            dts_file.write(dts_content)
 
     def compile_dts(self, board_name):
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-        dtb = os.path.join("buildroot", "rv32.dtb")
+        dtb = os.path.join("images", "rv32.dtb")
         os.system("dtc -O dtb -o {} {}".format(dtb, dts))
 
 # Build --------------------------------------------------------------------------------------------
@@ -206,23 +205,23 @@ def main():
         sim_config.add_module("ethernet", "eth", args={"interface": "tap0", "ip": args.remote_ip})
 
     for i in range(2):
-        soc = SoCLinux(i!=0,
-            sdram_module          = args.sdram_module,
-            sdram_data_width      = int(args.sdram_data_width),
-            sdram_verbosity       = int(args.sdram_verbosity),
-            with_ethernet         = args.with_ethernet)
+        soc = SoCLinux( i!=0,
+            sdram_module     = args.sdram_module,
+            sdram_data_width = int(args.sdram_data_width),
+            sdram_verbosity  = int(args.sdram_verbosity),
+            with_ethernet    = args.with_ethernet)
         if args.with_ethernet:
             for i in range(4):
                 soc.add_constant("LOCALIP{}".format(i+1), int(args.local_ip.split(".")[i]))
             for i in range(4):
                 soc.add_constant("REMOTEIP{}".format(i+1), int(args.remote_ip.split(".")[i]))
         board_name = "sim"
-        build_dir = os.path.join("build", board_name)
+        build_dir  = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
-            compile_gateware = i!=0,
+            compile_gateware = i != 0 ,
             csr_json         = os.path.join(build_dir, "csr.json"))
         builder.build(sim_config=sim_config,
-            run         = i!=0,
+            run         = i != 0,
             opt_level   = args.opt_level,
             trace       = args.trace,
             trace_start = int(args.trace_start),
