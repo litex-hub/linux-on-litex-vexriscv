@@ -266,7 +266,7 @@ def SoCLinux(soc_cls, **kwargs):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
 
             with open(json_src) as json_file, open(dts, "w") as dts_file:
-                dts_content = generate_dts(json.load(json_file))
+                dts_content = generate_dts(json.load(json_file), polling=True)
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------
