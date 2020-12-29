@@ -112,7 +112,6 @@ class SoCLinux(SoCCore):
         SoCCore.__init__(self, platform, clk_freq=sys_clk_freq,
             cpu_type                 = "vexriscv_smp",
             cpu_variant              = "linux",
-            csr_data_width           = 8,
             integrated_rom_size      = 0x8000,
             uart_name                = "sim")
         self.add_constant("SIM")
