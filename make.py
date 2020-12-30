@@ -537,8 +537,8 @@ def main():
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, output_dir=build_dir, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
-        builder.build(build_name="top", run=args.build)
+        builder   = Builder(soc, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
+        builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
@@ -546,7 +546,7 @@ def main():
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
-            board.load(filename=os.path.join(build_dir, "gateware", "top" + board.bitstream_ext))
+            board.load(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
