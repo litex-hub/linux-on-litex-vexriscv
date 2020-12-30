@@ -344,7 +344,7 @@ class ECPIX5(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".svf")
 
 #---------------------------------------------------------------------------------------------------
