@@ -451,6 +451,7 @@ def main():
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--board",          required=True,            help="FPGA board")
     parser.add_argument("--device",         default=None,             help="FPGA device")
+    parser.add_argument("--variant",        default=None,             help="FPGA board variant")
     parser.add_argument("--toolchain",      default=None,             help="Toolchain use to build")
     parser.add_argument("--build",          action="store_true",      help="Build bitstream")
     parser.add_argument("--load",           action="store_true",      help="Load bitstream (to SRAM)")
@@ -483,6 +484,8 @@ def main():
         soc_kwargs.update(board.soc_kwargs)
         if args.device is not None:
             soc_kwargs.update(device=args.device)
+        if args.variant is not None:
+            soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
         if "usb_fifo" in board.soc_capabilities:
