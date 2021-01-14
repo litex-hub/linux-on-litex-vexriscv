@@ -57,7 +57,7 @@ class Arty(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -83,7 +83,7 @@ class ArtyS7(Arty):
             "serial",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -112,7 +112,7 @@ class NeTV2(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             # Video
@@ -131,7 +131,7 @@ class Genesys2(Board):
             "usb_fifo",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ class KC705(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
             #"sata",
             # GPIOs
             "leds",
@@ -164,7 +164,7 @@ class KCU105(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # ZCU104 support -----------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ class Nexys4DDR(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -199,7 +199,7 @@ class NexysVideo(Board):
             # Communication
             "usb_fifo",
             # Storage
-            "spisdcard",
+            "sdcard",
             # Video
             "framebuffer",
         }, bitstream_ext=".bit")
@@ -216,7 +216,7 @@ class MiniSpartan6(Board):
             # Communication
             "usb_fifo",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # Pipistrello support ------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ class ULX3S(Board):
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".svf")
 
 # HADBadge support ---------------------------------------------------------------------------------
@@ -306,7 +306,7 @@ class OrangeCrab(Board):
             # Communication
             "usb_acm",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
@@ -331,7 +331,7 @@ class TrellisBoard(Board):
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".svf")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
@@ -371,7 +371,7 @@ class De10Nano(Board):
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             "switches",
