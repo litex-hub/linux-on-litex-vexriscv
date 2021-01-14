@@ -241,6 +241,16 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# AlveoU280 support -------------------------------------------------------------------------------
+
+class AlveoU280(Board):
+    def __init__(self):
+        from litex_boards.targets import alveo_u280
+        Board.__init__(self, alveo_u280.BaseSoC, soc_capabilities={
+            # Communication
+            "serial"
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -425,6 +435,7 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
+    "alveo_u280":    AlveoU280,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
