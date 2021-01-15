@@ -305,6 +305,8 @@ class OrangeCrab(Board):
         Board.__init__(self, orangecrab.BaseSoC, soc_capabilities={
             # Communication
             "usb_acm",
+            # Buses
+            "i2c",
             # Storage
             "spisdcard",
         }, bitstream_ext=".bit")
@@ -505,6 +507,10 @@ def main():
         if board_name in ["arty", "arty_a7"]:
             from litex_boards.platforms.arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
+
+        if board_name in ["orangecrab"]:
+            from litex_boards.platforms.orangecrab import feather_i2c
+            board.platform.add_extension(feather_i2c)
 
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
