@@ -313,7 +313,7 @@ class OrangeCrab(Board):
             # Buses
             "i2c",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
