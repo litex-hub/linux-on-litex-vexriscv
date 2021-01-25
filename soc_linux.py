@@ -106,7 +106,6 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_type       = "vexriscv_smp",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
-                l2_size        = 0,
                 max_sdram_size = 0x40000000, # Limit mapped SDRAM to 1GB.
                 **kwargs)
 

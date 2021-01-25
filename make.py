@@ -14,7 +14,7 @@ kB = 1024
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
-    soc_kwargs = {"integrated_rom_size": 0x10000}
+    soc_kwargs = {"integrated_rom_size": 0x10000, "l2_size": 0}
     def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -83,7 +83,6 @@ class ArtyS7(Arty):
             "serial",
             # Storage
             "spiflash",
-            "sdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -208,6 +207,7 @@ class NexysVideo(Board):
 
 class MiniSpartan6(Board):
     soc_kwargs = {
+        "l2_size"    :  2048, # Use Wishbone and L2 for memory accesses.
         "sdram_sys2x":  True, # Use HalfRate SDRAM PHY.
     }
     def __init__(self):
@@ -222,6 +222,7 @@ class MiniSpartan6(Board):
 # Pipistrello support ------------------------------------------------------------------------------
 
 class Pipistrello(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import pipistrello
         Board.__init__(self, pipistrello.BaseSoC, soc_capabilities={
@@ -251,6 +252,7 @@ class VersaECP5(Board):
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.BaseSoC, soc_capabilities={
@@ -264,6 +266,7 @@ class VersaECP5(Board):
 # ULX3S support ------------------------------------------------------------------------------------
 
 class ULX3S(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import ulx3s
         Board.__init__(self, ulx3s.BaseSoC, soc_capabilities={
@@ -279,6 +282,7 @@ class HADBadge(Board):
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 8
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
         Board.__init__(self, hadbadge.BaseSoC, soc_capabilities={
@@ -297,6 +301,7 @@ class OrangeCrab(Board):
     soc_kwargs = {
         "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
         "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -314,6 +319,7 @@ class OrangeCrab(Board):
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import camlink_4k
         Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
@@ -327,6 +333,7 @@ class CamLink4K(Board):
 # TrellisBoard support -----------------------------------------------------------------------------
 
 class TrellisBoard(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import trellisboard
         Board.__init__(self, trellisboard.BaseSoC, soc_capabilities={
@@ -339,6 +346,7 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
@@ -356,6 +364,7 @@ class ECPIX5(Board):
 # De10Lite support ---------------------------------------------------------------------------------
 
 class De10Lite(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import de10lite
         Board.__init__(self, de10lite.BaseSoC, soc_capabilities={
@@ -366,7 +375,10 @@ class De10Lite(Board):
 # De10Nano support ---------------------------------------------------------------------------------
 
 class De10Nano(Board):
-    soc_kwargs = {"with_mister_sdram": True} # Add MiSTer SDRAM extension.
+    soc_kwargs = {
+        "with_mister_sdram": True, # Add MiSTer SDRAM extension.
+        "l2_size" : 2048,          # Use Wishbone and L2 for memory accesses.
+    }
     def __init__(self):
         from litex_boards.targets import de10nano
         Board.__init__(self, de10nano.BaseSoC, soc_capabilities={
@@ -384,6 +396,7 @@ class De10Nano(Board):
 class De0Nano(Board):
     soc_kwargs = {
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import de0nano
@@ -398,6 +411,7 @@ class Qmtech_EP4CE15(Board):
     soc_kwargs = {
         "integrated_sram_size": 0x800,
         "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4ce15
@@ -467,8 +481,6 @@ def main():
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
-    VexRiscvSMP.args_read(args)
-
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
         board_names = list(supported_boards.keys())
@@ -480,10 +492,15 @@ def main():
     # Board(s) iteration ---------------------------------------------------------------------------
     for board_name in board_names:
         board = supported_boards[board_name]()
-
-        # SoC parameters ---------------------------------------------------------------------------
         soc_kwargs = Board.soc_kwargs
         soc_kwargs.update(board.soc_kwargs)
+
+        # CPU parameters ---------------------------------------------------------------------------
+        # Do memory accesses through Wishbone and L2 cache when L2 size is configured.
+        args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
+        VexRiscvSMP.args_read(args)
+
+        # SoC parameters ---------------------------------------------------------------------------
         if args.device is not None:
             soc_kwargs.update(device=args.device)
         if args.variant is not None:
