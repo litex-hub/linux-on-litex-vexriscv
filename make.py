@@ -357,6 +357,22 @@ class ECPIX5(Board):
             "sdcard",
         }, bitstream_ext=".svf")
 
+# Colorlight i5 support ------------------------------------------------------------------------------------
+
+class Colorlight_i5(Board):
+    soc_kwargs = {
+        "sys_clk_freq": int(50e6),     # 48MHz default.
+        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+        "l2_size"    :  2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import colorlight_i5
+        Board.__init__(self, colorlight_i5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        }, bitstream_ext=".svf")
+
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
@@ -450,6 +466,7 @@ supported_boards = {
     "camlink_4k":   CamLink4K,
     "trellisboard": TrellisBoard,
     "ecpix5":       ECPIX5,
+    "colorlight_i5":Colorlight_i5,
 
     # Altera/Intel
     "de0nano":      De0Nano,
