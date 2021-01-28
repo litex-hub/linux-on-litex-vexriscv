@@ -346,7 +346,6 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
