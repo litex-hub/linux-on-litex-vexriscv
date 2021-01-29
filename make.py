@@ -346,13 +346,10 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    soc_kwargs = {
-        "sys_clk_freq": int(50e6),
-        "l2_size" : 2048 # Use Wishbone and L2 for memory accesses.
-    }
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 8
+    soc_kwargs = {"sys_clk_freq": int(50e6)}
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
