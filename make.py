@@ -251,6 +251,16 @@ class AlveoU280(Board):
             "serial"
         }, bitstream_ext=".bit")
 
+# AlveoU250 support -------------------------------------------------------------------------------
+
+class AlveoU250(Board):
+    def __init__(self):
+        from litex_boards.targets import alveo_u250
+        Board.__init__(self, alveo_u250.BaseSoC, soc_capabilities={
+            # Communication
+            "serial"
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -436,6 +446,7 @@ supported_boards = {
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
     "alveo_u280":    AlveoU280,
+    "alveo_u250":    AlveoU250,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
