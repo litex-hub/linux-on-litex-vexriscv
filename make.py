@@ -261,7 +261,7 @@ class VersaECP5(Board):
             "ethernet",
             # Storage
             "spiflash",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -341,18 +341,18 @@ class TrellisBoard(Board):
             "serial",
             # Storage
             "sdcard",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    soc_kwargs = {
-        "sys_clk_freq": int(50e6),
-        "l2_size" : 2048 # Use Wishbone and L2 for memory accesses.
-    }
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 8
+    soc_kwargs = {
+        "sys_clk_freq" : int(50e6),
+        "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
+    }
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
@@ -365,7 +365,7 @@ class ECPIX5(Board):
             "sata",
             "sdcard",
             "spiflash",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # Colorlight i5 support ------------------------------------------------------------------------------------
 
