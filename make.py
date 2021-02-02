@@ -261,7 +261,7 @@ class VersaECP5(Board):
             "ethernet",
             # Storage
             "spiflash",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -341,7 +341,7 @@ class TrellisBoard(Board):
             "serial",
             # Storage
             "sdcard",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
@@ -365,7 +365,7 @@ class ECPIX5(Board):
             "sata",
             "sdcard",
             "spiflash",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # Colorlight i5 support ------------------------------------------------------------------------------------
 
