@@ -381,7 +381,7 @@ class Colorlight_i5(Board):
             # Communication
             "serial",
             "ethernet",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
