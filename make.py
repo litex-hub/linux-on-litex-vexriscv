@@ -244,6 +244,9 @@ class XCU1525(Board):
 # AlveoU280 support -------------------------------------------------------------------------------
 
 class AlveoU280(Board):
+    soc_kwargs = {
+        "ddram_channel":  1, # pick board DRAM channel
+    }
     def __init__(self):
         from litex_boards.targets import alveo_u280
         Board.__init__(self, alveo_u280.BaseSoC, soc_capabilities={
