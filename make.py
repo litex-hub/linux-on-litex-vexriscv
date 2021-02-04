@@ -24,8 +24,9 @@ class Board:
         prog = self.platform.create_programmer()
         prog.load_bitstream(filename)
 
-    def flash(self):
-        raise NotImplementedError
+    def flash(self, filename):
+        prog = self.platform.create_programmer()
+        prog.flash(None, filename)
 
 #---------------------------------------------------------------------------------------------------
 # Xilinx Boards
@@ -600,6 +601,10 @@ def main():
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
             board.load(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+
+        # Flash bitstream/images (to SPI Flash) ----------------------------------------------------
+        if args.flash:
+            board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
