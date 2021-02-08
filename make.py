@@ -448,6 +448,62 @@ class Qmtech_EP4CE15(Board):
             # "leds",
         }, bitstream_ext=".sof")
 
+# QMTECH WuKong support ---------------------------------------------------------------------------
+
+class Qmtech_WuKong(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 7
+    soc_kwargs = {
+        "uart_baudrate": 3e6,
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_wukong
+        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
+            "mmcm",
+            "leds",
+            # Bus
+            "i2c",
+            "spi",
+            # Communication
+            "serial",
+            "uart",
+            "ethernet",
+            # Storage
+            "spiflash",
+            "spisdcard",
+            # Video
+            "vga",
+            "framebuffer",
+        }, bitstream_ext=".bit")
+
+
+class EGO1(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {
+        "cpu_type" : "vexriscv",
+        "integrated_sram_size": 0x10000,
+        "integrated_rom_size":   0x8000, 
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+        "uart_baudrate": 3e6,
+    }
+    def __init__(self):
+        from litex_boards.targets import ego1
+        Board.__init__(self, ego1.BaseSoC, soc_capabilities={
+            # Communication
+            "seven_seg_ctl",
+            "seven_seg",
+            "serial",
+            "leds",
+            "switches",
+            "user_btn",
+            "vga",
+            "spiflash",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
@@ -468,6 +524,8 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
+    "qmtech_wukong": Qmtech_WuKong,
+    "ego1":          EGO1,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -506,6 +564,7 @@ def main():
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
     parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
+    parser.add_argument("--dts",            default=True,             help="DTS build")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -541,6 +600,8 @@ def main():
             soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
+        if "vga" in board.soc_capabilities:
+            soc_kwargs.update(with_vga=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
 
@@ -575,6 +636,12 @@ def main():
             soc.add_rgb_led()
         if "switches" in board.soc_capabilities:
             soc.add_switches()
+        if "uart" in board.soc_capabilities:
+            soc.add_uart_port()
+        if "seven_seg_ctl" in board.soc_capabilities:
+            soc.add_seven_seg_ctl()
+        if "seven_seg" in board.soc_capabilities:
+            soc.add_seven_seg()
         if "spi" in board.soc_capabilities:
             soc.add_spi(args.spi_data_width, args.spi_clk_freq)
         if "i2c" in board.soc_capabilities:
@@ -595,8 +662,11 @@ def main():
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name)
-        soc.compile_dts(board_name)
+        if args.dts is True:
+            soc.generate_dts(board_name)
+            soc.compile_dts(board_name)
+        else:
+            pass
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:

@@ -5,11 +5,12 @@ import json
 import subprocess
 
 from litex.soc.cores.cpu import VexRiscvSMP
+from litex.soc.integration.soc import SoCRegion
 from migen import *
 
 from litex.soc.interconnect import wishbone
 from litex.soc.interconnect.csr import *
-
+from litex.soc.cores import uart
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
@@ -99,11 +100,11 @@ def SoCLinux(soc_cls, **kwargs):
             "csr":          0xf0000000,
         }}
 
-        def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
+        def __init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", uart_baudrate=1e6, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------
             soc_cls.__init__(self,
-                cpu_type       = "vexriscv_smp",
+                cpu_type       = cpu_type,
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
                 max_sdram_size = 0x40000000, # Limit mapped SDRAM to 1GB.
@@ -129,16 +130,75 @@ def SoCLinux(soc_cls, **kwargs):
             self.submodules.switches = GPIOIn(Cat(platform_request_all(self.platform, "user_sw")))
             self.add_csr("switches")
 
+        # Seven Segment Control --------------------------------------------------------------------
+        def add_seven_seg_ctl(self):
+            self.submodules.seven_seg_ctl = GPIOOut(Cat(platform_request_all(self.platform, "seven_seg_ctl")))
+            #print(self.submodules.seven_seg_ctl)
+            self.add_csr("seven_seg_ctl")
+
+        # Seven Segment ----------------------------------------------------------------------------
+        def add_seven_seg(self):
+            self.submodules.seven_seg = GPIOOut(Cat(platform_request_all(self.platform, "seven_seg")))
+            #print(self.submodules.seven_seg)
+            self.add_csr("seven_seg")
+
         # SPI --------------------------------------------------------------------------------------
         def add_spi(self, data_width, clk_freq):
-            spi_pads = self.platform.request("spi")
-            self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, clk_freq)
-            self.add_csr("spi")
+            spi0_pads = self.platform.request("spi", 0)
+            spi0 = SPIMaster(spi0_pads, data_width, self.clk_freq, clk_freq)
+            setattr(self.submodules, "spi0", spi0)
+            self.add_csr("spi0")
+
+            spi1_pads = self.platform.request("spi", 1)
+            spi1 = SPIMaster(spi1_pads, data_width, self.clk_freq, clk_freq)
+            setattr(self.submodules, "spi1", spi1)
+            self.add_csr("spi1")
 
         # I2C --------------------------------------------------------------------------------------
         def add_i2c(self):
-            self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
+            i2c0 = I2CMaster(self.platform.request("i2c", 0))
+            setattr(self.submodules, "i2c0", i2c0)
             self.add_csr("i2c0")
+
+            i2c1 = I2CMaster(self.platform.request("i2c", 1))
+            setattr(self.submodules, "i2c1", i2c1)
+            self.add_csr("i2c1")
+
+            i2c2 = I2CMaster(self.platform.request("i2c", 2))
+            setattr(self.submodules, "i2c2", i2c2)
+            self.add_csr("i2c2")
+
+        # UART Port --------------------------------------------------------------------------------
+        def add_uart_port(self):
+            uart1_phy = uart.UARTPHY(
+                pads     = self.platform.request("uart", 0),
+                clk_freq = self.sys_clk_freq,
+                baudrate = 115200)
+            uart1 = ResetInserter()(uart.UART(uart1_phy, tx_fifo_depth = 16, rx_fifo_depth = 16))
+            setattr(self, "uart1_phy", uart1_phy)
+            setattr(self.submodules, "uart1_phy", self.uart1_phy)
+            setattr(self.submodules, "uart1", uart1)
+            self.csr.add("uart1_phy", use_loc_if_exists=True)
+            self.csr.add("uart1", use_loc_if_exists=True)
+            if self.irq.enabled:
+                self.irq.add("uart1", use_loc_if_exists=True)
+            else:
+                self.add_constant("UART_POLLING")
+
+            uart2_phy = uart.UARTPHY(
+                pads     = self.platform.request("uart", 1),
+                clk_freq = self.sys_clk_freq,
+                baudrate = 115200)
+            uart2 = ResetInserter()(uart.UART(uart2_phy, tx_fifo_depth = 16, rx_fifo_depth = 16))
+            setattr(self, "uart2_phy", uart2_phy)
+            setattr(self.submodules, "uart2_phy", self.uart2_phy)
+            setattr(self.submodules, "uart2", uart2)
+            self.csr.add("uart2_phy", use_loc_if_exists=True)
+            self.csr.add("uart2", use_loc_if_exists=True)
+            if self.irq.enabled:
+                self.irq.add("uart2", use_loc_if_exists=True)
+            else:
+                self.add_constant("UART_POLLING")
 
         # XADC (Xilinx only) -----------------------------------------------------------------------
         def add_xadc(self):
