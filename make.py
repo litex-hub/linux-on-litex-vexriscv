@@ -243,6 +243,16 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# SDS1104X-E support -------------------------------------------------------------------------------
+
+class SDS1104XE(Board):
+    def __init__(self):
+        from litex_boards.targets import sds1104xe
+        Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -468,6 +478,7 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
+    "sds1104xe":     SDS1104XE,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -591,7 +602,11 @@ def main():
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
+        builder   = Builder(soc,
+            bios_options = ["TERM_MINI"],
+            csr_json     = os.path.join(build_dir, "csr.json"),
+            csr_csv      = os.path.join(build_dir, "csr.csv")
+        )
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
