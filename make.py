@@ -448,36 +448,6 @@ class Qmtech_EP4CE15(Board):
             # "leds",
         }, bitstream_ext=".sof")
 
-# QMTECH WuKong support ---------------------------------------------------------------------------
-
-class Qmtech_WuKong(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 7
-    soc_kwargs = {
-        "uart_baudrate": 3e6,
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
-    }
-    def __init__(self):
-        from litex_boards.targets import qmtech_wukong
-        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
-            "mmcm",
-            "leds",
-            # Bus
-            "i2c",
-            "spi",
-            # Communication
-            "serial",
-            "uart",
-            "ethernet",
-            # Storage
-            "spiflash",
-            "spisdcard",
-            # Video
-            "vga",
-            "framebuffer",
-        }, bitstream_ext=".bit")
-
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
@@ -498,7 +468,6 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
-    "qmtech_wukong": Qmtech_WuKong,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -572,8 +541,6 @@ def main():
             soc_kwargs.update(uart_name="usb_acm")
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
-        if "vga" in board.soc_capabilities:
-            soc_kwargs.update(with_vga=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
 

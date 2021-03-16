@@ -62,7 +62,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 ## Prerequisites
 ```sh
 $ sudo apt install build-essential device-tree-compiler wget git python3-setuptools
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
+$ git clone https://github.com/litex-hub/linux-on-litex-vexriscv
 $ cd linux-on-litex-vexriscv
 ```
 
