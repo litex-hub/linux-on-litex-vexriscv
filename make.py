@@ -26,7 +26,7 @@ class Board:
 
     def flash(self, filename):
         prog = self.platform.create_programmer()
-        prog.flash(None, filename)
+        prog.flash(0, filename)
 
 #---------------------------------------------------------------------------------------------------
 # Xilinx Boards
