@@ -243,6 +243,21 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# SDS1104X-E support -------------------------------------------------------------------------------
+
+class SDS1104XE(Board):
+    soc_kwargs = {"l2_size" : 8192} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import sds1104xe
+        Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        }, bitstream_ext=".bit")
+
+    def load(self, filename):
+        prog = self.platform.create_programmer()
+        prog.load_bitstream(filename, device=1)
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -623,7 +638,11 @@ def main():
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
+        builder   = Builder(soc,
+            bios_options = ["TERM_MINI"],
+            csr_json     = os.path.join(build_dir, "csr.json"),
+            csr_csv      = os.path.join(build_dir, "csr.csv")
+        )
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
