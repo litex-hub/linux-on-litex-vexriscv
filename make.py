@@ -26,7 +26,7 @@ class Board:
 
     def flash(self, filename):
         prog = self.platform.create_programmer()
-        prog.flash(None, filename)
+        prog.flash(0, filename)
 
 #---------------------------------------------------------------------------------------------------
 # Xilinx Boards
@@ -243,6 +243,21 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# SDS1104X-E support -------------------------------------------------------------------------------
+
+class SDS1104XE(Board):
+    soc_kwargs = {"l2_size" : 8192} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import sds1104xe
+        Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        }, bitstream_ext=".bit")
+
+    def load(self, filename):
+        prog = self.platform.create_programmer()
+        prog.load_bitstream(filename, device=1)
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -453,10 +468,10 @@ class Qmtech_EP4CE15(Board):
 class Qmtech_WuKong(Board):
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    SPIFLASH_DUMMY_CYCLES = 7
     soc_kwargs = {
         "uart_baudrate": 3e6,
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+        #"l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_wukong
@@ -495,6 +510,7 @@ supported_boards = {
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
     "qmtech_wukong": Qmtech_WuKong,
+    "sds1104xe":     SDS1104XE,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -532,7 +548,7 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--video",          default="1920x1080@60Hz", help="Video configuration")
+    parser.add_argument("--video",          default="1024x600@60Hz", help="Video configuration")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -596,7 +612,7 @@ def main():
             soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
             soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
         if "spisdcard" in board.soc_capabilities:
-            soc.add_spi_sdcard()
+            soc.add_spi_sdcard(spi_clk_freq=10e6, software_debug=False)
         if "sdcard" in board.soc_capabilities:
             soc.add_sdcard()
         if "ethernet" in board.soc_capabilities:
@@ -623,7 +639,11 @@ def main():
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
+        builder   = Builder(soc,
+            bios_options = ["TERM_MINI"],
+            csr_json     = os.path.join(build_dir, "csr.json"),
+            csr_csv      = os.path.join(build_dir, "csr.csv")
+        )
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
