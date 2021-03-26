@@ -5,7 +5,7 @@ rm -rf build/qmtech_wukong
 --cpu-count=4 \
 --cpu-per-fpu=1 \
 --with-fpu \
---aes-instruction \
+--aes-instruction=true \
 --video=1920x1080@60Hz \
 --build
 
