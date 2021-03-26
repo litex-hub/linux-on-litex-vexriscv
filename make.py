@@ -7,7 +7,7 @@ import os
 from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
 
-from soc_linux import SoCLinux, video_resolutions
+from soc_linux import SoCLinux
 
 kB = 1024
 
@@ -521,7 +521,6 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -559,6 +558,8 @@ def main():
             soc_kwargs.update(with_ethernet=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
+        if "framebuffer" in board.soc_capabilities:
+            soc_kwargs.update(with_video_framebuffer=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
@@ -597,10 +598,6 @@ def main():
             soc.add_i2c()
         if "xadc" in board.soc_capabilities:
             soc.add_xadc()
-        if "framebuffer" in board.soc_capabilities:
-            assert args.video in video_resolutions.keys(), "Unsupported video resolution"
-            video_settings = video_resolutions[args.video]
-            soc.add_framebuffer(video_settings)
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
         soc.configure_boot()
