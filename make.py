@@ -36,8 +36,8 @@ class Board:
 
 class AcornCLE215(Board):
     def __init__(self):
-        from litex_boards.targets import acorn_cle_215
-        Board.__init__(self, acorn_cle_215.BaseSoC, soc_capabilities={
+        from litex_boards.targets import acorn
+        Board.__init__(self, acorn.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
