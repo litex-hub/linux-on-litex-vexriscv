@@ -1,6 +1,6 @@
 ## Regenerate all the default configurations
 
-Install Java and SBT, then run : 
+Install Java and SBT, then run :
 
 ```sh
 ./generate.py
@@ -126,4 +126,13 @@ Check that you can read and write on it:
 $ echo "Hi SDCard" > /sdcard/test
 $ cat /sdcard/test
 Hi SDCard
+```
+
+
+**Use the Framebuffer**:
+
+When available on the board, the Video Framebuffer will be automatically enabled at startup and should the tux logo during the boot.
+In Linux you can then simply test the Video Framebuffer but filling it with random data with:
+```
+$ cat /dev/urandom >/dev/fb0
 ```
