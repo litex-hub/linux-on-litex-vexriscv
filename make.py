@@ -207,10 +207,7 @@ class NexysVideo(Board):
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
 class MiniSpartan6(Board):
-    soc_kwargs = {
-        "l2_size"    :  2048, # Use Wishbone and L2 for memory accesses.
-        "sdram_sys2x":  True, # Use HalfRate SDRAM PHY.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import minispartan6
         Board.__init__(self, minispartan6.BaseSoC, soc_capabilities={
@@ -218,6 +215,8 @@ class MiniSpartan6(Board):
             "usb_fifo",
             # Storage
             "sdcard",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
 # Pipistrello support ------------------------------------------------------------------------------
