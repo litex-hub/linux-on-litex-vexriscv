@@ -290,6 +290,8 @@ class ULX3S(Board):
             "serial",
             # Storage
             "sdcard",
+            # Video,
+            "framebuffer",
         }, bitstream_ext=".svf")
 
 # HADBadge support ---------------------------------------------------------------------------------
