@@ -188,6 +188,8 @@ class Nexys4DDR(Board):
             "ethernet",
             # Storage
             "sdcard",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
