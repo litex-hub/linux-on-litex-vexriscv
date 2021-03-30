@@ -318,9 +318,8 @@ class HADBadge(Board):
 
 class OrangeCrab(Board):
     soc_kwargs = {
-        "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
-        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+        "sys_clk_freq" : int(64e6), # Increase sys_clk_freq to 64MHz (48MHz default).
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -370,7 +369,7 @@ class ECPIX5(Board):
     SPIFLASH_DUMMY_CYCLES = 8
     soc_kwargs = {
         "sys_clk_freq" : int(50e6),
-        "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
+        "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import ecpix5
@@ -390,9 +389,8 @@ class ECPIX5(Board):
 
 class Colorlight_i5(Board):
     soc_kwargs = {
-        "sys_clk_freq": int(50e6),     # 48MHz default.
-        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
-        "l2_size"    :  2048, # Use Wishbone and L2 for memory accesses.
+        "sys_clk_freq" : int(50e6), # 48MHz default.
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import colorlight_i5
@@ -428,10 +426,7 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
-    soc_kwargs = {
-        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
@@ -443,9 +438,8 @@ class De0Nano(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
-        "integrated_sram_size": 0x800,
-        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size" : 0x800,
+        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4ce15
