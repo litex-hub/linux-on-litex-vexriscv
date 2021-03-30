@@ -406,17 +406,6 @@ class Colorlight_i5(Board):
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
 
-# De10Lite support ---------------------------------------------------------------------------------
-
-class De10Lite(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
-    def __init__(self):
-        from litex_boards.targets import de10lite
-        Board.__init__(self, de10lite.BaseSoC, soc_capabilities={
-            # Communication
-            "serial",
-        }, bitstream_ext=".sof")
-
 # De10Nano support ---------------------------------------------------------------------------------
 
 class De10Nano(Board):
@@ -500,7 +489,6 @@ supported_boards = {
 
     # Altera/Intel
     "de0nano":      De0Nano,
-    "de10lite":     De10Lite,
     "de10nano":     De10Nano,
 
     "qmtech_ep4ce15":      Qmtech_EP4CE15,
