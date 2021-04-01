@@ -59,6 +59,8 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 > **Note:** Avalanche support can be found in [RISC-V - Getting Started Guide](https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-avalanche.html) thanks to [Antmicro](https://antmicro.com).
 
+> **Note:** On FPGA without distributed ram (as Cyclone IV), consider using the --without-out-of-order-decoder option to reduce area.
+
 ## Prerequisites
 ```sh
 $ sudo apt install build-essential device-tree-compiler wget git python3-setuptools
