@@ -34,7 +34,7 @@ $ echo 50 > duty_cycle
 $ echo 1 > enable
 ````
 
-This should turn configure the Led with 50% PWM that you can adjust by changing `duty_cycle` value from `0` to the configured `period`.
+This should configure the LED with 50% PWM that you can adjust by changing the `duty_cycle` value from `0` to the configured `period`.
 
 **Configure/Use Ethernet**:
 
@@ -131,8 +131,8 @@ Hi SDCard
 
 **Use the Framebuffer**:
 
-When available on the board, the Video Framebuffer will be automatically enabled at startup and should the tux logo during the boot.
-In Linux you can then simply test the Video Framebuffer but filling it with random data with:
+When available on the board, the Video Framebuffer will be automatically enabled at startup and will show the tux logo during the boot.
+In Linux you can then simply test the Video Framebuffer by filling it with random data with:
 ```
 $ cat /dev/urandom >/dev/fb0
 ```
