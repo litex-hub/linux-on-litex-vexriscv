@@ -449,6 +449,31 @@ class Qmtech_EP4CE15(Board):
             # "leds",
         }, bitstream_ext=".sof")
 
+# QMTECH WuKong support ---------------------------------------------------------------------------
+
+class Qmtech_WuKong(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {
+        "uart_baudrate": 3e6,
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_wukong
+        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
+            "leds",
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+            "spisdcard",
+            # Video
+            #"video_terminal",
+            "framebuffer",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
@@ -469,6 +494,7 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
+    "qmtech_wukong": Qmtech_WuKong,
     "sds1104xe":     SDS1104XE,
 
     # Lattice
@@ -506,6 +532,7 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
+    parser.add_argument("--video",          default="1024x600@60Hz", help="Video configuration")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -543,8 +570,11 @@ def main():
             soc_kwargs.update(with_ethernet=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
+        if "video_terminal" in board.soc_capabilities:
+            soc_kwargs.update(with_video_terminal=True)
         if "framebuffer" in board.soc_capabilities:
             soc_kwargs.update(with_video_framebuffer=True)
+            soc_kwargs.update(video_timing=args.video)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
