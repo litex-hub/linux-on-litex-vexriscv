@@ -532,7 +532,6 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--video",          default="1024x600@60Hz", help="Video configuration")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -574,7 +573,6 @@ def main():
             soc_kwargs.update(with_video_terminal=True)
         if "framebuffer" in board.soc_capabilities:
             soc_kwargs.update(with_video_framebuffer=True)
-            soc_kwargs.update(video_timing=args.video)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
