@@ -532,6 +532,7 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
+    parser.add_argument("--fdtoverlays",    default="",               help="Device Tree Overlays to apply")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -627,7 +628,10 @@ def main():
 
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
-        soc.compile_dts(board_name)
+        soc.compile_dts(board_name, args.fdtoverlays)
+
+        # DTB --------------------------------------------------------------------------------------
+        soc.combine_dtb(board_name, args.fdtoverlays)
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
