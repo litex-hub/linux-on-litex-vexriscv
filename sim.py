@@ -93,7 +93,7 @@ class SoCLinux(SoCCore):
         sdram_verbosity  = 0,
         with_ethernet    = False):
         platform     = Platform()
-        sys_clk_freq = int(1e6)
+        sys_clk_freq = int(100e6)
 
         ram_init = []
         if init_memories:
@@ -113,7 +113,7 @@ class SoCLinux(SoCCore):
             cpu_variant              = "linux",
             integrated_rom_size      = 0x8000,
             uart_name                = "sim")
-        self.add_constant("SIM")
+        self.add_config("DISABLE_DELAYS")
 
         # Add linker region for OpenSBI
         self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")

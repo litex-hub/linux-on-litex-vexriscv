@@ -1,6 +1,6 @@
 ## Regenerate all the default configurations
 
-Install Java and SBT, then run : 
+Install Java and SBT, then run :
 
 ```sh
 ./generate.py
@@ -11,6 +11,7 @@ Install Java and SBT, then run :
 This document describes how to configure and use the periperals of your board from Linux.
 
 **Configure/Use the Leds**:
+
 Configure the Leds GPIOs as outputs:
 ````
 $echo 508 > /sys/class/gpio/export
@@ -23,6 +24,7 @@ $echo 1 > /sys/class/gpio/gpio508/value
 ````
 
 **Configure/Use the PWM RGB Led**:
+
 ````
 $ cd /sys/class/pwm/pwmchip0
 $ echo 0 > export
@@ -32,9 +34,12 @@ $ echo 50 > duty_cycle
 $ echo 1 > enable
 ````
 
-This should turn configure the Led with 50% PWM that you can adjust by changing `duty_cycle` value from `0` to the configured `period`.
+This should configure the LED with 50% PWM that you can adjust by changing the `duty_cycle` value from `0` to the configured `period`.
 
 **Configure/Use Ethernet**:
+
+1. Manual address:
+
 Verify that the `eth0` ethernet device is present:
 `$ ifconfig -a`:
 ````
@@ -78,7 +83,12 @@ PING 192.168.1.100 (192.168.1.100): 56 data bytes
 round-trip min/avg/max = 4.585/11.364/19.839 ms
 ````
 
+2. Automatic address through DHCP:
+
+`$ udhcpc -i eth0`
+
 **Configure/Use the SPI Flash:**
+
 There should be a `/dev/mtd0` that you can read from/write to directly from bash, i.e.,:
 ```
 $ cat /dev/mtd0
@@ -97,4 +107,32 @@ $ echo -ne "\x01\x01" > /dev/mtd0
 ```
 
 **Configure/Use the SDCard:**
-TODO
+
+Plug the SDCard, it should be detected with all partitions on it:
+
+`$ ls /dev/mmcblk*`:
+````
+/dev/mmcblk0    /dev/mmcblk0p1
+````
+
+Mount the partition to the directory you want to access it (here /sdcard for example):
+```
+$ mkdir /sdcard
+$ mount /dev/mmcblk0p1 /sdcard/
+```
+
+Check that you can read and write on it:
+```
+$ echo "Hi SDCard" > /sdcard/test
+$ cat /sdcard/test
+Hi SDCard
+```
+
+
+**Use the Framebuffer**:
+
+When available on the board, the Video Framebuffer will be automatically enabled at startup and will show the tux logo during the boot.
+In Linux you can then simply test the Video Framebuffer by filling it with random data with:
+```
+$ cat /dev/urandom >/dev/fb0
+```

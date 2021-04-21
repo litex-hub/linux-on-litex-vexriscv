@@ -48,7 +48,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | OrangeCrab   | Lattice ECP5        | LFE5U 25F     |     48MHz     | 16-bits 128MB SDR  |   4MB QSPI*   |         No         |   Yes  |
 | CamLink 4K   | Lattice ECP5        | LFE5U 25F     |     81MHz     | 16-bits 128MB SDR  |      No       |         No         |   No   |
 | TrellisBoard | Lattice ECP5        | LFE5UM5G 85F  |     75MHz     | 32-bits   1GB DDR3 |   16MB QSPI*  |   1Gbps RGMII*     |   Yes  |
-| ECPIX-5      | Lattice ECP5        | LFE5UM5G 85F  |     75MHz     | 16-bits 512MB DDR3 |   16MB QSPI*  |   1Gbps RGMII      |   Yes* |
+| ECPIX-5      | Lattice ECP5        | LFE5UM5G 85F  |     50MHz     | 16-bits 512MB DDR3 |   16MB QSPI   |   1Gbps RGMII      |   Yes  |
 | De0Nano      | Intel Cyclone4      | EP4CE22F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
 | De10Lite     | Intel MAX10         | 10M50DA       |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
 | De10Nano     | Intel Cyclone5      | 5CSEBA6U23I7  |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   Yes  |
@@ -59,10 +59,12 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 
 > **Note:** Avalanche support can be found in [RISC-V - Getting Started Guide](https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-avalanche.html) thanks to [Antmicro](https://antmicro.com).
 
+> **Note:** On FPGA without distributed ram (as Cyclone IV), consider using the --without-out-of-order-decoder option to reduce area.
+
 ## Prerequisites
 ```sh
 $ sudo apt install build-essential device-tree-compiler wget git python3-setuptools
-$ git clone https://github.com/enjoy-digital/linux-on-litex-vexriscv
+$ git clone https://github.com/litex-hub/linux-on-litex-vexriscv
 $ cd linux-on-litex-vexriscv
 ```
 

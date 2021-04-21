@@ -2,6 +2,7 @@
 
 import os
 import json
+import shutil
 import subprocess
 
 from litex.soc.cores.cpu import VexRiscvSMP
@@ -27,44 +28,6 @@ from litesdcard.phy import SDPHY
 from litesdcard.core import SDCore
 
 from litex.tools.litex_json2dts import generate_dts
-
-# Predefined values --------------------------------------------------------------------------------
-
-video_resolutions = {
-    "1920x1080_60Hz" : {
-        "pix_clk"        : 148.5e6,
-        "h-active"       : 1920,
-        "h-blanking"     : 280,
-        "h-sync"         : 44,
-        "h-front-porch"  : 148,
-        "v-active"       : 1080,
-        "v-blanking"     : 45,
-        "v-sync"         : 5,
-        "v-front-porch"  : 36,
-    },
-    "1280x720_60Hz"  : {
-        "pix_clk"        : 74.25e6,
-        "h-active"       : 1280,
-        "h-blanking"     : 370,
-        "h-sync"         : 40,
-        "h-front-porch"  : 220,
-        "v-active"       : 720,
-        "v-blanking"     : 30,
-        "v-sync"         : 5,
-        "v-front-porch"  : 20,
-    },
-    "640x480_75Hz"   : {
-        "pix_clk"        : 31.5e6,
-        "h-active"       : 640,
-        "h-blanking"     : 200,
-        "h-sync"         : 64,
-        "h-front-porch"  : 16,
-        "v-active"       : 480,
-        "v-blanking"     : 20,
-        "v-sync"         : 3,
-        "v-front-porch"  : 1,
-    }
-}
 
 # Helpers ------------------------------------------------------------------------------------------
 
@@ -106,7 +69,6 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_type       = "vexriscv_smp",
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
-                l2_size        = 0,
                 max_sdram_size = 0x40000000, # Limit mapped SDRAM to 1GB.
                 **kwargs)
 
@@ -145,40 +107,6 @@ def SoCLinux(soc_cls, **kwargs):
         def add_xadc(self):
             self.submodules.xadc = XADC()
             self.add_csr("xadc")
-
-        # Framebuffer (Xilinx only) ----------------------------------------------------------------
-        def add_framebuffer(self, video_settings):
-            platform = self.platform
-            assert platform.device[:4] == "xc7a"
-            dram_port = self.sdram.crossbar.get_port(
-                mode         = "read",
-                data_width   = 32,
-                clock_domain = "pix",
-                reverse      = True)
-            framebuffer = VideoOut(
-                device    = platform.device,
-                pads      = platform.request("hdmi_out"),
-                dram_port = dram_port)
-            self.submodules.framebuffer = framebuffer
-            self.add_csr("framebuffer")
-
-            clocking = framebuffer.driver.clocking
-            platform.add_period_constraint(clocking.cd_pix.clk,   1e9/video_settings["pix_clk"])
-            platform.add_period_constraint(clocking.cd_pix5x.clk, 1e9/(5*video_settings["pix_clk"]))
-            platform.add_false_path_constraints(
-                self.crg.cd_sys.clk,
-                framebuffer.driver.clocking.cd_pix.clk,
-                framebuffer.driver.clocking.cd_pix5x.clk)
-
-            self.add_constant("litevideo_pix_clk",       video_settings["pix_clk"])
-            self.add_constant("litevideo_h_active",      video_settings["h-active"])
-            self.add_constant("litevideo_h_blanking",    video_settings["h-blanking"])
-            self.add_constant("litevideo_h_sync",        video_settings["h-sync"])
-            self.add_constant("litevideo_h_front_porch", video_settings["h-front-porch"])
-            self.add_constant("litevideo_v_active",      video_settings["v-active"])
-            self.add_constant("litevideo_v_blanking",    video_settings["v-blanking"])
-            self.add_constant("litevideo_v_sync",        video_settings["v-sync"])
-            self.add_constant("litevideo_v_front_porch", video_settings["v-front-porch"])
 
         # ICAP Bitstream (Xilinx only) -------------------------------------------------------------
         def add_icap_bitstream(self):
@@ -257,15 +185,25 @@ def SoCLinux(soc_cls, **kwargs):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
 
             with open(json_src) as json_file, open(dts, "w") as dts_file:
-                dts_content = generate_dts(json.load(json_file), polling=True)
+                dts_content = generate_dts(json.load(json_file), polling=False)
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------
-        def compile_dts(self, board_name):
+        def compile_dts(self, board_name, symbols=False):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-            dtb = os.path.join("images", "rv32.dtb")
+            dtb = os.path.join("build", board_name, "{}.dtb".format(board_name))
             subprocess.check_call(
-                "dtc -O dtb -o {} {}".format(dtb, dts), shell=True)
+                "dtc {} -O dtb -o {} {}".format("-@" if symbols else "", dtb, dts), shell=True)
+
+        # DTB combination --------------------------------------------------------------------------
+        def combine_dtb(self, board_name, overlays=""):
+            dtb_in = os.path.join("build", board_name, "{}.dtb".format(board_name))
+            dtb_out = os.path.join("images", "rv32.dtb")
+            if overlays == "":
+                shutil.copyfile(dtb_in, dtb_out)
+            else:
+                subprocess.check_call(
+                    "fdtoverlay -i {} -o {} {}".format(dtb_in, dtb_out, overlays), shell=True)
 
         # Documentation generation -----------------------------------------------------------------
         def generate_doc(self, board_name):

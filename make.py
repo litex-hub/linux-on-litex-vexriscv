@@ -7,14 +7,14 @@ import os
 from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
 
-from soc_linux import SoCLinux, video_resolutions
+from soc_linux import SoCLinux
 
 kB = 1024
 
 # Board definition----------------------------------------------------------------------------------
 
 class Board:
-    soc_kwargs = {"integrated_rom_size": 0x10000}
+    soc_kwargs = {"integrated_rom_size": 0x10000, "l2_size": 0}
     def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -24,8 +24,9 @@ class Board:
         prog = self.platform.create_programmer()
         prog.load_bitstream(filename)
 
-    def flash(self):
-        raise NotImplementedError
+    def flash(self, filename):
+        prog = self.platform.create_programmer()
+        prog.flash(0, filename)
 
 #---------------------------------------------------------------------------------------------------
 # Xilinx Boards
@@ -35,8 +36,8 @@ class Board:
 
 class AcornCLE215(Board):
     def __init__(self):
-        from litex_boards.targets import acorn_cle_215
-        Board.__init__(self, acorn_cle_215.BaseSoC, soc_capabilities={
+        from litex_boards.targets import acorn
+        Board.__init__(self, acorn.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
@@ -57,7 +58,7 @@ class Arty(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -83,7 +84,6 @@ class ArtyS7(Arty):
             "serial",
             # Storage
             "spiflash",
-            "spisdcard",
             # GPIOs
             "leds",
             "rgb_led",
@@ -112,7 +112,7 @@ class NeTV2(Board):
             "ethernet",
             # Storage
             "spiflash",
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             # Video
@@ -131,7 +131,7 @@ class Genesys2(Board):
             "usb_fifo",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ class KC705(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
             #"sata",
             # GPIOs
             "leds",
@@ -164,7 +164,7 @@ class KCU105(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
         }, bitstream_ext=".bit")
 
 # ZCU104 support -----------------------------------------------------------------------------------
@@ -187,7 +187,9 @@ class Nexys4DDR(Board):
             "serial",
             "ethernet",
             # Storage
-            "spisdcard",
+            "sdcard",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -199,7 +201,7 @@ class NexysVideo(Board):
             # Communication
             "usb_fifo",
             # Storage
-            "spisdcard",
+            "sdcard",
             # Video
             "framebuffer",
         }, bitstream_ext=".bit")
@@ -207,21 +209,22 @@ class NexysVideo(Board):
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
 class MiniSpartan6(Board):
-    soc_kwargs = {
-        "sdram_sys2x":  True, # Use HalfRate SDRAM PHY.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import minispartan6
         Board.__init__(self, minispartan6.BaseSoC, soc_capabilities={
             # Communication
             "usb_fifo",
             # Storage
-            "spisdcard",
+            "sdcard",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
 # Pipistrello support ------------------------------------------------------------------------------
 
 class Pipistrello(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import pipistrello
         Board.__init__(self, pipistrello.BaseSoC, soc_capabilities={
@@ -264,6 +267,21 @@ class AlveoU250(Board):
             "serial"
         }, bitstream_ext=".bit")
 
+# SDS1104X-E support -------------------------------------------------------------------------------
+
+class SDS1104XE(Board):
+    soc_kwargs = {"l2_size" : 8192} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import sds1104xe
+        Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        }, bitstream_ext=".bit")
+
+    def load(self, filename):
+        prog = self.platform.create_programmer()
+        prog.load_bitstream(filename, device=1)
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -274,6 +292,7 @@ class VersaECP5(Board):
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.BaseSoC, soc_capabilities={
@@ -282,18 +301,21 @@ class VersaECP5(Board):
             "ethernet",
             # Storage
             "spiflash",
-        }, bitstream_ext=".svf")
+        }, bitstream_ext=".bit")
 
 # ULX3S support ------------------------------------------------------------------------------------
 
 class ULX3S(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import ulx3s
         Board.__init__(self, ulx3s.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
+            # Video,
+            "framebuffer",
         }, bitstream_ext=".svf")
 
 # HADBadge support ---------------------------------------------------------------------------------
@@ -302,6 +324,7 @@ class HADBadge(Board):
     SPIFLASH_PAGE_SIZE    = 256
     SPIFLASH_SECTOR_SIZE  = 64*kB
     SPIFLASH_DUMMY_CYCLES = 8
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
         Board.__init__(self, hadbadge.BaseSoC, soc_capabilities={
@@ -318,8 +341,8 @@ class HADBadge(Board):
 
 class OrangeCrab(Board):
     soc_kwargs = {
-        "sys_clk_freq": int(64e6),     # Increase sys_clk_freq to 64MHz (48MHz default).
-        "integrated_rom_size": 0xa000, # Reduce integrated_rom_size.
+        "sys_clk_freq" : int(64e6), # Increase sys_clk_freq to 64MHz (48MHz default).
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import orangecrab
@@ -328,6 +351,8 @@ class OrangeCrab(Board):
         Board.__init__(self, orangecrab.BaseSoC, soc_capabilities={
             # Communication
             "usb_acm",
+            # Buses
+            "i2c",
             # Storage
             "spisdcard",
         }, bitstream_ext=".bit")
@@ -335,6 +360,7 @@ class OrangeCrab(Board):
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import camlink_4k
         Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
@@ -348,53 +374,73 @@ class CamLink4K(Board):
 # TrellisBoard support -----------------------------------------------------------------------------
 
 class TrellisBoard(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import trellisboard
         Board.__init__(self, trellisboard.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
-            "spisdcard",
-        }, bitstream_ext=".svf")
+            "sdcard",
+        }, bitstream_ext=".bit")
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 8
+    soc_kwargs = {
+        "sys_clk_freq" : int(50e6),
+        "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
+    }
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             "ethernet",
+            # GPIO
+            #"rgb_led",
             # Storage
+            "sata",
             "sdcard",
-        }, bitstream_ext=".svf")
+            "spiflash",
+        }, bitstream_ext=".bit")
+
+# Colorlight i5 support ------------------------------------------------------------------------------------
+
+class Colorlight_i5(Board):
+    soc_kwargs = {
+        "sys_clk_freq" : int(50e6), # 48MHz default.
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import colorlight_i5
+        Board.__init__(self, colorlight_i5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        }, bitstream_ext=".bit")
 
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
 
-# De10Lite support ---------------------------------------------------------------------------------
-
-class De10Lite(Board):
-    def __init__(self):
-        from litex_boards.targets import de10lite
-        Board.__init__(self, de10lite.BaseSoC, soc_capabilities={
-            # Communication
-            "serial",
-        }, bitstream_ext=".sof")
-
 # De10Nano support ---------------------------------------------------------------------------------
 
 class De10Nano(Board):
-    soc_kwargs = {"with_mister_sdram": True} # Add MiSTer SDRAM extension.
+    soc_kwargs = {
+        "with_mister_sdram": True, # Add MiSTer SDRAM extension.
+        "l2_size" : 2048,          # Use Wishbone and L2 for memory accesses.
+    }
     def __init__(self):
         from litex_boards.targets import de10nano
         Board.__init__(self, de10nano.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
             # GPIOs
             "leds",
             "switches",
@@ -403,9 +449,7 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
-    soc_kwargs = {
-        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import de0nano
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
@@ -417,8 +461,8 @@ class De0Nano(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
-        "integrated_sram_size": 0x800,
-        "integrated_rom_size": 0x8000, # Reduce integrated_rom_size.
+        "integrated_sram_size" : 0x800,
+        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4ce15
@@ -427,6 +471,31 @@ class Qmtech_EP4CE15(Board):
             "serial",
             # "leds",
         }, bitstream_ext=".sof")
+
+# QMTECH WuKong support ---------------------------------------------------------------------------
+
+class Qmtech_WuKong(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {
+        "uart_baudrate": 3e6,
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_wukong
+        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
+            "leds",
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+            "spisdcard",
+            # Video
+            #"video_terminal",
+            "framebuffer",
+        }, bitstream_ext=".bit")
 
 #---------------------------------------------------------------------------------------------------
 # Build
@@ -450,6 +519,8 @@ supported_boards = {
     "xcu1525":       XCU1525,
     "alveo_u280":    AlveoU280,
     "alveo_u250":    AlveoU250,
+    "qmtech_wukong": Qmtech_WuKong,
+    "sds1104xe":     SDS1104XE,
 
     # Lattice
     "versa_ecp5":   VersaECP5,
@@ -459,10 +530,10 @@ supported_boards = {
     "camlink_4k":   CamLink4K,
     "trellisboard": TrellisBoard,
     "ecpix5":       ECPIX5,
+    "colorlight_i5":Colorlight_i5,
 
     # Altera/Intel
     "de0nano":      De0Nano,
-    "de10lite":     De10Lite,
     "de10nano":     De10Nano,
 
     "qmtech_ep4ce15":      Qmtech_EP4CE15,
@@ -486,11 +557,9 @@ def main():
     parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
     parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
     parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--video",          default="1920x1080_60Hz", help="Video configuration")
+    parser.add_argument("--fdtoverlays",    default="",               help="Device Tree Overlays to apply")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
-
-    VexRiscvSMP.args_read(args)
 
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
@@ -503,10 +572,15 @@ def main():
     # Board(s) iteration ---------------------------------------------------------------------------
     for board_name in board_names:
         board = supported_boards[board_name]()
-
-        # SoC parameters ---------------------------------------------------------------------------
         soc_kwargs = Board.soc_kwargs
         soc_kwargs.update(board.soc_kwargs)
+
+        # CPU parameters ---------------------------------------------------------------------------
+        # Do memory accesses through Wishbone and L2 cache when L2 size is configured.
+        args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
+        VexRiscvSMP.args_read(args)
+
+        # SoC parameters ---------------------------------------------------------------------------
         if args.device is not None:
             soc_kwargs.update(device=args.device)
         if args.variant is not None:
@@ -521,6 +595,10 @@ def main():
             soc_kwargs.update(with_ethernet=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
+        if "video_terminal" in board.soc_capabilities:
+            soc_kwargs.update(with_video_terminal=True)
+        if "framebuffer" in board.soc_capabilities:
+            soc_kwargs.update(with_video_framebuffer=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
@@ -530,6 +608,10 @@ def main():
         if board_name in ["arty", "arty_a7"]:
             from litex_boards.platforms.arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
+
+        if board_name in ["orangecrab"]:
+            from litex_boards.platforms.orangecrab import feather_i2c
+            board.platform.add_extension(feather_i2c)
 
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
@@ -555,26 +637,34 @@ def main():
             soc.add_i2c()
         if "xadc" in board.soc_capabilities:
             soc.add_xadc()
-        if "framebuffer" in board.soc_capabilities:
-            assert args.video in video_resolutions.keys(), "Unsupported video resolution"
-            video_settings = video_resolutions[args.video]
-            soc.add_framebuffer(video_settings)
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
         soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
-        builder   = Builder(soc, csr_json=os.path.join(build_dir, "csr.json"), bios_options=["TERM_MINI"])
+        builder   = Builder(soc,
+            output_dir   = os.path.join("build", board_name),
+            bios_options = ["TERM_MINI"],
+            csr_json     = os.path.join(build_dir, "csr.json"),
+            csr_csv      = os.path.join(build_dir, "csr.csv")
+        )
         builder.build(run=args.build)
 
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
-        soc.compile_dts(board_name)
+        soc.compile_dts(board_name, args.fdtoverlays)
+
+        # DTB --------------------------------------------------------------------------------------
+        soc.combine_dtb(board_name, args.fdtoverlays)
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
             board.load(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+
+        # Flash bitstream/images (to SPI Flash) ----------------------------------------------------
+        if args.flash:
+            board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
