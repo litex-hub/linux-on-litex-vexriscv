@@ -581,7 +581,7 @@ def main():
         board.platform = soc.platform
 
         # SoC constants ----------------------------------------------------------------------------
-        for k, v in board.soc_constants:
+        for k, v in board.soc_constants.items():
             soc.add_constant(k, v)
 
         # SoC peripherals --------------------------------------------------------------------------
