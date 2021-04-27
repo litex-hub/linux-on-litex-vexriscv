@@ -254,6 +254,7 @@ class SDS1104XE(Board):
         Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
             # Communication
             "serial",
+            "ethernet",
         }, bitstream_ext=".bit")
 
     def load(self, filename):
