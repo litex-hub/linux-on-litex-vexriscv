@@ -255,6 +255,8 @@ class SDS1104XE(Board):
             # Communication
             "serial",
             "ethernet",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
     def load(self, filename):
