@@ -244,7 +244,7 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
-# AlveoU280 support -------------------------------------------------------------------------------
+# AlveoU280 (ES1) support -------------------------------------------------------------------------------
 
 class AlveoU280(Board):
     soc_kwargs = {
@@ -517,7 +517,7 @@ supported_boards = {
     "minispartan6":  MiniSpartan6,
     "pipistrello":   Pipistrello,
     "xcu1525":       XCU1525,
-    "alveo_u280":    AlveoU280,
+    "alveo_u280":    AlveoU280,#ES1
     "alveo_u250":    AlveoU250,
     "qmtech_wukong": Qmtech_WuKong,
     "sds1104xe":     SDS1104XE,
