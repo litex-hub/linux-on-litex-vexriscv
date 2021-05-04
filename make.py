@@ -15,9 +15,10 @@ kB = 1024
 
 class Board:
     soc_kwargs = {"integrated_rom_size": 0x10000, "l2_size": 0}
-    def __init__(self, soc_cls=None, soc_capabilities={}, bitstream_ext=""):
+    def __init__(self, soc_cls=None, soc_capabilities={}, soc_constants={}, bitstream_ext=""):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
+        self.soc_constants    = soc_constants
         self.bitstream_ext    = bitstream_ext
 
     def load(self, filename):
@@ -276,6 +277,9 @@ class SDS1104XE(Board):
         Board.__init__(self, sds1104xe.BaseSoC, soc_capabilities={
             # Communication
             "serial",
+            "ethernet",
+            # Video
+            "framebuffer",
         }, bitstream_ext=".bit")
 
     def load(self, filename):
@@ -603,6 +607,10 @@ def main():
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         board.platform = soc.platform
+
+        # SoC constants ----------------------------------------------------------------------------
+        for k, v in board.soc_constants.items():
+            soc.add_constant(k, v)
 
         # SoC peripherals --------------------------------------------------------------------------
         if board_name in ["arty", "arty_a7"]:
