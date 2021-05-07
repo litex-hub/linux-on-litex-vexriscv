@@ -249,8 +249,9 @@ class XCU1525(Board):
 
 class AlveoU280(Board):
     soc_kwargs = {
-        "ddram_channel":  1, # pick board DRAM channel
-        "with-pcie": True
+        "ddram_channel": 1, # pick board DRAM channel
+        "with_pcie": True,
+        "driver": True
     }
     def __init__(self):
         from litex_boards.targets import alveo_u280
