@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+#
+# This file is part of Linux-on-LiteX-VexRiscv
+#
+# Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
+# SPDX-License-Identifier: BSD-2-Clause
+
 import json
 import argparse
 
