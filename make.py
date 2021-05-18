@@ -269,6 +269,31 @@ class SDS1104XE(Board):
         prog = self.platform.create_programmer()
         prog.load_bitstream(filename, device=1)
 
+# QMTECH WuKong support ---------------------------------------------------------------------------
+
+class Qmtech_WuKong(Board):
+    SPIFLASH_PAGE_SIZE    = 256
+    SPIFLASH_SECTOR_SIZE  = 64*kB
+    SPIFLASH_DUMMY_CYCLES = 11
+    soc_kwargs = {
+        "uart_baudrate": 3e6,
+        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_wukong
+        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
+            "leds",
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "spiflash",
+            #"spisdcard",
+            # Video
+            #"video_terminal",
+            "framebuffer",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -459,69 +484,43 @@ class Qmtech_EP4CE15(Board):
             # "leds",
         }, bitstream_ext=".sof")
 
-# QMTECH WuKong support ---------------------------------------------------------------------------
-
-class Qmtech_WuKong(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
-    soc_kwargs = {
-        "uart_baudrate": 3e6,
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
-    }
-    def __init__(self):
-        from litex_boards.targets import qmtech_wukong
-        Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
-            "leds",
-            # Communication
-            "serial",
-            "ethernet",
-            # Storage
-            "spiflash",
-            "spisdcard",
-            # Video
-            #"video_terminal",
-            "framebuffer",
-        }, bitstream_ext=".bit")
-
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
 
 supported_boards = {
     # Xilinx
-    "acorn_cle_215": AcornCLE215,
-    "arty":          Arty,
-    "arty_a7":       ArtyA7,
-    "arty_s7":       ArtyS7,
-    "netv2":         NeTV2,
-    "genesys2":      Genesys2,
-    "kc705":         KC705,
-    "kcu105":        KCU105,
-    "zcu104":        ZCU104,
-    "nexys4ddr":     Nexys4DDR,
-    "nexys_video":   NexysVideo,
-    "minispartan6":  MiniSpartan6,
-    "pipistrello":   Pipistrello,
-    "xcu1525":       XCU1525,
-    "qmtech_wukong": Qmtech_WuKong,
-    "sds1104xe":     SDS1104XE,
+    "acorn_cle_215":    AcornCLE215,
+    "arty":             Arty,
+    "arty_a7":          ArtyA7,
+    "arty_s7":          ArtyS7,
+    "netv2":            NeTV2,
+    "genesys2":         Genesys2,
+    "kc705":            KC705,
+    "kcu105":           KCU105,
+    "zcu104":           ZCU104,
+    "nexys4ddr":        Nexys4DDR,
+    "nexys_video":      NexysVideo,
+    "minispartan6":     MiniSpartan6,
+    "pipistrello":      Pipistrello,
+    "xcu1525":          XCU1525,
+    "qmtech_wukong":    Qmtech_WuKong,
+    "sds1104xe":        SDS1104XE,
 
     # Lattice
-    "versa_ecp5":   VersaECP5,
-    "ulx3s":        ULX3S,
-    "hadbadge":     HADBadge,
-    "orangecrab":   OrangeCrab,
-    "camlink_4k":   CamLink4K,
-    "trellisboard": TrellisBoard,
-    "ecpix5":       ECPIX5,
-    "colorlight_i5":Colorlight_i5,
+    "versa_ecp5":      VersaECP5,
+    "ulx3s":           ULX3S,
+    "hadbadge":        HADBadge,
+    "orangecrab":      OrangeCrab,
+    "camlink_4k":      CamLink4K,
+    "trellisboard":    TrellisBoard,
+    "ecpix5":          ECPIX5,
+    "colorlight_i5":   Colorlight_i5,
 
     # Altera/Intel
-    "de0nano":      De0Nano,
-    "de10nano":     De10Nano,
-
-    "qmtech_ep4ce15":      Qmtech_EP4CE15,
+    "de0nano":         De0Nano,
+    "de10nano":        De10Nano,
+    "qmtech_ep4ce15":  Qmtech_EP4CE15,
 }
 
 def main():
@@ -638,7 +637,7 @@ def main():
             csr_json     = os.path.join(build_dir, "csr.json"),
             csr_csv      = os.path.join(build_dir, "csr.csv")
         )
-        builder.build(run=args.build)
+        builder.build(run=args.build, build_name=board_name)
 
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name)
