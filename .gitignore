@@ -23,3 +23,14 @@ build/*
 *.d
 *.o
 *.elf
+
+# smdev files
+*.bit
+images/Image
+*.cpio
+*.dtb
+prog
+images2021
+demo/
+images/Image00
+.vscode/
