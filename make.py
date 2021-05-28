@@ -177,7 +177,7 @@ class KCU105(Board):
 # VC707 support ---------------------------------------------------------------------------------
 
 class VC707(Board):
-    # soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
+    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
     def __init__(self):
         from litex_boards.targets import vc707
         Board.__init__(self, vc707.BaseSoC, soc_capabilities={
@@ -188,7 +188,7 @@ class VC707(Board):
             #"sdcard",
             #"sata",
             # GPIOs
-            #"leds",
+            "leds",
             # Monitoring
             #"xadc",
         }, bitstream_ext=".bit")
