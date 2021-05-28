@@ -174,6 +174,25 @@ class KCU105(Board):
             "sdcard",
         }, bitstream_ext=".bit")
 
+# VC707 support ---------------------------------------------------------------------------------
+
+class VC707(Board):
+    # soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
+    def __init__(self):
+        from litex_boards.targets import vc707
+        Board.__init__(self, vc707.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            #"ethernet",
+            # Storage
+            #"sdcard",
+            #"sata",
+            # GPIOs
+            #"leds",
+            # Monitoring
+            #"xadc",
+        }, bitstream_ext=".bit")
+
 # ZCU104 support -----------------------------------------------------------------------------------
 
 class ZCU104(Board):
@@ -256,8 +275,9 @@ class XCU1525(Board):
 class AlveoU280(Board):
     soc_kwargs = {
         "ddram_channel": 1, # pick board DRAM channel
-        "with_pcie": True,
-        "driver": True
+        "with_pcie": False,
+        "driver": False#,
+        #"with_hbm": True
     }
     def __init__(self):
         from litex_boards.targets import alveo_u280
@@ -523,6 +543,7 @@ supported_boards = {
     "genesys2":         Genesys2,
     "kc705":            KC705,
     "kcu105":           KCU105,
+    "vc707" :           VC707,
     "zcu104":           ZCU104,
     "nexys4ddr":        Nexys4DDR,
     "nexys_video":      NexysVideo,
