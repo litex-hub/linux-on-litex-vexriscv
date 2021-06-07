@@ -192,6 +192,7 @@ def main():
     parser.add_argument("--trace-start",          default=0,               help="cycle to start VCD tracing")
     parser.add_argument("--trace-end",            default=-1,              help="cycle to end VCD tracing")
     parser.add_argument("--opt-level",            default="O3",            help="compilation optimization level")
+    parser.add_argument("--threads",              default=1,               help="Set number of threads (default=1)")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -222,7 +223,8 @@ def main():
             opt_level   = args.opt_level,
             trace       = args.trace,
             trace_start = int(args.trace_start),
-            trace_end   = int(args.trace_end))
+            trace_end   = int(args.trace_end),
+            threads     = args.threads)
         if i == 0:
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
