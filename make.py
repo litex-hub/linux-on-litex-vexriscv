@@ -276,8 +276,9 @@ class AlveoU280(Board):
     soc_kwargs = {
         "ddram_channel": 1, # pick board DRAM channel
         "with_pcie": False,
-        "driver": False#,
-        #"with_hbm": True
+        "driver": False,
+        "with_led_chaser": False,
+        "with_hbm": True
     }
     def __init__(self):
         from litex_boards.targets import alveo_u280
