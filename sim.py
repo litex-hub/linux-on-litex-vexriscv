@@ -30,6 +30,12 @@ from litedram.core.controller import ControllerSettings
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.mac import LiteEthMAC
 
+from litespi import modules
+from litespi.opcodes import SpiNorFlashOpCodes as Codes
+from litespi.phy.generic import LiteSPIPHY
+from litespi import LiteSPI
+from litex.soc.integration.soc import SoCRegion
+
 from litex.tools.litex_json2dts import generate_dts
 
 # IOs ----------------------------------------------------------------------------------------------
@@ -57,6 +63,12 @@ _io = [
         Subsignal("sink_valid", Pins(1)),
         Subsignal("sink_ready", Pins(1)),
         Subsignal("sink_data",  Pins(8)),
+    ),
+    ("spiflash4x", 0,
+        Subsignal("cs_n", Pins(1)),
+        Subsignal("clk",  Pins(1)),
+        Subsignal("dq",   Pins(4)),
+
     ),
 ]
 
@@ -97,6 +109,7 @@ class SoCLinux(SoCCore):
         sdram_module     = "MT48LC16M16",
         sdram_data_width = 32,
         sdram_verbosity  = 0,
+        with_flash       = False,
         with_ethernet    = False):
         platform     = Platform()
         sys_clk_freq = int(100e6)
@@ -165,6 +178,13 @@ class SoCLinux(SoCCore):
             self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
+       # Flash -------------------------------------------------------------------------------------
+        if with_flash:
+          self.submodules.spiflash_phy = LiteSPIPHY(platform.request("spiflash4x"), modules.S25FL128L(Codes.READ_1_1_4))
+          self.submodules.spiflash_mmap = LiteSPI(self.spiflash_phy, clk_freq=int(1e6), mmap_endianness=self.cpu.endianness)
+          spiflash_region = SoCRegion(origin=self.mem_map.get("spiflash", None), size=modules.S25FL128L.total_size, cached=False)
+          self.bus.add_slave(name="spiflash", slave=self.spiflash_mmap.bus, region=spiflash_region)
+
     def generate_dts(self, board_name):
         json_src = os.path.join("build", board_name, "csr.json")
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
@@ -186,6 +206,7 @@ def main():
     parser.add_argument("--sdram-data-width",     default=32,              help="Set SDRAM chip data width")
     parser.add_argument("--sdram-verbosity",      default=0,               help="Set SDRAM checker verbosity")
     parser.add_argument("--with-ethernet",        action="store_true",     help="enable Ethernet support")
+    parser.add_argument("--with-flash",           action="store_true",     help="Use LiteSPI to flash memory mapping")
     parser.add_argument("--local-ip",             default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50)")
     parser.add_argument("--remote-ip",            default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100)")
     parser.add_argument("--trace",                action="store_true",     help="enable VCD tracing")
@@ -206,6 +227,7 @@ def main():
             sdram_module     = args.sdram_module,
             sdram_data_width = int(args.sdram_data_width),
             sdram_verbosity  = int(args.sdram_verbosity),
+            with_flash       = args.with_flash,
             with_ethernet    = args.with_ethernet)
         if args.with_ethernet:
             for i in range(4):

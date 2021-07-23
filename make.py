@@ -12,6 +12,11 @@ import os
 
 from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
+from litespi import modules
+from litespi.opcodes import SpiNorFlashOpCodes as Codes
+from litespi.phy.generic import LiteSPIPHY
+from litespi import LiteSPI
+from litex.soc.integration.soc import SoCRegion
 
 from soc_linux import SoCLinux
 
@@ -604,9 +609,12 @@ def main():
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
         if "spiflash" in board.soc_capabilities:
-            soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
-            soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
-            soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
+            mmap_total_size = modules.S25FL128L.total_size
+            mmap_op = modules.S25FL128L(Codes.READ_1_1_4)
+            soc.submodules.spiflash_phy  = LiteSPIPHY(board.platform.request("spiflash4x"), mmap_op)
+            soc.submodules.spiflash_mmap = LiteSPI(soc.spiflash_phy, clk_freq=int(args.spi_clk_freq), mmap_endianness=soc.cpu.endianness)
+            spiflash_region = SoCRegion(origin=soc.mem_map.get("spiflash", None), size=mmap_total_size, cached=False)
+            soc.bus.add_slave(name="spiflash", slave=soc.spiflash_mmap.bus, region=spiflash_region)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
