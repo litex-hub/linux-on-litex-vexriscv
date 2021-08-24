@@ -33,7 +33,7 @@ from litex.build.generic_platform import *
 from litesdcard.phy import SDPHY
 from litesdcard.core import SDCore
 
-from litex.tools.litex_json2dts import generate_dts
+from litex.tools.litex_json2dts_linux import generate_dts
 
 # Helpers ------------------------------------------------------------------------------------------
 

@@ -30,7 +30,7 @@ from litedram.core.controller import ControllerSettings
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.mac import LiteEthMAC
 
-from litex.tools.litex_json2dts import generate_dts
+from litex.tools.litex_json2dts_linux import generate_dts
 
 # IOs ----------------------------------------------------------------------------------------------
 
