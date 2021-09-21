@@ -13,6 +13,9 @@ import os
 from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
 
+from litespi.modules import *
+from litespi.opcodes import SpiNorFlashOpCodes as Codes
+
 from soc_linux import SoCLinux
 
 kB = 1024
@@ -54,9 +57,7 @@ class AcornCLE215(Board):
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.BaseSoC, soc_capabilities={
@@ -80,10 +81,10 @@ class Arty(Board):
             "icap_bitstream",
         }, bitstream_ext=".bit")
 
-class ArtyA7(Arty):
-    SPIFLASH_DUMMY_CYCLES = 7
+class ArtyA7(Arty): pass
 
-class ArtyS7(Arty):
+class ArtyS7(Board):
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty_s7
         Board.__init__(self, arty_s7.BaseSoC, soc_capabilities={
@@ -108,9 +109,7 @@ class ArtyS7(Arty):
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = MX25L6436E(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import netv2
         Board.__init__(self, netv2.BaseSoC, soc_capabilities={
@@ -272,9 +271,7 @@ class SDS1104XE(Board):
 # QMTECH WuKong support ---------------------------------------------------------------------------
 
 class Qmtech_WuKong(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     soc_kwargs = {
         "uart_baudrate": 3e6,
         "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
@@ -301,9 +298,7 @@ class Qmtech_WuKong(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = N25Q128A13(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
@@ -333,9 +328,7 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 8
+    spiflash = W25Q128JV(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
@@ -399,9 +392,7 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 8
+    spiflash = IS25LP256D(Codes.READ_1_1_1)
     soc_kwargs = {
         "sys_clk_freq" : int(50e6),
         "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
@@ -604,9 +595,7 @@ def main():
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
         if "spiflash" in board.soc_capabilities:
-            soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
-            soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
-            soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
+            soc.add_spi_flash(mode="1x", module=board.spiflash, with_master=False)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
