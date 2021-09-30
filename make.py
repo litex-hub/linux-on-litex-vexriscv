@@ -302,7 +302,7 @@ class MNT_RKX7(Board):
             # Communication
             "serial",
             # Storage
-            "sdcard",
+            "spisdcard",
         }, bitstream_ext=".bit")
 
 #---------------------------------------------------------------------------------------------------
