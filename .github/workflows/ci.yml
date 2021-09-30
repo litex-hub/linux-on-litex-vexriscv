@@ -17,6 +17,8 @@ jobs:
           pip3 install setuptools
           pip3 install requests
           pip3 install pexpect
+          pip3 install meson
+          pip3 install ninja
 
       # Install (n)Migen / LiteX / Cores
       - name: Install LiteX
