@@ -291,6 +291,19 @@ class Qmtech_WuKong(Board):
             "framebuffer",
         }, bitstream_ext=".bit")
 
+
+# MNT RKX7 support ---------------------------------------------------------------------------------
+
+class MNT_RKX7(Board):
+    def __init__(self):
+        from litex_boards.targets import mnt_rkx7
+        Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -497,6 +510,7 @@ supported_boards = {
     "xcu1525":          XCU1525,
     "qmtech_wukong":    Qmtech_WuKong,
     "sds1104xe":        SDS1104XE,
+    "mnt_rkx7":         MNT_RKX7,
 
     # Lattice
     "versa_ecp5":      VersaECP5,
