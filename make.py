@@ -295,6 +295,7 @@ class Qmtech_WuKong(Board):
 # MNT RKX7 support ---------------------------------------------------------------------------------
 
 class MNT_RKX7(Board):
+    soc_kwargs = {"uart_baudrate": 115200}
     def __init__(self):
         from litex_boards.targets import mnt_rkx7
         Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
