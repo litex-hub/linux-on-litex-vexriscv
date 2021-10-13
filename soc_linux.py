@@ -84,41 +84,34 @@ def SoCLinux(soc_cls, **kwargs):
         # Leds -------------------------------------------------------------------------------------
         def add_leds(self):
             self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
-            self.add_csr("leds")
 
         # RGB Led ----------------------------------------------------------------------------------
         def add_rgb_led(self):
             rgb_led_pads = self.platform.request("rgb_led", 0)
             for n in "rgb":
                 setattr(self.submodules, "rgb_led_{}0".format(n), PWM(getattr(rgb_led_pads, n)))
-                self.add_csr("rgb_led_{}0".format(n))
 
         # Switches ---------------------------------------------------------------------------------
         def add_switches(self):
             self.submodules.switches = GPIOIn(Cat(platform_request_all(self.platform, "user_sw")), with_irq=True)
-            self.add_csr("switches")
             self.add_interrupt("switches")
 
         # SPI --------------------------------------------------------------------------------------
         def add_spi(self, data_width, clk_freq):
             spi_pads = self.platform.request("spi")
             self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, clk_freq)
-            self.add_csr("spi")
 
         # I2C --------------------------------------------------------------------------------------
         def add_i2c(self):
             self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
-            self.add_csr("i2c0")
 
         # XADC (Xilinx only) -----------------------------------------------------------------------
         def add_xadc(self):
             self.submodules.xadc = XADC()
-            self.add_csr("xadc")
 
         # ICAP Bitstream (Xilinx only) -------------------------------------------------------------
         def add_icap_bitstream(self):
             self.submodules.icap_bit = ICAPBitstream();
-            self.add_csr("icap_bit")
 
         # MMCM (Xilinx only) -----------------------------------------------------------------------
         def add_mmcm(self, nclkout):
@@ -162,7 +155,6 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("clkout_divide_range_max", int(self.mmcm.clkout_divide_range[1]))
 
             self.mmcm.expose_drp()
-            self.add_csr("mmcm")
 
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 

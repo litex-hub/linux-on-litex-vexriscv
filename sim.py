@@ -126,7 +126,6 @@ class SoCLinux(SoCCore):
 
         # Supervisor -------------------------------------------------------------------------------
         self.submodules.supervisor = Supervisor()
-        self.add_csr("supervisor")
 
         # SDRAM ------------------------------------------------------------------------------------
         sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
@@ -154,14 +153,12 @@ class SoCLinux(SoCCore):
         if with_ethernet:
             # eth phy
             self.submodules.ethphy = LiteEthPHYModel(self.platform.request("eth", 0))
-            self.add_csr("ethphy")
             # eth mac
             ethmac = LiteEthMAC(phy=self.ethphy, dw=32,
                 interface="wishbone", endianness=self.cpu.endianness)
             self.submodules.ethmac = ethmac
             self.add_memory_region("ethmac", self.mem_map["ethmac"], 0x2000, type="io")
             self.add_wb_slave(self.mem_map["ethmac"], self.ethmac.bus)
-            self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
     def generate_dts(self, board_name):
