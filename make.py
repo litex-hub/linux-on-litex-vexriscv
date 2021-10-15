@@ -45,6 +45,7 @@ class Board:
 # Acorn CLE 215+ support ---------------------------------------------------------------------------
 
 class AcornCLE215(Board):
+    soc_kwargs = {"uart_name": "jtag_uart", "sys_clk_freq": int(150e6)}
     def __init__(self):
         from litex_boards.targets import acorn
         Board.__init__(self, acorn.BaseSoC, soc_capabilities={
