@@ -377,6 +377,21 @@ class OrangeCrab(Board):
             "spisdcard",
         }, bitstream_ext=".bit")
 
+# Butterstick support ------------------------------------------------------------------------------
+
+class ButterStick(Board):
+    soc_kwargs = {
+       "with_etherbone": True,
+    }
+    def __init__(self):
+        from litex_boards.targets import butterstick
+        Board.__init__(self, butterstick.BaseSoC, soc_capabilities={
+            # Communication
+            "crossover",
+            # Storage
+            "spisdcard",
+        }, bitstream_ext=".bit")
+
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
@@ -519,6 +534,7 @@ supported_boards = {
     "ulx3s":           ULX3S,
     "hadbadge":        HADBadge,
     "orangecrab":      OrangeCrab,
+    "butterstick":     ButterStick,
     "camlink_4k":      CamLink4K,
     "trellisboard":    TrellisBoard,
     "ecpix5":          ECPIX5,
@@ -578,6 +594,8 @@ def main():
             soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+        if "crossover" in board.soc_capabilities:
+            soc_kwargs.update(uart_name="crossover")
         if "usb_fifo" in board.soc_capabilities:
             soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:

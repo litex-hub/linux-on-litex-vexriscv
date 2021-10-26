@@ -46,6 +46,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | HADBadge     | Lattice ECP5        | LFE5U-45F     |     48MHz     |  8-bits  32MB SDR  |  16MB QSPI*   |         No         |   No   |
 | ULX3S        | Lattice ECP5        | LFE5U 45F     |     50MHz     | 16-bits  32MB SDR  |   4MB QSPI*   |         No         |   Yes  |
 | OrangeCrab   | Lattice ECP5        | LFE5U 25F     |     48MHz     | 16-bits 128MB SDR  |   4MB QSPI*   |         No         |   Yes  |
+| ButterStick  | Lattice ECP5        | LFE5UM5G 85F  |     60MHz     | 16-bits  1GB DDR3  |   4MB QSPI*   |         Yes        |   Yes* |
 | CamLink 4K   | Lattice ECP5        | LFE5U 25F     |     81MHz     | 16-bits 128MB SDR  |      No       |         No         |   No   |
 | TrellisBoard | Lattice ECP5        | LFE5UM5G 85F  |     75MHz     | 32-bits   1GB DDR3 |   16MB QSPI*  |   1Gbps RGMII*     |   Yes  |
 | ECPIX-5      | Lattice ECP5        | LFE5UM5G 85F  |     50MHz     | 16-bits 512MB DDR3 |   16MB QSPI   |   1Gbps RGMII      |   Yes  |
