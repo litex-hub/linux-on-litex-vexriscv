@@ -380,16 +380,13 @@ class OrangeCrab(Board):
 # Butterstick support ------------------------------------------------------------------------------
 
 class ButterStick(Board):
-    soc_kwargs = {
-       "with_etherbone": True,
-    }
+    soc_kwargs = {"uart_name": "jtag_uart"}
     def __init__(self):
         from litex_boards.targets import butterstick
         Board.__init__(self, butterstick.BaseSoC, soc_capabilities={
             # Communication
-            "crossover",
-            # Storage
-            "spisdcard",
+            "serial",
+            "ethernet",
         }, bitstream_ext=".bit")
 
 # Cam Link 4K support ------------------------------------------------------------------------------
