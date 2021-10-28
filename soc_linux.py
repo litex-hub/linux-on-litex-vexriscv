@@ -14,7 +14,6 @@ import subprocess
 from litex.soc.cores.cpu import VexRiscvSMP
 from migen import *
 
-from litex.soc.interconnect import wishbone
 from litex.soc.interconnect.csr import *
 
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
@@ -25,29 +24,7 @@ from litex.soc.cores.pwm import PWM
 from litex.soc.cores.icap import ICAPBitstream
 from litex.soc.cores.clock import S7MMCM
 
-from litevideo.output import VideoOut
-
-from migen.build.generic_platform import Pins, IOStandard, Subsignal
-from litex.build.generic_platform import *
-
-from litesdcard.phy import SDPHY
-from litesdcard.core import SDCore
-
 from litex.tools.litex_json2dts_linux import generate_dts
-
-# Helpers ------------------------------------------------------------------------------------------
-
-def platform_request_all(platform, name):
-    from litex.build.generic_platform import ConstraintError
-    r = []
-    while True:
-        try:
-            r += [platform.request(name, len(r))]
-        except ConstraintError:
-            break
-    if r == []:
-        raise ValueError
-    return r
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -83,7 +60,7 @@ def SoCLinux(soc_cls, **kwargs):
 
         # Leds -------------------------------------------------------------------------------------
         def add_leds(self):
-            self.submodules.leds = GPIOOut(Cat(platform_request_all(self.platform, "user_led")))
+            self.submodules.leds = GPIOOut(Cat(self.platform.request_all("user_led")))
 
         # RGB Led ----------------------------------------------------------------------------------
         def add_rgb_led(self):
@@ -93,7 +70,7 @@ def SoCLinux(soc_cls, **kwargs):
 
         # Switches ---------------------------------------------------------------------------------
         def add_switches(self):
-            self.submodules.switches = GPIOIn(Cat(platform_request_all(self.platform, "user_sw")), with_irq=True)
+            self.submodules.switches = GPIOIn(Cat(self.platform.request_all("user_sw")), with_irq=True)
             self.add_interrupt("switches")
 
         # SPI --------------------------------------------------------------------------------------
