@@ -503,6 +503,24 @@ class Qmtech_EP4CE15(Board):
         }, bitstream_ext=".sof")
 
 #---------------------------------------------------------------------------------------------------
+# Efinix Boards
+#---------------------------------------------------------------------------------------------------
+
+class TrionT120BGA576DevKit(Board):
+    soc_kwargs = {
+        "integrated_sram_size" : 0x800,
+        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import trion_t120_bga576_dev_kit
+        Board.__init__(self, trion_t120_bga576_dev_kit.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+             "leds",
+        }, bitstream_ext=".bit")
+
+#---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
 
@@ -541,6 +559,9 @@ supported_boards = {
     "de0nano":         De0Nano,
     "de10nano":        De10Nano,
     "qmtech_ep4ce15":  Qmtech_EP4CE15,
+
+    # Efinix
+    "trion_t120_bga576_dev_kit" : TrionT120BGA576DevKit,
 }
 
 def main():
