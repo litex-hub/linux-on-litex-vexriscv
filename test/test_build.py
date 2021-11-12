@@ -27,7 +27,12 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(os.path.isfile(f"build/{board}/gateware/{board}.v"), True)
 
     def test_boards(self):
+        excluded_boards = [
+            "trion_t120_bga576_dev_kit", # Reason: Require Efinity toolchain.
+        ]
         for board in supported_boards:
+            if board in excluded_boards:
+                continue
             with self.subTest(msg=f"board={board} build test..."):
                 self.board_build_test(board=board)
 
