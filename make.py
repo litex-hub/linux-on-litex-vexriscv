@@ -42,9 +42,9 @@ class Board:
 # Xilinx Boards
 #---------------------------------------------------------------------------------------------------
 
-# Acorn CLE 215+ support ---------------------------------------------------------------------------
+# Acorn support ------------------------------------------------------------------------------------
 
-class AcornCLE215(Board):
+class Acorn(Board):
     soc_kwargs = {"uart_name": "jtag_uart", "sys_clk_freq": int(150e6)}
     def __init__(self):
         from litex_boards.targets import acorn
@@ -53,6 +53,18 @@ class AcornCLE215(Board):
             "serial",
             # Storage
             "sata",
+        }, bitstream_ext=".bit")
+
+# Acorn PCIe support -------------------------------------------------------------------------------
+
+class AcornPCIe(Board):
+    soc_kwargs = {"with_pcie": True, "uart_name": "crossover"}
+    def __init__(self):
+        from litex_boards.targets import sqrl_acorn
+        Board.__init__(self, sqrl_acorn.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "pcie",
         }, bitstream_ext=".bit")
 
 # Arty support -------------------------------------------------------------------------------------
@@ -526,7 +538,8 @@ class TrionT120BGA576DevKit(Board):
 
 supported_boards = {
     # Xilinx
-    "acorn_cle_215":    AcornCLE215,
+    "acorn":            Acorn,
+    "acorn_pcie":       AcornPCIe,
     "arty":             Arty,
     "arty_a7":          ArtyA7,
     "arty_s7":          ArtyS7,
@@ -686,6 +699,11 @@ def main():
 
         # DTB --------------------------------------------------------------------------------------
         soc.combine_dtb(board_name, args.fdtoverlays)
+
+        # PCIe Driver ------------------------------------------------------------------------------
+        if "pcie" in board.soc_capabilities:
+            from litepcie.software import generate_litepcie_software
+            generate_litepcie_software(soc, os.path.join(builder.output_dir, "driver"))
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
