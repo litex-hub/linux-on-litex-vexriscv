@@ -711,7 +711,10 @@ def main():
 
         # Flash bitstream/images (to SPI Flash) ----------------------------------------------------
         if args.flash:
-            board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+            if board_name == "acorn_pcie":
+                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + "_fallback.bin"))
+            else:
+                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
