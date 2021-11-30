@@ -58,7 +58,7 @@ class Acorn(Board):
 # Acorn PCIe support -------------------------------------------------------------------------------
 
 class AcornPCIe(Board):
-    soc_kwargs = {"with_pcie": True, "uart_name": "crossover"}
+    soc_kwargs = {"with_pcie": True, "uart_name": "crossover", "sys_clk_freq": int(125e6)}
     def __init__(self):
         from litex_boards.targets import sqrl_acorn
         Board.__init__(self, sqrl_acorn.BaseSoC, soc_capabilities={
