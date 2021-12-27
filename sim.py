@@ -209,6 +209,7 @@ def main():
                 soc.add_constant("LOCALIP{}".format(i+1), int(args.local_ip.split(".")[i]))
             for i in range(4):
                 soc.add_constant("REMOTEIP{}".format(i+1), int(args.remote_ip.split(".")[i]))
+        soc.add_constant("config_earlycon", "sbi")
         board_name = "sim"
         build_dir  = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
