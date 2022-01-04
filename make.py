@@ -532,6 +532,19 @@ class TrionT120BGA576DevKit(Board):
              "leds",
         }, bitstream_ext=".bit")
 
+
+class TitaniumTi60F225DevKit(Board):
+    soc_kwargs = {"with_hyperram" : True}
+    def __init__(self):
+        from litex_boards.targets import titanium_ti60_f225_dev_kit
+        Board.__init__(self, titanium_ti60_f225_dev_kit.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+             "leds",
+        }, bitstream_ext=".bit")
+
+
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
@@ -575,6 +588,7 @@ supported_boards = {
 
     # Efinix
     "trion_t120_bga576_dev_kit" : TrionT120BGA576DevKit,
+    "titanium_ti60_f225_dev_kit": TitaniumTi60F225DevKit,
 }
 
 def main():
