@@ -465,6 +465,28 @@ class Colorlight_i5(Board):
             "ethernet",
         }, bitstream_ext=".bit")
 
+# Icesugar Pro support ------------------------------------------------------------------------------------
+
+class IcesugarPro(Board):
+    spiflash = W25Q256JV(Codes.READ_1_1_1)
+    soc_kwargs = {
+        "sys_clk_freq" : int(50e6), # 48MHz default.
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import muselab_icesugar_pro
+        Board.__init__(self, muselab_icesugar_pro.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIO
+            # pin collision with user_led
+            #"rgb_led",
+            # Storage
+            "sdcard",
+            # USRMCLK issue unsolved in litex_boards
+            #"spiflash",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
@@ -594,6 +616,7 @@ supported_boards = {
     "trellisboard":    TrellisBoard,
     "ecpix5":          ECPIX5,
     "colorlight_i5":   Colorlight_i5,
+    "icesugar_pro":    IcesugarPro,
 
     # Altera/Intel
     "de0nano":         De0Nano,
