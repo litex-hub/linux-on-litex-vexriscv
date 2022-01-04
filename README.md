@@ -53,6 +53,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | De0Nano      | Intel Cyclone4      | EP4CE22F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
 | De10Lite     | Intel MAX10         | 10M50DA       |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
 | De10Nano     | Intel Cyclone5      | 5CSEBA6U23I7  |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   Yes  |
+| De1-SoC      | Intel Cyclone5      | 5CSEMA5F31    |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
 | Avalanche    | Microsemi PolarFire | MPF300TS      |    100MHz     | 16-bits 256MB DDR3 |   8MB QSPI*   |   1Gbps RGMII*     |   No   |
 | QM T EP4CE15 | Intel Cyclone4      | EP4CE15F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
 

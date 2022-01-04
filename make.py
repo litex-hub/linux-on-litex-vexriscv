@@ -499,6 +499,19 @@ class De0Nano(Board):
             "serial",
         }, bitstream_ext=".sof")
 
+# De1-SoC support ----------------------------------------------------------------------------------
+
+class De1SoC(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import de1soc
+        Board.__init__(self, de1soc.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "leds",
+            "switches",
+        }, bitstream_ext=".sof")
+
 # QMTECH EP4CE15 support ---------------------------------------------------------------------------
 
 class Qmtech_EP4CE15(Board):
@@ -584,6 +597,7 @@ supported_boards = {
     # Altera/Intel
     "de0nano":         De0Nano,
     "de10nano":        De10Nano,
+    "de1soc":          De1SoC,
     "qmtech_ep4ce15":  Qmtech_EP4CE15,
 
     # Efinix
