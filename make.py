@@ -347,7 +347,7 @@ class ULX3S(Board):
             # Communication
             "serial",
             # Storage
-            "sdcard",
+            "spisdcard",
             # Video,
             "framebuffer",
         }, bitstream_ext=".svf")
