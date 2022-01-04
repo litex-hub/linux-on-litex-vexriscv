@@ -508,6 +508,7 @@ class De1SoC(Board):
         Board.__init__(self, de1soc.BaseSoC, soc_capabilities={
             # Communication
             "serial",
+            # GPIOs
             "leds",
             "switches",
         }, bitstream_ext=".sof")
