@@ -28,7 +28,8 @@ class TestBuild(unittest.TestCase):
 
     def test_boards(self):
         excluded_boards = [
-            "trion_t120_bga576_dev_kit", # Reason: Require Efinity toolchain.
+            "trion_t120_bga576_dev_kit",  # Reason: Require Efinity toolchain.
+            "titanium_ti60_f225_dev_kit", # Reason: Require Efinity toolchain.
         ]
         for board in supported_boards:
             if board in excluded_boards:
