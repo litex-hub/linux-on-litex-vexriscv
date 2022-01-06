@@ -172,6 +172,25 @@ class KC705(Board):
             "xadc",
         }, bitstream_ext=".bit")
 
+# VC707 support ---------------------------------------------------------------------------------
+
+class VC707(Board):
+    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
+    def __init__(self):
+        from litex_boards.targets import vc707
+        Board.__init__(self, vc707.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "sdcard",
+            #"sata",
+            # GPIOs
+            "leds",
+            # Monitoring
+            "xadc",
+        }, bitstream_ext=".bit")
+
 # KCU105 support -----------------------------------------------------------------------------------
 
 class KCU105(Board):
@@ -595,6 +614,7 @@ supported_boards = {
     "netv2":            NeTV2,
     "genesys2":         Genesys2,
     "kc705":            KC705,
+    "vc707":            VC707,
     "kcu105":           KCU105,
     "zcu104":           ZCU104,
     "nexys4ddr":        Nexys4DDR,
