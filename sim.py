@@ -15,6 +15,7 @@ from migen import *
 from litex.build.generic_platform import *
 from litex.build.sim import SimPlatform
 from litex.build.sim.config import SimConfig
+from litex.build.sim.verilator import verilator_build_args, verilator_build_argdict
 
 from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
@@ -177,22 +178,19 @@ class SoCLinux(SoCCore):
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
-    parser.add_argument("--with-sdram",           action="store_true",     help="enable SDRAM support")
-    parser.add_argument("--sdram-module",         default="MT48LC16M16",   help="Select SDRAM chip")
-    parser.add_argument("--sdram-data-width",     default=32,              help="Set SDRAM chip data width")
-    parser.add_argument("--sdram-verbosity",      default=0,               help="Set SDRAM checker verbosity")
-    parser.add_argument("--with-ethernet",        action="store_true",     help="enable Ethernet support")
-    parser.add_argument("--local-ip",             default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50)")
-    parser.add_argument("--remote-ip",            default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100)")
-    parser.add_argument("--trace",                action="store_true",     help="enable VCD tracing")
-    parser.add_argument("--trace-start",          default=0,               help="cycle to start VCD tracing")
-    parser.add_argument("--trace-end",            default=-1,              help="cycle to end VCD tracing")
-    parser.add_argument("--opt-level",            default="O3",            help="compilation optimization level")
-    parser.add_argument("--threads",              default=1,               help="Set number of threads (default=1)")
+    parser.add_argument("--with-sdram",       action="store_true",     help="Enable SDRAM support.")
+    parser.add_argument("--sdram-module",     default="MT48LC16M16",   help="Select SDRAM chip.")
+    parser.add_argument("--sdram-data-width", default=32,              help="Set SDRAM chip data width.")
+    parser.add_argument("--sdram-verbosity",  default=0,               help="Set SDRAM checker verbosity.")
+    parser.add_argument("--with-ethernet",    action="store_true",     help="enable Ethernet support.")
+    parser.add_argument("--local-ip",         default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50).")
+    parser.add_argument("--remote-ip",        default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100).")
     VexRiscvSMP.args_fill(parser)
+    verilator_build_args(parser)
     args = parser.parse_args()
 
     VexRiscvSMP.args_read(args)
+    verilator_build_kwargs = verilator_build_argdict(args)
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
     if args.with_ethernet:
@@ -215,12 +213,9 @@ def main():
             compile_gateware = i != 0 ,
             csr_json         = os.path.join(build_dir, "csr.json"))
         builder.build(sim_config=sim_config,
-            run         = i != 0,
-            opt_level   = args.opt_level,
-            trace       = args.trace,
-            trace_start = int(args.trace_start),
-            trace_end   = int(args.trace_end),
-            threads     = args.threads)
+            run = i != 0,
+            **verilator_build_kwargs
+        )
         if i == 0:
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
