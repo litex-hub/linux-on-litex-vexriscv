@@ -103,12 +103,7 @@ class SoCLinux(SoCCore):
 
         ram_init = []
         if init_memories:
-            ram_init = get_mem_data({
-                "images/Image":       "0x00000000",
-                "images/rv32.dtb":    "0x00ef0000",
-                "images/rootfs.cpio": "0x01000000",
-                "images/opensbi.bin": "0x00f00000"
-            }, "little")
+            ram_init = get_mem_data("images/boot.json", endianness="little", offset=0x40000000)
 
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = CRG(platform.request("sys_clk"))
