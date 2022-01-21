@@ -11,11 +11,11 @@ import json
 import shutil
 import subprocess
 
-from litex.soc.cores.cpu import VexRiscvSMP
 from migen import *
 
 from litex.soc.interconnect.csr import *
 
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 from litex.soc.cores.gpio import GPIOOut, GPIOIn
 from litex.soc.cores.spi import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster

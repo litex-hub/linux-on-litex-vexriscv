@@ -6,12 +6,13 @@
 # Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
 # SPDX-License-Identifier: BSD-2-Clause
 
+import os
 import sys
 import argparse
-import os
 
-from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
+
 
 from litespi.modules import *
 from litespi.opcodes import SpiNorFlashOpCodes as Codes
@@ -558,12 +559,13 @@ class De1SoC(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
+        "variant"              : "ep4ce15",
         "integrated_sram_size" : 0x800,
         "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
-        from litex_boards.targets import qmtech_ep4ce15
-        Board.__init__(self, qmtech_ep4ce15.BaseSoC, soc_capabilities={
+        from litex_boards.targets import qmtech_ep4cex5
+        Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # "leds",
@@ -573,12 +575,13 @@ class Qmtech_EP4CE15(Board):
 
 class Qmtech_EP4CE55(Board):
     soc_kwargs = {
-        "integrated_sram_size" : 0x800,
-        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
+        "variant"              : "ep4ce55",
+        "integrated_sram_size" :  0x800,
+        "l2_size"              :  2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
-        from litex_boards.targets import qmtech_ep4ce55
-        Board.__init__(self, qmtech_ep4ce55.BaseSoC, soc_capabilities={
+        from litex_boards.targets import qmtech_ep4cex5
+        Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # "leds",
