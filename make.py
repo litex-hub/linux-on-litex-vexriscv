@@ -772,7 +772,6 @@ def main():
             soc.add_xadc()
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
-        soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)

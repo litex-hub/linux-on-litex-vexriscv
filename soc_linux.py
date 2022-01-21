@@ -40,9 +40,8 @@ def SoCLinux(soc_cls, **kwargs):
             "timer0":     1,
         }}
         mem_map = {**soc_cls.mem_map, **{
-            "ethmac":       0xb0000000, # len: 0x2000
-            "spiflash":     0xd0000000,
-            "csr":          0xf0000000,
+            "ethmac":  0xb0000000, # len: 0x2000
+            "csr":     0xf0000000,
         }}
 
         def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
@@ -149,11 +148,6 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP2", int(remote_ip[1]))
             self.add_constant("REMOTEIP3", int(remote_ip[2]))
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
-
-        # Boot configuration -----------------------------------------------------------------------
-        def configure_boot(self):
-            if hasattr(self, "spiflash"):
-                self.add_constant("FLASH_BOOT_ADDRESS", self.mem_map["spiflash"])
 
         # DTS generation ---------------------------------------------------------------------------
         def generate_dts(self, board_name):
