@@ -569,6 +569,21 @@ class Qmtech_EP4CE15(Board):
             # "leds",
         }, bitstream_ext=".sof")
 
+# ... and its bigger brother 
+
+class Qmtech_EP4CE55(Board):
+    soc_kwargs = {
+        "integrated_sram_size" : 0x800,
+        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_ep4ce55
+        Board.__init__(self, qmtech_ep4ce55.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # "leds",
+        }, bitstream_ext=".sof")
+
 #---------------------------------------------------------------------------------------------------
 # Efinix Boards
 #---------------------------------------------------------------------------------------------------
@@ -643,6 +658,7 @@ supported_boards = {
     "de10nano":        De10Nano,
     "de1soc":          De1SoC,
     "qmtech_ep4ce15":  Qmtech_EP4CE15,
+    "qmtech_ep4ce55":  Qmtech_EP4CE55,
 
     # Efinix
     "trion_t120_bga576_dev_kit" : TrionT120BGA576DevKit,
