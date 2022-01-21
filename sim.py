@@ -9,7 +9,7 @@
 import json
 import argparse
 
-from litex.soc.cores.cpu import VexRiscvSMP
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 from migen import *
 
 from litex.build.generic_platform import *
