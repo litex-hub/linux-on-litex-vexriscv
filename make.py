@@ -6,12 +6,16 @@
 # Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
 # SPDX-License-Identifier: BSD-2-Clause
 
+import os
 import sys
 import argparse
-import os
 
-from litex.soc.cores.cpu import VexRiscvSMP
 from litex.soc.integration.builder import Builder
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
+
+
+from litespi.modules import *
+from litespi.opcodes import SpiNorFlashOpCodes as Codes
 
 from soc_linux import SoCLinux
 
@@ -39,9 +43,10 @@ class Board:
 # Xilinx Boards
 #---------------------------------------------------------------------------------------------------
 
-# Acorn CLE 215+ support ---------------------------------------------------------------------------
+# Acorn support ------------------------------------------------------------------------------------
 
-class AcornCLE215(Board):
+class Acorn(Board):
+    soc_kwargs = {"uart_name": "jtag_uart", "sys_clk_freq": int(150e6)}
     def __init__(self):
         from litex_boards.targets import acorn
         Board.__init__(self, acorn.BaseSoC, soc_capabilities={
@@ -51,12 +56,22 @@ class AcornCLE215(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# Acorn PCIe support -------------------------------------------------------------------------------
+
+class AcornPCIe(Board):
+    soc_kwargs = {"with_pcie": True, "uart_name": "crossover", "sys_clk_freq": int(125e6)}
+    def __init__(self):
+        from litex_boards.targets import sqrl_acorn
+        Board.__init__(self, sqrl_acorn.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "pcie",
+        }, bitstream_ext=".bit")
+
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.BaseSoC, soc_capabilities={
@@ -80,10 +95,10 @@ class Arty(Board):
             "icap_bitstream",
         }, bitstream_ext=".bit")
 
-class ArtyA7(Arty):
-    SPIFLASH_DUMMY_CYCLES = 7
+class ArtyA7(Arty): pass
 
-class ArtyS7(Arty):
+class ArtyS7(Board):
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty_s7
         Board.__init__(self, arty_s7.BaseSoC, soc_capabilities={
@@ -108,9 +123,7 @@ class ArtyS7(Arty):
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = MX25L6436E(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import netv2
         Board.__init__(self, netv2.BaseSoC, soc_capabilities={
@@ -148,6 +161,25 @@ class KC705(Board):
     def __init__(self):
         from litex_boards.targets import kc705
         Board.__init__(self, kc705.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "sdcard",
+            #"sata",
+            # GPIOs
+            "leds",
+            # Monitoring
+            "xadc",
+        }, bitstream_ext=".bit")
+
+# VC707 support ---------------------------------------------------------------------------------
+
+class VC707(Board):
+    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
+    def __init__(self):
+        from litex_boards.targets import vc707
+        Board.__init__(self, vc707.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             "ethernet",
@@ -319,9 +351,7 @@ class SDS1104XE(Board):
 # QMTECH WuKong support ---------------------------------------------------------------------------
 
 class Qmtech_WuKong(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = S25FL128L(Codes.READ_1_1_1)
     soc_kwargs = {
         "uart_baudrate": 3e6,
         "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
@@ -341,6 +371,20 @@ class Qmtech_WuKong(Board):
             "framebuffer",
         }, bitstream_ext=".bit")
 
+
+# MNT RKX7 support ---------------------------------------------------------------------------------
+
+class MNT_RKX7(Board):
+    soc_kwargs = {"uart_baudrate": 115200}
+    def __init__(self):
+        from litex_boards.targets import mnt_rkx7
+        Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spisdcard",
+        }, bitstream_ext=".bit")
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -348,9 +392,7 @@ class Qmtech_WuKong(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 11
+    spiflash = N25Q128A13(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
@@ -372,7 +414,7 @@ class ULX3S(Board):
             # Communication
             "serial",
             # Storage
-            "sdcard",
+            "spisdcard",
             # Video,
             "framebuffer",
         }, bitstream_ext=".svf")
@@ -380,9 +422,7 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 8
+    spiflash = W25Q128JV(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
@@ -416,6 +456,18 @@ class OrangeCrab(Board):
             "spisdcard",
         }, bitstream_ext=".bit")
 
+# Butterstick support ------------------------------------------------------------------------------
+
+class ButterStick(Board):
+    soc_kwargs = {"uart_name": "jtag_uart"}
+    def __init__(self):
+        from litex_boards.targets import butterstick
+        Board.__init__(self, butterstick.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        }, bitstream_ext=".bit")
+
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
@@ -446,9 +498,7 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    SPIFLASH_PAGE_SIZE    = 256
-    SPIFLASH_SECTOR_SIZE  = 64*kB
-    SPIFLASH_DUMMY_CYCLES = 8
+    spiflash = IS25LP256D(Codes.READ_1_1_1)
     soc_kwargs = {
         "sys_clk_freq" : int(50e6),
         "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
@@ -480,6 +530,28 @@ class Colorlight_i5(Board):
             # Communication
             "serial",
             "ethernet",
+        }, bitstream_ext=".bit")
+
+# Icesugar Pro support ------------------------------------------------------------------------------------
+
+class IcesugarPro(Board):
+    spiflash = W25Q256JV(Codes.READ_1_1_1)
+    soc_kwargs = {
+        "sys_clk_freq" : int(50e6), # 48MHz default.
+        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import muselab_icesugar_pro
+        Board.__init__(self, muselab_icesugar_pro.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIO
+            # pin collision with user_led
+            #"rgb_led",
+            # Storage
+            "sdcard",
+            # USRMCLK issue unsolved in litex_boards
+            #"spiflash",
         }, bitstream_ext=".bit")
 
 #---------------------------------------------------------------------------------------------------
@@ -516,20 +588,82 @@ class De0Nano(Board):
             "serial",
         }, bitstream_ext=".sof")
 
+# De1-SoC support ----------------------------------------------------------------------------------
+
+class De1SoC(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import de1soc
+        Board.__init__(self, de1soc.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+            "leds",
+            "switches",
+        }, bitstream_ext=".sof")
+
 # QMTECH EP4CE15 support ---------------------------------------------------------------------------
 
 class Qmtech_EP4CE15(Board):
+    soc_kwargs = {
+        "variant"              : "ep4ce15",
+        "integrated_sram_size" : 0x800,
+        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_ep4cex5
+        Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # "leds",
+        }, bitstream_ext=".sof")
+
+# ... and its bigger brother 
+
+class Qmtech_EP4CE55(Board):
+    soc_kwargs = {
+        "variant"              : "ep4ce55",
+        "integrated_sram_size" :  0x800,
+        "l2_size"              :  2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_ep4cex5
+        Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # "leds",
+        }, bitstream_ext=".sof")
+
+#---------------------------------------------------------------------------------------------------
+# Efinix Boards
+#---------------------------------------------------------------------------------------------------
+
+class TrionT120BGA576DevKit(Board):
     soc_kwargs = {
         "integrated_sram_size" : 0x800,
         "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
-        from litex_boards.targets import qmtech_ep4ce15
-        Board.__init__(self, qmtech_ep4ce15.BaseSoC, soc_capabilities={
+        from litex_boards.targets import trion_t120_bga576_dev_kit
+        Board.__init__(self, trion_t120_bga576_dev_kit.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            # "leds",
-        }, bitstream_ext=".sof")
+            # GPIOs
+             "leds",
+        }, bitstream_ext=".bit")
+
+
+class TitaniumTi60F225DevKit(Board):
+    soc_kwargs = {"with_hyperram" : True}
+    def __init__(self):
+        from litex_boards.targets import titanium_ti60_f225_dev_kit
+        Board.__init__(self, titanium_ti60_f225_dev_kit.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+             "leds",
+        }, bitstream_ext=".bit")
+
 
 #---------------------------------------------------------------------------------------------------
 # Build
@@ -537,13 +671,15 @@ class Qmtech_EP4CE15(Board):
 
 supported_boards = {
     # Xilinx
-    "acorn_cle_215":    AcornCLE215,
+    "acorn":            Acorn,
+    "acorn_pcie":       AcornPCIe,
     "arty":             Arty,
     "arty_a7":          ArtyA7,
     "arty_s7":          ArtyS7,
     "netv2":            NeTV2,
     "genesys2":         Genesys2,
     "kc705":            KC705,
+    "vc707":            VC707,
     "kcu105":           KCU105,
     "vc707" :           VC707,
     "zcu104":           ZCU104,
@@ -556,21 +692,30 @@ supported_boards = {
     "alveo_u250":       AlveoU250,
     "qmtech_wukong":    Qmtech_WuKong,
     "sds1104xe":        SDS1104XE,
+    "mnt_rkx7":         MNT_RKX7,
 
     # Lattice
     "versa_ecp5":      VersaECP5,
     "ulx3s":           ULX3S,
     "hadbadge":        HADBadge,
     "orangecrab":      OrangeCrab,
+    "butterstick":     ButterStick,
     "camlink_4k":      CamLink4K,
     "trellisboard":    TrellisBoard,
     "ecpix5":          ECPIX5,
     "colorlight_i5":   Colorlight_i5,
+    "icesugar_pro":    IcesugarPro,
 
     # Altera/Intel
     "de0nano":         De0Nano,
     "de10nano":        De10Nano,
+    "de1soc":          De1SoC,
     "qmtech_ep4ce15":  Qmtech_EP4CE15,
+    "qmtech_ep4ce55":  Qmtech_EP4CE55,
+
+    # Efinix
+    "trion_t120_bga576_dev_kit" : TrionT120BGA576DevKit,
+    "titanium_ti60_f225_dev_kit": TitaniumTi60F225DevKit,
 }
 
 def main():
@@ -621,6 +766,8 @@ def main():
             soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+        if "crossover" in board.soc_capabilities:
+            soc_kwargs.update(uart_name="crossover")
         if "usb_fifo" in board.soc_capabilities:
             soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
@@ -654,9 +801,7 @@ def main():
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
         if "spiflash" in board.soc_capabilities:
-            soc.add_spi_flash(dummy_cycles=board.SPIFLASH_DUMMY_CYCLES)
-            soc.add_constant("SPIFLASH_PAGE_SIZE", board.SPIFLASH_PAGE_SIZE)
-            soc.add_constant("SPIFLASH_SECTOR_SIZE", board.SPIFLASH_SECTOR_SIZE)
+            soc.add_spi_flash(mode="1x", module=board.spiflash, with_master=False)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
@@ -677,7 +822,6 @@ def main():
             soc.add_xadc()
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
-        soc.configure_boot()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
@@ -696,13 +840,21 @@ def main():
         # DTB --------------------------------------------------------------------------------------
         soc.combine_dtb(board_name, args.fdtoverlays)
 
+        # PCIe Driver ------------------------------------------------------------------------------
+        if "pcie" in board.soc_capabilities:
+            from litepcie.software import generate_litepcie_software
+            generate_litepcie_software(soc, os.path.join(builder.output_dir, "driver"))
+
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
             board.load(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Flash bitstream/images (to SPI Flash) ----------------------------------------------------
         if args.flash:
-            board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+            if board_name == "acorn_pcie":
+                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + "_fallback.bin"))
+            else:
+                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:

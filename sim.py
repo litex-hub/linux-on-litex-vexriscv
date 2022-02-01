@@ -9,16 +9,16 @@
 import json
 import argparse
 
-from litex.soc.cores.cpu import VexRiscvSMP
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 from migen import *
 
 from litex.build.generic_platform import *
 from litex.build.sim import SimPlatform
 from litex.build.sim.config import SimConfig
+from litex.build.sim.verilator import verilator_build_args, verilator_build_argdict
 
 from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
-from litex.soc.integration.soc_sdram import *
 from litex.soc.integration.builder import *
 from litex.soc.interconnect import wishbone
 
@@ -30,7 +30,7 @@ from litedram.core.controller import ControllerSettings
 from liteeth.phy.model import LiteEthPHYModel
 from liteeth.mac import LiteEthMAC
 
-from litex.tools.litex_json2dts import generate_dts
+from litex.tools.litex_json2dts_linux import generate_dts
 
 # IOs ----------------------------------------------------------------------------------------------
 
@@ -103,12 +103,7 @@ class SoCLinux(SoCCore):
 
         ram_init = []
         if init_memories:
-            ram_init = get_mem_data({
-                "images/Image":       "0x00000000",
-                "images/rv32.dtb":    "0x00ef0000",
-                "images/rootfs.cpio": "0x01000000",
-                "images/opensbi.bin": "0x00f00000"
-            }, "little")
+            ram_init = get_mem_data("images/boot.json", endianness="little", offset=0x40000000)
 
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = CRG(platform.request("sys_clk"))
@@ -127,7 +122,6 @@ class SoCLinux(SoCCore):
 
         # Supervisor -------------------------------------------------------------------------------
         self.submodules.supervisor = Supervisor()
-        self.add_csr("supervisor")
 
         # SDRAM ------------------------------------------------------------------------------------
         sdram_clk_freq   = int(100e6) # FIXME: use 100MHz timings
@@ -155,14 +149,12 @@ class SoCLinux(SoCCore):
         if with_ethernet:
             # eth phy
             self.submodules.ethphy = LiteEthPHYModel(self.platform.request("eth", 0))
-            self.add_csr("ethphy")
             # eth mac
             ethmac = LiteEthMAC(phy=self.ethphy, dw=32,
                 interface="wishbone", endianness=self.cpu.endianness)
             self.submodules.ethmac = ethmac
             self.add_memory_region("ethmac", self.mem_map["ethmac"], 0x2000, type="io")
             self.add_wb_slave(self.mem_map["ethmac"], self.ethmac.bus)
-            self.add_csr("ethmac")
             self.add_interrupt("ethmac")
 
     def generate_dts(self, board_name):
@@ -181,21 +173,19 @@ class SoCLinux(SoCCore):
 
 def main():
     parser = argparse.ArgumentParser(description="Linux on LiteX-VexRiscv Simulation")
-    parser.add_argument("--with-sdram",           action="store_true",     help="enable SDRAM support")
-    parser.add_argument("--sdram-module",         default="MT48LC16M16",   help="Select SDRAM chip")
-    parser.add_argument("--sdram-data-width",     default=32,              help="Set SDRAM chip data width")
-    parser.add_argument("--sdram-verbosity",      default=0,               help="Set SDRAM checker verbosity")
-    parser.add_argument("--with-ethernet",        action="store_true",     help="enable Ethernet support")
-    parser.add_argument("--local-ip",             default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50)")
-    parser.add_argument("--remote-ip",            default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100)")
-    parser.add_argument("--trace",                action="store_true",     help="enable VCD tracing")
-    parser.add_argument("--trace-start",          default=0,               help="cycle to start VCD tracing")
-    parser.add_argument("--trace-end",            default=-1,              help="cycle to end VCD tracing")
-    parser.add_argument("--opt-level",            default="O3",            help="compilation optimization level")
+    parser.add_argument("--with-sdram",       action="store_true",     help="Enable SDRAM support.")
+    parser.add_argument("--sdram-module",     default="MT48LC16M16",   help="Select SDRAM chip.")
+    parser.add_argument("--sdram-data-width", default=32,              help="Set SDRAM chip data width.")
+    parser.add_argument("--sdram-verbosity",  default=0,               help="Set SDRAM checker verbosity.")
+    parser.add_argument("--with-ethernet",    action="store_true",     help="enable Ethernet support.")
+    parser.add_argument("--local-ip",         default="192.168.1.50",  help="Local IP address of SoC (default=192.168.1.50).")
+    parser.add_argument("--remote-ip",        default="192.168.1.100", help="Remote IP address of TFTP server (default=192.168.1.100).")
     VexRiscvSMP.args_fill(parser)
+    verilator_build_args(parser)
     args = parser.parse_args()
 
     VexRiscvSMP.args_read(args)
+    verilator_build_kwargs = verilator_build_argdict(args)
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
     if args.with_ethernet:
@@ -218,11 +208,9 @@ def main():
             compile_gateware = i != 0 ,
             csr_json         = os.path.join(build_dir, "csr.json"))
         builder.build(sim_config=sim_config,
-            run         = i != 0,
-            opt_level   = args.opt_level,
-            trace       = args.trace,
-            trace_start = int(args.trace_start),
-            trace_end   = int(args.trace_end))
+            run = i != 0,
+            **verilator_build_kwargs
+        )
         if i == 0:
             soc.generate_dts(board_name)
             soc.compile_dts(board_name)
