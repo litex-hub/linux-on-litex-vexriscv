@@ -283,6 +283,34 @@ class XCU1525(Board):
             "sata",
         }, bitstream_ext=".bit")
 
+# AlveoU280 (ES1) support -------------------------------------------------------------------------------
+
+class AlveoU280(Board):
+    soc_kwargs = {
+        "ddram_channel": 0, # pick board DRAM channel and clk
+        "with_pcie": False,
+        "driver": False,
+        "with_led_chaser": False,
+        "with_hbm": True, # will use HBM channel 0, no DRAM
+        "sys_clk_freq": 250e6 # 250MHz for HBM, 150MHz for DRAM
+    }
+    def __init__(self):
+        from litex_boards.targets import alveo_u280
+        Board.__init__(self, alveo_u280.BaseSoC, soc_capabilities={
+            # Communication
+            "serial"
+        }, bitstream_ext=".bit")
+
+# AlveoU250 support -------------------------------------------------------------------------------
+
+class AlveoU250(Board):
+    def __init__(self):
+        from litex_boards.targets import alveo_u250
+        Board.__init__(self, alveo_u250.BaseSoC, soc_capabilities={
+            # Communication
+            "serial"
+        }, bitstream_ext=".bit")
+
 # SDS1104X-E support -------------------------------------------------------------------------------
 
 class SDS1104XE(Board):
@@ -640,6 +668,8 @@ supported_boards = {
     "minispartan6":     MiniSpartan6,
     "pipistrello":      Pipistrello,
     "xcu1525":          XCU1525,
+    "alveo_u280":       AlveoU280,#ES1
+    "alveo_u250":       AlveoU250,
     "qmtech_wukong":    Qmtech_WuKong,
     "sds1104xe":        SDS1104XE,
     "mnt_rkx7":         MNT_RKX7,
