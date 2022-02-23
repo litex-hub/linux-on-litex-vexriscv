@@ -637,7 +637,7 @@ class TrionT120BGA576DevKit(Board):
 class TitaniumTi60F225DevKit(Board):
     soc_kwargs = {
         "with_hyperram" : True,
-        "l2_size"       : 2048, # Use Wishbone and L2 for memory accesses.
+        "sys_clk_freq"  : 300e6,
     }
     def __init__(self):
         from litex_boards.targets import titanium_ti60_f225_dev_kit
