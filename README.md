@@ -57,6 +57,7 @@ This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new p
 | De1-SoC      | Intel Cyclone5      | 5CSEMA5F31    |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
 | Avalanche    | Microsemi PolarFire | MPF300TS      |    100MHz     | 16-bits 256MB DDR3 |   8MB QSPI*   |   1Gbps RGMII*     |   No   |
 | QM T EP4CE15 | Intel Cyclone4      | EP4CE15F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
+| Efinix       | Titanium            | Ti60          |    300MHz     | 16-bit 256MB DDR   |   128MB SPI   |         No         |   Yes  |
 
 > **Note:** \*=present on the board but not yet supported.
 
