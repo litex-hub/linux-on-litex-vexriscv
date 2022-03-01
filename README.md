@@ -9,91 +9,125 @@
                     / /__/ / __/ -_)>  </___/ |/ / -_) \ // __/ (_-</ __/ |/ /
                    /____/_/\__/\__/_/|_|    |___/\__/_\_\/_/ /_/___/\__/|___/
 
-                   Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
+                   Copyright (c) 2019-2022, Linux-on-LiteX-VexRiscv Developers
 ```
 [![](https://github.com/litex-hub/linux-on-litex-vexriscv/workflows/ci/badge.svg)](https://github.com/litex-hub/linux-on-litex-vexriscv/actions) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
-> **Note:** Tested on Ubuntu 18.04.
+> **Note:** Tested on Ubuntu 18.04/20.04 LTS.
 
-## Intro:
-In this repository, we experiment running Linux with [VexRiscv](https://github.com/SpinalHDL/VexRiscv) CPU, a 32-bits Linux Capable RISC-V CPU written in Spinal HDL. A SoC around the VexRiscv CPU is created using LiteX as the SoC builder and LiteX's cores written in Migen Python DSL (LiteDRAM, LiteEth, LiteSDCard). All the components used to create the SoC are open-source and the flexibility of Spinal HDL/Migen allow targeting easily very various FPGA devices/boards: Lattice, Altera, Xilinx, Microsemi FPGAs with SDRAM/DDR/DDR2/DDR3/DDR4 RAMs, RMII/MII/RGMII/1000BASE-X Ethernet PHYs. On Lattice ECP5 FPGAs, the [open source toolchain](https://github.com/SymbiFlow/prjtrellis) allows creating full open-source SoC with open-source cores **and** toolchain!
 
-This project demonstrates **how high level HDLs (Spinal HDL, Migen) enable new possibilities and complement each other**. Results shown here are the results of a productive collaboration between open-source communities.
+[> Intro
+--------
 
-<p align="center"><img src="https://user-images.githubusercontent.com/1450143/102530175-39e2a880-40a1-11eb-80cd-bea7c6cdf49b.png" width="500"></p>
-<p align="center"><img src="https://user-images.githubusercontent.com/1450143/102530313-68f91a00-40a1-11eb-9f97-199e33828bcb.JPG" width="500"></p>
+This project is an experiment to run Linux with [VexRiscv-SMP](https://github.com/SpinalHDL/VexRiscv) CPU, a 32-bits Linux Capable RISC-V CPU written in [Spinal HDL](https://github.com/SpinalHDL/SpinalHDL).  [LiteX](https://github.com/enjoy-digital/litex) is used to create the SoC around the VexRiscv-SMP CPU and provides the infrastructure and peripherals (LiteDRAM, LiteEth, LiteSDCard, etc...). All the components used to create the SoC are open-source and the flexibility of Spinal HDL/LiteX allow targeting easily very various FPGA devices/boards: Xilinx, Intel, Lattice, Microsemi, Efinix FPGAs are tested with very various configuration: SDRAM/DDR/DDR2/DDR3/DDR4 or HyperRAM RAMs, RMII/MII/RGMII/1000BASE-X Ethernet PHYs,  SDCard (in SPI or SD mode), SATA, PCIe, etc...
 
-## Demo:
-[![asciicast](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF.svg)](https://asciinema.org/a/tvvAQPzH29IsEEdmTOUTLEKeF)
+On Lattice ECP5 FPGAs, the [open source toolchain](https://github.com/SymbiFlow/prjtrellis) even allows creating full open-source SoC with open-source cores **and** toolchain!
 
-## Supported boards:
+This project demonstrates **how high level HDLs framework like Spinal HDL, LiteX can enable new possibilities and complement each other**. Results shown here are the results of a productive collaboration between various open-source communities.
 
-| Name         | FPGA Family         | FPGA device   | CPU Frequency |        RAM         |    Flash      |       Ethernet     | SDCard |
-|--------------|---------------------|---------------|---------------|--------------------|---------------|--------------------|--------|
-| Acorn CLE215+| Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits   1GB DDR3 |  16MB QSPI*   |         No         |   No   |
-| Arty(A7)     | Xilinx Artix7       | XC7A35T       |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    | 100Mbps MII        |   No   |
-| ArtyS7       | Xilinx Spartan7     | XC7S50        |    100MHz     | 16-bits 256MB DDR3 |  16MB QSPI    |         No         |   No   |
-| NeTV2        | Xilinx Artix7       | XC7A35T       |    100MHz     | 32-bits 512MB DDR3 |  16MB QSPI*   | 100Mbps RMII       |   Yes  |
-| Genesys2     | Xilinx Kintex7      | XC7K325T      |    125MHz     | 32-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps RGMII*     |   Yes  |
-| KC705        | Xilinx Kintex7      | XC7K325T      |    125MHz     | 64-bits   1GB DDR3 |  32MB QSPI*   |   1Gbps GMII       |   Yes  |
-| KCU105       | Xilinx KintexU      | XCKU40        |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps 1000BASE-X |   Yes  |
-| ZCU104       | Xilinx ZynqU+       | XCZU7EV       |    125MHz     | 64-bits   1GB DDR4 |  64MB QSPI*   |   1Gbps RGMII*     |   Yes* |
-| Nexys4DDR    | Xilinx Artix7       | XC7A100T      |    100MHz     | 16-bits 128MB DDR2 |  16MB QSPI*   | 100Mbps RMII       |   Yes  |
-| Nexys Video  | Xilinx Artix7       | XC7A200T      |    100MHz     | 16-bits 512MB DDR3 |  32MB QSPI*   |   1Gbps RMII*      |   Yes  |
-| miniSpartan6 | Xilinx Spartan6     | XC6SLX25      |     80MHz     | 16-bits  32MB SDR  |   8MB QSPI*   |         No         |   Yes  |
-| Pipistrello  | Xilinx Spartan6     | XC6SLX45      |     83MHz     | 16-bits  64MB LPDDR|  16MB QSPI*   |         No         |   Yes* |
-| XCU1525      | Xilinx Ultrascale+  | XCVU9P        |    125MHz     | 64-bits  4GB DDR4  |      No       |         No         |   No   |
-| AlveoU280    | Xilinx Ultrascale+  | XCU280-ES1    |    250MHz     | 64-bits 2x16GB DDR4* <BR> 1024-bits 2x4GB HBM2 | No | No |  No   |
-| Versa ECP5   | Lattice ECP5        | LFE5UM5G 45F  |     75MHz     | 16-bits 128MB DDR3 |  16MB QSPI*   |   1Gbps RGMII      |   No   |
-| HADBadge     | Lattice ECP5        | LFE5U-45F     |     48MHz     |  8-bits  32MB SDR  |  16MB QSPI*   |         No         |   No   |
-| ULX3S        | Lattice ECP5        | LFE5U 45F     |     50MHz     | 16-bits  32MB SDR  |   4MB QSPI*   |         No         |   Yes  |
-| OrangeCrab   | Lattice ECP5        | LFE5U 25F     |     48MHz     | 16-bits 128MB SDR  |   4MB QSPI*   |         No         |   Yes  |
-| ButterStick  | Lattice ECP5        | LFE5UM5G 85F  |     60MHz     | 16-bits  1GB DDR3  |   4MB QSPI*   |         Yes        |   Yes* |
-| CamLink 4K   | Lattice ECP5        | LFE5U 25F     |     81MHz     | 16-bits 128MB SDR  |      No       |         No         |   No   |
-| TrellisBoard | Lattice ECP5        | LFE5UM5G 85F  |     75MHz     | 32-bits   1GB DDR3 |   16MB QSPI*  |   1Gbps RGMII*     |   Yes  |
-| ECPIX-5      | Lattice ECP5        | LFE5UM5G 85F  |     50MHz     | 16-bits 512MB DDR3 |   16MB QSPI   |   1Gbps RGMII      |   Yes  |
-| De0Nano      | Intel Cyclone4      | EP4CE22F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
-| De10Lite     | Intel MAX10         | 10M50DA       |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
-| De10Nano     | Intel Cyclone5      | 5CSEBA6U23I7  |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   Yes  |
-| De1-SoC      | Intel Cyclone5      | 5CSEMA5F31    |     50MHz     | 16-bits  64MB SDR  |      No       |         No         |   No   |
-| Avalanche    | Microsemi PolarFire | MPF300TS      |    100MHz     | 16-bits 256MB DDR3 |   8MB QSPI*   |   1Gbps RGMII*     |   No   |
-| QM T EP4CE15 | Intel Cyclone4      | EP4CE15F      |     50MHz     | 16-bits  32MB SDR  |      No       |         No         |   No   |
+[> Demo
+----------
 
-> **Note:** \*=present on the board but not yet supported.
+<p align="center"><img src="https://user-images.githubusercontent.com/1450143/156186177-ea06bddc-87b2-4d27-af60-d6d7f3f2929b.png" width="800"></p>
+
+https://user-images.githubusercontent.com/1450143/156186677-87c40a39-2cf5-4ae0-9138-9d2aa0693ab6.mp4
+
+[> Supported boards
+-------------------
+All boards supported in [LiteX-Boards](https://github.com/litex-hub/litex-boards) with...:
+
+ - Enough FPGA logic to fit VexRiscv-SMP + LiteX SoC.
+ - 32MB of RAM (Reduced to 8MB when rootfs can be put on a SDCard).
+ - A UART.
+
+... could run this project.
+
+The board support is directly imported from LiteX-Boards and the configuration is just adapted for the project in `make.py`.
+
+The current list of boards that have been tested and are supported can be obtained by running `./make.py --help`:
+
+    ├── acorn
+    ├── acorn_pcie
+    ├── alveo_u250
+    ├── alveo_u280
+    ├── arty
+    ├── arty_a7
+    ├── arty_s7
+    ├── butterstick
+    ├── camlink_4k
+    ├── colorlight_i5
+    ├── de0nano
+    ├── de10nano
+    ├── de1soc
+    ├── ecpix5
+    ├── genesys2
+    ├── hadbadge
+    ├── icesugar_pro
+    ├── kc705
+    ├── kcu105
+    ├── minispartan6
+    ├── mnt_rkx7
+    ├── netv2
+    ├── nexys4ddr
+    ├── nexys_video
+    ├── orangecrab
+    ├── pipistrello
+    ├── qmtech_ep4ce15
+    ├── qmtech_ep4ce55
+    ├── qmtech_wukong
+    ├── sds1104xe
+    ├── stlv7325
+    ├── titanium_ti60_f225_dev_kit
+    ├── trellisboard
+    ├── trion_t120_bga576_dev_kit
+    ├── ulx3s
+    ├── vc707
+    ├── versa_ecp5
+    ├── xcu1525
+    ├── zcu104
+
+Adding support for another board from LiteX-Boards satisfying the requirements should only be a matter of adding a few lines to `make.py`.
 
 > **Note:** Avalanche support can be found in [RISC-V - Getting Started Guide](https://risc-v-getting-started-guide.readthedocs.io/en/latest/linux-avalanche.html) thanks to [Antmicro](https://antmicro.com).
 
 > **Note:** On FPGA without distributed ram (as Cyclone IV), consider using the --without-out-of-order-decoder option to reduce area.
 
-## Prerequisites
+[> Prerequisites
+----------------
 ```sh
 $ sudo apt install build-essential device-tree-compiler wget git python3-setuptools
 $ git clone https://github.com/litex-hub/linux-on-litex-vexriscv
 $ cd linux-on-litex-vexriscv
 ```
 
-## Pre-built Bitstreams and Linux/OpenSBI images
+[> Pre-built Bitstreams and Linux/OpenSBI images
+------------------------------------------------
+
 Pre-built bistreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
 
-## Installing LiteX
+[> Installing LiteX
+-------------------
 ```sh
 $ wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
 $ chmod +x litex_setup.py
-$ ./litex_setup.py init install --user (--user to install to user directory)
+$ ./litex_setup.py --init --install --user (--user to install to user directory)
 ```
 For more information, please visit: https://github.com/enjoy-digital/litex/wiki/Installation
 
-## Installing a RISC-V toolchain
+[> Installing a RISC-V toolchain
+--------------------------------
 ```sh
 $ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
 $ tar -xvf riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
 $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14/bin/
 ```
-## Installing Verilator (only needed for simulation)
+[> Installing Verilator (only needed for simulation)
+----------------------------------------------------
 ```sh
 $ sudo apt install verilator
 $ sudo apt install libevent-dev libjson-c-dev
 ```
-## Installing OpenOCD (only needed for hardware test)
+[> Installing OpenOCD (only needed for hardware test)
+-----------------------------------------------------
 ```sh
 $ sudo apt install libtool automake pkg-config libusb-1.0-0-dev
 $ git clone https://github.com/ntfreak/openocd.git
@@ -104,7 +138,8 @@ $ make
 $ sudo make install
 ```
 
-## Running the LiteX simulation
+[> Running the LiteX simulation
+-------------------------------
 ```sh
 $ ./sim.py
 ```
@@ -195,15 +230,15 @@ login[48]: root login on 'hvc0'
 # help
 Built-in commands:
 ------------------
-	. : [ [[ alias bg break cd chdir command continue echo eval exec
-	exit export false fg getopts hash help history jobs kill let
-	local printf pwd read readonly return set shift source test times
-	trap true type ulimit umask unalias unset wait
-#
+  . : [ [[ alias bg break cd chdir command continue echo eval exec
+  exit export false fg getopts hash help history jobs kill let
+  local printf pwd read readonly return set shift source test times
+  trap true type ulimit umask unalias unset wait
 #
 ```
 
-## Running on hardware
+[> Running on hardware
+----------------------
 ### Build the FPGA bitstream (optional)
 **The prebuilt bitstreams for the supported boards are provided**, so you can just use them for quick testing, if you want to rebuild the bitstreams you will need to install the toolchain for your FPGA:
 
@@ -264,7 +299,8 @@ The images will be loaded to RAM and you should see Linux booting :)
 ### Configure/Use the peripherals
 Please visit the [HOWTO](https://github.com/litex-hub/linux-on-litex-vexriscv/blob/master/HOWTO.md) document to learn how to configure and use the peripherals from Linux.
 
-## Generating the Linux binaries (optional)
+[> Generating the Linux binaries (optional)
+-------------------------------------------
 ```sh
 $ git clone http://github.com/buildroot/buildroot
 $ cd buildroot
@@ -273,7 +309,8 @@ $ make
 ```
 The binaries are located in *output/images/*.
 
-## Generating the OpenSBI binary (optional)
+[> Generating the OpenSBI binary (optional)
+-------------------------------------------
 ```sh
 $ git clone https://github.com/litex-hub/opensbi --branch 0.8-linux-on-litex-vexriscv
 $ cd opensbi
@@ -282,13 +319,15 @@ $ make CROSS_COMPILE=riscv-none-embed- PLATFORM=litex/vexriscv
 
 The binary will be located at *build/platform/litex/vexriscv/firmware/fw_jump.bin*.
 
-## Generating the VexRiscv Linux variant (optional)
+[> Generating the VexRiscv Linux variant (optional)
+---------------------------------------------------
 
 If the VexRiscv configuration you ask isn't already generated, you will need to install java and SBT on your machine to enable their local on demande generation.
 
 To install java and SBT see Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
 
-## Udev rules (optional)
+[> Udev rules (optional)
+----------------------------
 Not needed but can make loading/flashing bitstreams easier:
 ```sh
 $ git clone https://github.com/litex-hub/litex-buildenv-udev

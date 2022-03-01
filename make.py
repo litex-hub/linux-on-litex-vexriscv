@@ -720,7 +720,7 @@ supported_boards = {
 def main():
     description = "Linux on LiteX-VexRiscv\n\n"
     description += "Available boards:\n"
-    for name in supported_boards.keys():
+    for name in sorted(supported_boards.keys()):
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--board",          required=True,            help="FPGA board")
