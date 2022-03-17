@@ -3,7 +3,7 @@
 #
 # This file is part of Linux-on-LiteX-VexRiscv
 #
-# Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
+# Copyright (c) 2019-2022, Linux-on-LiteX-VexRiscv Developers
 # SPDX-License-Identifier: BSD-2-Clause
 
 import os
@@ -21,15 +21,14 @@ from soc_linux import SoCLinux
 
 kB = 1024
 
-# Board definition----------------------------------------------------------------------------------
+# Board Definition ---------------------------------------------------------------------------------
 
 class Board:
     soc_kwargs = {"integrated_rom_size": 0x10000, "l2_size": 0}
-    def __init__(self, soc_cls=None, soc_capabilities={}, soc_constants={}, bitstream_ext=""):
+    def __init__(self, soc_cls=None, soc_capabilities={}, soc_constants={}):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
         self.soc_constants    = soc_constants
-        self.bitstream_ext    = bitstream_ext
 
     def load(self, filename):
         prog = self.platform.create_programmer()
@@ -54,7 +53,7 @@ class Acorn(Board):
             "serial",
             # Storage
             "sata",
-        }, bitstream_ext=".bit")
+        })
 
 # Acorn PCIe support -------------------------------------------------------------------------------
 
@@ -66,7 +65,11 @@ class AcornPCIe(Board):
             # Communication
             "serial",
             "pcie",
-        }, bitstream_ext=".bit")
+        })
+
+    def flash(self, filename):
+        prog = self.platform.create_programmer()
+        prog.flash(0, filename.replace(".bin", "_fallback.bin"))
 
 # Arty support -------------------------------------------------------------------------------------
 
@@ -93,7 +96,7 @@ class Arty(Board):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
-        }, bitstream_ext=".bit")
+        })
 
 class ArtyA7(Arty): pass
 
@@ -118,7 +121,7 @@ class ArtyS7(Board):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
-        }, bitstream_ext=".bit")
+        })
 
 # NeTV2 support ------------------------------------------------------------------------------------
 
@@ -139,7 +142,7 @@ class NeTV2(Board):
             "framebuffer",
             # Monitoring
             "xadc",
-        }, bitstream_ext=".bit")
+        })
 
 # Genesys2 support ---------------------------------------------------------------------------------
 
@@ -152,7 +155,7 @@ class Genesys2(Board):
             "ethernet",
             # Storage
             "sdcard",
-        }, bitstream_ext=".bit")
+        })
 
 # KC705 support ---------------------------------------------------------------------------------
 
@@ -171,7 +174,7 @@ class KC705(Board):
             "leds",
             # Monitoring
             "xadc",
-        }, bitstream_ext=".bit")
+        })
 
 # VC707 support ---------------------------------------------------------------------------------
 
@@ -190,7 +193,7 @@ class VC707(Board):
             "leds",
             # Monitoring
             "xadc",
-        }, bitstream_ext=".bit")
+        })
 
 # KCU105 support -----------------------------------------------------------------------------------
 
@@ -204,7 +207,7 @@ class KCU105(Board):
             "ethernet",
             # Storage
             "sdcard",
-        }, bitstream_ext=".bit")
+        })
 
 # ZCU104 support -----------------------------------------------------------------------------------
 
@@ -214,7 +217,7 @@ class ZCU104(Board):
         Board.__init__(self, zcu104.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        }, bitstream_ext=".bit")
+        })
 
 # Nexys4DDR support --------------------------------------------------------------------------------
 
@@ -229,7 +232,7 @@ class Nexys4DDR(Board):
             "sdcard",
             # Video
             "framebuffer",
-        }, bitstream_ext=".bit")
+        })
 
 # NexysVideo support -------------------------------------------------------------------------------
 
@@ -243,7 +246,7 @@ class NexysVideo(Board):
             "sdcard",
             # Video
             "framebuffer",
-        }, bitstream_ext=".bit")
+        })
 
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
@@ -258,7 +261,7 @@ class MiniSpartan6(Board):
             "sdcard",
             # Video
             "framebuffer",
-        }, bitstream_ext=".bit")
+        })
 
 # Pipistrello support ------------------------------------------------------------------------------
 
@@ -269,7 +272,7 @@ class Pipistrello(Board):
         Board.__init__(self, pipistrello.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        }, bitstream_ext=".bit")
+        })
 
 # XCU1525 support ----------------------------------------------------------------------------------
 
@@ -281,25 +284,21 @@ class XCU1525(Board):
             "serial",
             # Storage
             "sata",
-        }, bitstream_ext=".bit")
+        })
 
 # AlveoU280 (ES1) support -------------------------------------------------------------------------------
 
 class AlveoU280(Board):
     soc_kwargs = {
-        "ddram_channel": 0, # pick board DRAM channel and clk
-        "with_pcie": False,
-        "driver": False,
-        "with_led_chaser": False,
-        "with_hbm": True, # will use HBM channel 0, no DRAM
-        "sys_clk_freq": 250e6 # 250MHz for HBM, 150MHz for DRAM
+        "with_hbm"      : True, # Use HBM @ 250MHz (Min).
+        "sys_clk_freq"  : 250e6
     }
     def __init__(self):
         from litex_boards.targets import alveo_u280
         Board.__init__(self, alveo_u280.BaseSoC, soc_capabilities={
             # Communication
             "serial"
-        }, bitstream_ext=".bit")
+        })
 
 # AlveoU250 support -------------------------------------------------------------------------------
 
@@ -309,7 +308,7 @@ class AlveoU250(Board):
         Board.__init__(self, alveo_u250.BaseSoC, soc_capabilities={
             # Communication
             "serial"
-        }, bitstream_ext=".bit")
+        })
 
 # SDS1104X-E support -------------------------------------------------------------------------------
 
@@ -323,7 +322,7 @@ class SDS1104XE(Board):
             "ethernet",
             # Video
             "framebuffer",
-        }, bitstream_ext=".bit")
+        })
 
     def load(self, filename):
         prog = self.platform.create_programmer()
@@ -334,8 +333,8 @@ class SDS1104XE(Board):
 class Qmtech_WuKong(Board):
     spiflash = S25FL128L(Codes.READ_1_1_1)
     soc_kwargs = {
-        "uart_baudrate": 3e6,
-        "l2_size" : 2048,              # Use Wishbone and L2 for memory accesses.
+        "uart_baudrate" : 3e6,
+        "l2_size"       : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_wukong
@@ -350,7 +349,7 @@ class Qmtech_WuKong(Board):
             # Video
             #"video_terminal",
             "framebuffer",
-        }, bitstream_ext=".bit")
+        })
 
 
 # MNT RKX7 support ---------------------------------------------------------------------------------
@@ -364,7 +363,7 @@ class MNT_RKX7(Board):
             "serial",
             # Storage
             "spisdcard",
-        }, bitstream_ext=".bit")
+        })
 
 # STLV7325 -----------------------------------------------------------------------------------------
 
@@ -377,7 +376,7 @@ class STLV7325(Board):
             "serial",
             # Storage
             "sdcard",
-        }, bitstream_ext=".bit")
+        })
 
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
@@ -396,7 +395,7 @@ class VersaECP5(Board):
             "ethernet",
             # Storage
             "spiflash",
-        }, bitstream_ext=".bit")
+        })
 
 # ULX3S support ------------------------------------------------------------------------------------
 
@@ -411,7 +410,7 @@ class ULX3S(Board):
             "spisdcard",
             # Video,
             "framebuffer",
-        }, bitstream_ext=".svf")
+        })
 
 # HADBadge support ---------------------------------------------------------------------------------
 
@@ -425,7 +424,7 @@ class HADBadge(Board):
             "serial",
             # Storage
             "spiflash",
-        }, bitstream_ext=".bit")
+        })
 
     def load(self, filename):
         os.system("dfu-util --alt 2 --download {} --reset".format(filename))
@@ -448,7 +447,7 @@ class OrangeCrab(Board):
             "i2c",
             # Storage
             "spisdcard",
-        }, bitstream_ext=".bit")
+        })
 
 # Butterstick support ------------------------------------------------------------------------------
 
@@ -460,7 +459,7 @@ class ButterStick(Board):
             # Communication
             "serial",
             "ethernet",
-        }, bitstream_ext=".bit")
+        })
 
 # Cam Link 4K support ------------------------------------------------------------------------------
 
@@ -471,7 +470,7 @@ class CamLink4K(Board):
         Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        }, bitstream_ext=".bit")
+        })
 
     def load(self, filename):
         os.system("camlink configure {}".format(filename))
@@ -487,7 +486,7 @@ class TrellisBoard(Board):
             "serial",
             # Storage
             "sdcard",
-        }, bitstream_ext=".bit")
+        })
 
 # ECPIX5 support -----------------------------------------------------------------------------------
 
@@ -503,15 +502,12 @@ class ECPIX5(Board):
             # Communication
             "serial",
             "ethernet",
-            # GPIO
-            #"rgb_led",
             # Storage
-            "sata",
             "sdcard",
             "spiflash",
-        }, bitstream_ext=".bit")
+        })
 
-# Colorlight i5 support ------------------------------------------------------------------------------------
+# Colorlight i5 support ----------------------------------------------------------------------------
 
 class Colorlight_i5(Board):
     soc_kwargs = {
@@ -524,9 +520,9 @@ class Colorlight_i5(Board):
             # Communication
             "serial",
             "ethernet",
-        }, bitstream_ext=".bit")
+        })
 
-# Icesugar Pro support ------------------------------------------------------------------------------------
+# Icesugar Pro support -----------------------------------------------------------------------------
 
 class IcesugarPro(Board):
     spiflash = W25Q256JV(Codes.READ_1_1_1)
@@ -539,14 +535,9 @@ class IcesugarPro(Board):
         Board.__init__(self, muselab_icesugar_pro.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            # GPIO
-            # pin collision with user_led
-            #"rgb_led",
             # Storage
             "sdcard",
-            # USRMCLK issue unsolved in litex_boards
-            #"spiflash",
-        }, bitstream_ext=".bit")
+        })
 
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
@@ -556,8 +547,8 @@ class IcesugarPro(Board):
 
 class De10Nano(Board):
     soc_kwargs = {
-        "with_mister_sdram": True, # Add MiSTer SDRAM extension.
-        "l2_size" : 2048,          # Use Wishbone and L2 for memory accesses.
+        "with_mister_sdram" : True, # Add MiSTer SDRAM extension.
+        "l2_size"           : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import de10nano
@@ -569,7 +560,7 @@ class De10Nano(Board):
             # GPIOs
             "leds",
             "switches",
-        }, bitstream_ext=".sof")
+        })
 
 # De0Nano support ----------------------------------------------------------------------------------
 
@@ -580,7 +571,7 @@ class De0Nano(Board):
         Board.__init__(self, de0nano.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-        }, bitstream_ext=".sof")
+        })
 
 # De1-SoC support ----------------------------------------------------------------------------------
 
@@ -594,7 +585,7 @@ class De1SoC(Board):
             # GPIOs
             "leds",
             "switches",
-        }, bitstream_ext=".sof")
+        })
 
 # QMTECH EP4CE15 support ---------------------------------------------------------------------------
 
@@ -609,8 +600,7 @@ class Qmtech_EP4CE15(Board):
         Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            # "leds",
-        }, bitstream_ext=".sof")
+        })
 
 # ... and its bigger brother 
 
@@ -625,8 +615,7 @@ class Qmtech_EP4CE55(Board):
         Board.__init__(self, qmtech_ep4cex5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            # "leds",
-        }, bitstream_ext=".sof")
+        })
 
 #---------------------------------------------------------------------------------------------------
 # Efinix Boards
@@ -644,8 +633,7 @@ class TrionT120BGA576DevKit(Board):
             "serial",
             # GPIOs
              "leds",
-        }, bitstream_ext=".bit")
-
+        })
 
 class TitaniumTi60F225DevKit(Board):
     soc_kwargs = {
@@ -660,9 +648,8 @@ class TitaniumTi60F225DevKit(Board):
             # Storage
             "sdcard",
             # GPIOs
-             "leds",
-        }, bitstream_ext=".bit")
-
+            "leds",
+        })
 
 #---------------------------------------------------------------------------------------------------
 # Build
@@ -846,14 +833,11 @@ def main():
 
         # Load FPGA bitstream ----------------------------------------------------------------------
         if args.load:
-            board.load(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+            board.load(filename=builder.get_bitstream_filename(mode="sram"))
 
         # Flash bitstream/images (to SPI Flash) ----------------------------------------------------
         if args.flash:
-            if board_name == "acorn_pcie":
-                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + "_fallback.bin"))
-            else:
-                board.flash(filename=os.path.join(builder.gateware_dir, soc.build_name + board.bitstream_ext))
+            board.flash(filename=builder.get_bitstream_filename(mode="flash"))
 
         # Generate SoC documentation ---------------------------------------------------------------
         if args.doc:
