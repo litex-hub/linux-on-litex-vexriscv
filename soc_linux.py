@@ -1,10 +1,8 @@
 #
 # This file is part of Linux-on-LiteX-VexRiscv
 #
-# Copyright (c) 2019-2021, Linux-on-LiteX-VexRiscv Developers
+# Copyright (c) 2019-2022, Linux-on-LiteX-VexRiscv Developers
 # SPDX-License-Identifier: BSD-2-Clause
-
-#!/usr/bin/env python3
 
 import os
 import json
@@ -38,9 +36,6 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_variant    = cpu_variant,
                 uart_baudrate  = uart_baudrate,
                 **kwargs)
-
-            # Add linker region for OpenSBI
-            self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
 
         # Leds -------------------------------------------------------------------------------------
         def add_leds(self):

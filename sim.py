@@ -101,8 +101,7 @@ class SoCLinux(SoCCore):
             uart_name                = "sim")
         self.add_config("DISABLE_DELAYS")
 
-        # Add linker region for OpenSBI
-        self.add_memory_region("opensbi", self.mem_map["main_ram"] + 0x00f00000, 0x80000, type="cached+linker")
+        # Boot from OpenSBI.
         self.add_constant("ROM_BOOT_ADDRESS", self.bus.regions["opensbi"].origin)
 
         # Supervisor -------------------------------------------------------------------------------
