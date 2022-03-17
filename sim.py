@@ -115,7 +115,6 @@ class SoCLinux(SoCCore):
         self.add_sdram("sdram",
             phy           = self.sdrphy,
             module        = sdram_module,
-            origin        = self.mem_map["main_ram"],
             l2_cache_size = 0)
         self.add_constant("SDRAM_TEST_DISABLE") # Skip SDRAM test to avoid corrupting pre-initialized contents.
 
