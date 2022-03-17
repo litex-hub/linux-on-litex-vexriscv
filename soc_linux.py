@@ -39,10 +39,6 @@ def SoCLinux(soc_cls, **kwargs):
             "uart":       0,
             "timer0":     1,
         }}
-        mem_map = {**soc_cls.mem_map, **{
-            "ethmac":  0xb0000000, # len: 0x2000
-            "csr":     0xf0000000,
-        }}
 
         def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
 

@@ -86,11 +86,6 @@ class SoCLinux(SoCCore):
         "uart":   0,
         "timer0": 1,
     }}
-    mem_map = {**SoCCore.mem_map, **{
-        "ethmac":   0xb0000000,
-        "spiflash": 0xd0000000,
-        "csr":      0xf0000000,
-    }}
 
     def __init__(self,
         init_memories    = False,
