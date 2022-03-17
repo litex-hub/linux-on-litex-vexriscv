@@ -30,11 +30,6 @@ from litex.tools.litex_json2dts_linux import generate_dts
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
-        interrupt_map = {**soc_cls.interrupt_map, **{
-            "uart":       0,
-            "timer0":     1,
-        }}
-
         def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------

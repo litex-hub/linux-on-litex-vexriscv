@@ -77,11 +77,6 @@ class Supervisor(Module, AutoCSR):
 # SoCLinux -----------------------------------------------------------------------------------------
 
 class SoCLinux(SoCCore):
-    interrupt_map = {**SoCCore.interrupt_map, **{
-        "uart":   0,
-        "timer0": 1,
-    }}
-
     def __init__(self,
         init_memories    = False,
         sdram_module     = "MT48LC16M16",
