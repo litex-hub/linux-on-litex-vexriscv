@@ -19,12 +19,14 @@ from litespi.opcodes import SpiNorFlashOpCodes as Codes
 
 from soc_linux import SoCLinux
 
-kB = 1024
-
 # Board Definition ---------------------------------------------------------------------------------
 
 class Board:
-    soc_kwargs = {"integrated_rom_size": 0x10000, "l2_size": 0}
+    soc_kwargs = {
+        "integrated_rom_size"  : 0x10000,
+        "integrated_sram_size" : 0x1800,
+        "l2_size"              : 0
+    }
     def __init__(self, soc_cls=None, soc_capabilities={}, soc_constants={}):
         self.soc_cls          = soc_cls
         self.soc_capabilities = soc_capabilities
@@ -188,7 +190,6 @@ class VC707(Board):
             "ethernet",
             # Storage
             "sdcard",
-            #"sata",
             # GPIOs
             "leds",
             # Monitoring
@@ -290,8 +291,8 @@ class XCU1525(Board):
 
 class AlveoU280(Board):
     soc_kwargs = {
-        "with_hbm"      : True, # Use HBM @ 250MHz (Min).
-        "sys_clk_freq"  : 250e6
+        "with_hbm"     : True, # Use HBM @ 250MHz (Min).
+        "sys_clk_freq" : 250e6
     }
     def __init__(self):
         from litex_boards.targets import alveo_u280
@@ -331,7 +332,7 @@ class SDS1104XE(Board):
 # QMTECH WuKong support ---------------------------------------------------------------------------
 
 class Qmtech_WuKong(Board):
-    spiflash = S25FL128L(Codes.READ_1_1_1)
+    spiflash   = S25FL128L(Codes.READ_1_1_1)
     soc_kwargs = {
         "uart_baudrate" : 3e6,
         "l2_size"       : 2048, # Use Wishbone and L2 for memory accesses.
@@ -345,9 +346,7 @@ class Qmtech_WuKong(Board):
             "ethernet",
             # Storage
             "spiflash",
-            #"spisdcard",
             # Video
-            #"video_terminal",
             "framebuffer",
         })
 
@@ -385,7 +384,7 @@ class STLV7325(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
-    spiflash = N25Q128A13(Codes.READ_1_1_1)
+    spiflash   = N25Q128A13(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
@@ -415,7 +414,7 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
-    spiflash = W25Q128JV(Codes.READ_1_1_1)
+    spiflash   = W25Q128JV(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
@@ -491,7 +490,7 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    spiflash = IS25LP256D(Codes.READ_1_1_1)
+    spiflash   = IS25LP256D(Codes.READ_1_1_1)
     soc_kwargs = {
         "sys_clk_freq" : int(50e6),
         "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
@@ -525,7 +524,7 @@ class Colorlight_i5(Board):
 # Icesugar Pro support -----------------------------------------------------------------------------
 
 class IcesugarPro(Board):
-    spiflash = W25Q256JV(Codes.READ_1_1_1)
+    spiflash   = W25Q256JV(Codes.READ_1_1_1)
     soc_kwargs = {
         "sys_clk_freq" : int(50e6), # 48MHz default.
         "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
@@ -591,9 +590,9 @@ class De1SoC(Board):
 
 class Qmtech_EP4CE15(Board):
     soc_kwargs = {
-        "variant"              : "ep4ce15",
+        "variant" : "ep4ce15",
+        "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
         "integrated_sram_size" : 0x800,
-        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4cex5
@@ -606,9 +605,8 @@ class Qmtech_EP4CE15(Board):
 
 class Qmtech_EP4CE55(Board):
     soc_kwargs = {
-        "variant"              : "ep4ce55",
-        "integrated_sram_size" :  0x800,
-        "l2_size"              :  2048, # Use Wishbone and L2 for memory accesses.
+        "variant" : "ep4ce55",
+        "l2_size" :  2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4cex5
@@ -622,10 +620,7 @@ class Qmtech_EP4CE55(Board):
 #---------------------------------------------------------------------------------------------------
 
 class TrionT120BGA576DevKit(Board):
-    soc_kwargs = {
-        "integrated_sram_size" : 0x800,
-        "l2_size"              : 2048, # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import trion_t120_bga576_dev_kit
         Board.__init__(self, trion_t120_bga576_dev_kit.BaseSoC, soc_capabilities={
@@ -673,7 +668,7 @@ supported_boards = {
     "minispartan6":     MiniSpartan6,
     "pipistrello":      Pipistrello,
     "xcu1525":          XCU1525,
-    "alveo_u280":       AlveoU280,#ES1
+    "alveo_u280":       AlveoU280,
     "alveo_u250":       AlveoU250,
     "qmtech_wukong":    Qmtech_WuKong,
     "sds1104xe":        SDS1104XE,
