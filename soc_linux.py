@@ -30,11 +30,6 @@ from litex.tools.litex_json2dts_linux import generate_dts
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
-        csr_map = {**soc_cls.csr_map, **{
-            "ctrl":       0,
-            "uart":       2,
-            "timer0":     3,
-        }}
         interrupt_map = {**soc_cls.interrupt_map, **{
             "uart":       0,
             "timer0":     1,

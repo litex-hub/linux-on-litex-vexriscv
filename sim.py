@@ -77,11 +77,6 @@ class Supervisor(Module, AutoCSR):
 # SoCLinux -----------------------------------------------------------------------------------------
 
 class SoCLinux(SoCCore):
-    csr_map = {**SoCCore.csr_map, **{
-        "ctrl":   0,
-        "uart":   2,
-        "timer0": 3,
-    }}
     interrupt_map = {**SoCCore.interrupt_map, **{
         "uart":   0,
         "timer0": 1,
