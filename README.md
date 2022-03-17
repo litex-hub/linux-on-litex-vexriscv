@@ -270,15 +270,17 @@ $ ./make.py --board=XXYY --cpu-count=X --load
 ### Load the Linux images over Serial
 All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
 
-To load the Linux images over Serial, use the [lxterm](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
+To load the Linux images over Serial, use the [litex_term](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
 ```sh
-$ lxterm --images=images/boot.json /dev/ttyUSBX --speed=1e6
+$ litex_term --images=images/boot.json /dev/ttyUSBX
 ```
 The images should load and you should see Linux booting :)
 
-> **Note**: lxterm is automatically installed with LiteX.
+> **Note**: litex_term is automatically installed with LiteX.
 
-> **Note:** since on some boards JTAG/Serial is shared, when you will run lxterm after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
+> **Note**: By default baudrate is set to 115200 bauds. You can use `--uart-baudrate` argument of `make.py` to increase it on the board and use `--speed` argument of `litex_term` to reflect the change. This is useful to increase upload speed when binaries can only be uploaded over Serial.
+
+> **Note:** Since on some boards JTAG/Serial is shared, when you will run litex_term after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
 
 Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
 

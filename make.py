@@ -13,7 +13,6 @@ import argparse
 from litex.soc.integration.builder import Builder
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
-
 from litespi.modules import *
 from litespi.opcodes import SpiNorFlashOpCodes as Codes
 
@@ -162,7 +161,6 @@ class Genesys2(Board):
 # KC705 support ---------------------------------------------------------------------------------
 
 class KC705(Board):
-    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
     def __init__(self):
         from litex_boards.targets import kc705
         Board.__init__(self, kc705.BaseSoC, soc_capabilities={
@@ -181,7 +179,6 @@ class KC705(Board):
 # VC707 support ---------------------------------------------------------------------------------
 
 class VC707(Board):
-    soc_kwargs = {"uart_baudrate": 500e3} # 1Mbauds not supported by CP210x.
     def __init__(self):
         from litex_boards.targets import vc707
         Board.__init__(self, vc707.BaseSoC, soc_capabilities={
@@ -199,7 +196,6 @@ class VC707(Board):
 # KCU105 support -----------------------------------------------------------------------------------
 
 class KCU105(Board):
-    soc_kwargs = {"uart_baudrate": 115.2e3} # FIXME: understand why not working with more.
     def __init__(self):
         from litex_boards.targets import kcu105
         Board.__init__(self, kcu105.BaseSoC, soc_capabilities={
@@ -333,10 +329,7 @@ class SDS1104XE(Board):
 
 class Qmtech_WuKong(Board):
     spiflash   = S25FL128L(Codes.READ_1_1_1)
-    soc_kwargs = {
-        "uart_baudrate" : 3e6,
-        "l2_size"       : 2048, # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import qmtech_wukong
         Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
@@ -354,7 +347,6 @@ class Qmtech_WuKong(Board):
 # MNT RKX7 support ---------------------------------------------------------------------------------
 
 class MNT_RKX7(Board):
-    soc_kwargs = {"uart_baudrate": 115200}
     def __init__(self):
         from litex_boards.targets import mnt_rkx7
         Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
@@ -367,7 +359,6 @@ class MNT_RKX7(Board):
 # STLV7325 -----------------------------------------------------------------------------------------
 
 class STLV7325(Board):
-    soc_kwargs = {"uart_baudrate": 115200}
     def __init__(self):
         from litex_boards.targets import stlv7325
         Board.__init__(self, stlv7325.BaseSoC, soc_capabilities={
@@ -705,19 +696,20 @@ def main():
     for name in sorted(supported_boards.keys()):
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--board",          required=True,            help="FPGA board")
-    parser.add_argument("--device",         default=None,             help="FPGA device")
-    parser.add_argument("--variant",        default=None,             help="FPGA board variant")
-    parser.add_argument("--toolchain",      default=None,             help="Toolchain use to build")
-    parser.add_argument("--build",          action="store_true",      help="Build bitstream")
-    parser.add_argument("--load",           action="store_true",      help="Load bitstream (to SRAM)")
-    parser.add_argument("--flash",          action="store_true",      help="Flash bitstream/images (to SPI Flash)")
-    parser.add_argument("--doc",            action="store_true",      help="Build documentation")
-    parser.add_argument("--local-ip",       default="192.168.1.50",   help="Local IP address")
-    parser.add_argument("--remote-ip",      default="192.168.1.100",  help="Remote IP address of TFTP server")
-    parser.add_argument("--spi-data-width", type=int, default=8,      help="SPI data width (maximum transfered bits per xfer)")
-    parser.add_argument("--spi-clk-freq",   type=int, default=1e6,    help="SPI clock frequency")
-    parser.add_argument("--fdtoverlays",    default="",               help="Device Tree Overlays to apply")
+    parser.add_argument("--board",          required=True,               help="FPGA board.")
+    parser.add_argument("--device",         default=None,                help="FPGA device.")
+    parser.add_argument("--variant",        default=None,                help="FPGA board variant.")
+    parser.add_argument("--toolchain",      default=None,                help="Toolchain use to build.")
+    parser.add_argument("--uart-baudrate",  default=115.2e3, type=float, help="UART baudrate.")
+    parser.add_argument("--build",          action="store_true",         help="Build bitstream.")
+    parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
+    parser.add_argument("--flash",          action="store_true",         help="Flash bitstream/images (to Flash).")
+    parser.add_argument("--doc",            action="store_true",         help="Build documentation.")
+    parser.add_argument("--local-ip",       default="192.168.1.50",      help="Local IP address.")
+    parser.add_argument("--remote-ip",      default="192.168.1.100",     help="Remote IP address of TFTP server.")
+    parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
+    parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
+    parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -747,6 +739,7 @@ def main():
             soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+        soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
         if "crossover" in board.soc_capabilities:
             soc_kwargs.update(uart_name="crossover")
         if "usb_fifo" in board.soc_capabilities:
