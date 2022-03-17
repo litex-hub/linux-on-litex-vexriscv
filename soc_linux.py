@@ -28,12 +28,12 @@ from litex.tools.litex_json2dts_linux import generate_dts
 
 def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
-        def __init__(self, cpu_variant="linux", uart_baudrate=1e6, **kwargs):
+        def __init__(self, uart_baudrate=1e6, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------
             soc_cls.__init__(self,
                 cpu_type       = "vexriscv_smp",
-                cpu_variant    = cpu_variant,
+                cpu_variant    = "linux",
                 uart_baudrate  = uart_baudrate,
                 **kwargs)
 
