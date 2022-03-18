@@ -714,7 +714,7 @@ def main():
 
         # If Wishbone Memory is forced, enabled L2 Cache (if not already):
         if args.with_wishbone_memory:
-            soc_kwargs["l2_size"] = soc_kwargs.get("l2_size", 2048) # Defaults to 2048.
+            soc_kwargs["l2_size"] = max(soc_kwargs["l2_size"], 2048) # Defaults to 2048.
         # Else if board is configured to use L2 Cache, force use of Wishbone Memory on VexRiscv-SMP.
         else:
             args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
