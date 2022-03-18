@@ -728,6 +728,8 @@ def main():
             soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+
+        # UART.
         soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
         if "crossover" in board.soc_capabilities:
             soc_kwargs.update(uart_name="crossover")
@@ -735,6 +737,10 @@ def main():
             soc_kwargs.update(uart_name="usb_fifo")
         if "usb_acm" in board.soc_capabilities:
             soc_kwargs.update(uart_name="usb_acm")
+
+        # Peripherals
+        if "leds" in board.soc_capabilities:
+            soc_kwargs.update(with_led_chaser=True)
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
         if "sata" in board.soc_capabilities:

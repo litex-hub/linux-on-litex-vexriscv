@@ -36,10 +36,6 @@ def SoCLinux(soc_cls, **kwargs):
                 cpu_variant    = "linux",
                 **kwargs)
 
-        # Leds -------------------------------------------------------------------------------------
-        def add_leds(self):
-            self.submodules.leds = GPIOOut(Cat(self.platform.request_all("user_led")))
-
         # RGB Led ----------------------------------------------------------------------------------
         def add_rgb_led(self):
             rgb_led_pads = self.platform.request("rgb_led", 0)
