@@ -329,7 +329,6 @@ class SDS1104XE(Board):
 
 class Qmtech_WuKong(Board):
     spiflash   = S25FL128L(Codes.READ_1_1_1)
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import qmtech_wukong
         Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
@@ -376,7 +375,6 @@ class STLV7325(Board):
 
 class VersaECP5(Board):
     spiflash   = N25Q128A13(Codes.READ_1_1_1)
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.BaseSoC, soc_capabilities={
@@ -422,10 +420,7 @@ class HADBadge(Board):
 # OrangeCrab support -------------------------------------------------------------------------------
 
 class OrangeCrab(Board):
-    soc_kwargs = {
-        "sys_clk_freq" : int(64e6), # Increase sys_clk_freq to 64MHz (48MHz default).
-        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"sys_clk_freq" : int(64e6) } # Increase sys_clk_freq to 64MHz (48MHz default).
     def __init__(self):
         from litex_boards.targets import orangecrab
         os.system("git clone https://github.com/litex-hub/valentyusb -b hw_cdc_eptri")
@@ -454,7 +449,6 @@ class ButterStick(Board):
 # Cam Link 4K support ------------------------------------------------------------------------------
 
 class CamLink4K(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import camlink_4k
         Board.__init__(self, camlink_4k.BaseSoC, soc_capabilities={
@@ -468,7 +462,6 @@ class CamLink4K(Board):
 # TrellisBoard support -----------------------------------------------------------------------------
 
 class TrellisBoard(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import trellisboard
         Board.__init__(self, trellisboard.BaseSoC, soc_capabilities={
@@ -482,10 +475,6 @@ class TrellisBoard(Board):
 
 class ECPIX5(Board):
     spiflash   = IS25LP256D(Codes.READ_1_1_1)
-    soc_kwargs = {
-        "sys_clk_freq" : int(50e6),
-        "l2_size"      : 2048, # Use Wishbone and L2 for memory accesses.
-    }
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
@@ -500,10 +489,7 @@ class ECPIX5(Board):
 # Colorlight i5 support ----------------------------------------------------------------------------
 
 class Colorlight_i5(Board):
-    soc_kwargs = {
-        "sys_clk_freq" : int(50e6), # 48MHz default.
-        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import colorlight_i5
         Board.__init__(self, colorlight_i5.BaseSoC, soc_capabilities={
@@ -516,10 +502,7 @@ class Colorlight_i5(Board):
 
 class IcesugarPro(Board):
     spiflash   = W25Q256JV(Codes.READ_1_1_1)
-    soc_kwargs = {
-        "sys_clk_freq" : int(50e6), # 48MHz default.
-        "l2_size"      : 2048,      # Use Wishbone and L2 for memory accesses.
-    }
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import muselab_icesugar_pro
         Board.__init__(self, muselab_icesugar_pro.BaseSoC, soc_capabilities={
@@ -728,8 +711,14 @@ def main():
         soc_kwargs.update(board.soc_kwargs)
 
         # CPU parameters ---------------------------------------------------------------------------
-        # Do memory accesses through Wishbone and L2 cache when L2 size is configured.
-        args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
+
+        # If Wishbone Memory is forced, enabled L2 Cache (if not already):
+        if args.with_wishbone_memory:
+            soc_kwargs["l2_size"] = soc_kwargs.get("l2_size", 2048) # Defaults to 2048.
+        # Else if board is configured to use L2 Cache, force use of Wishbone Memory on VexRiscv-SMP.
+        else:
+            args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
+
         VexRiscvSMP.args_read(args)
 
         # SoC parameters ---------------------------------------------------------------------------

@@ -255,17 +255,19 @@ Once installed, build the bitstream with:
 $ ./make.py --board=XXYY --cpu-count=X --build
 ```
 
+> **Note**: On some ECP5 boards, variability can be seen between boards with direct use of DRAM's DM pins, if `mem_test` fails, add `--with-wishbone-memory` to the build command.
+
+> **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
+> ```
+> ./make.py --board=arty --toolchain=symbiflow --build
+> ```
+
 ### Load the FPGA bitstream
 To load the bitstream to you board, run:
 ```sh
 $ ./make.py --board=XXYY --cpu-count=X --load
 ```
 > **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
-
-> **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
-> ```
-> ./make.py --board=arty --toolchain=symbiflow --build
-> ```
 
 ### Load the Linux images over Serial
 All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
