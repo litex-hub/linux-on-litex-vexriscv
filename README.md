@@ -255,8 +255,6 @@ Once installed, build the bitstream with:
 $ ./make.py --board=XXYY --cpu-count=X --build
 ```
 
-> **Note**: On some ECP5 boards, variability can be seen between boards with direct use of DRAM's DM pins, if `mem_test` fails, add `--with-wishbone-memory` to the build command.
-
 > **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
 > ```
 > ./make.py --board=arty --toolchain=symbiflow --build
