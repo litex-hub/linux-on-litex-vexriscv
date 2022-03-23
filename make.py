@@ -13,9 +13,6 @@ import argparse
 from litex.soc.integration.builder import Builder
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
-from litespi.modules import *
-from litespi.opcodes import SpiNorFlashOpCodes as Codes
-
 from soc_linux import SoCLinux
 
 # Board Definition ---------------------------------------------------------------------------------
@@ -75,7 +72,6 @@ class AcornPCIe(Board):
 # Arty support -------------------------------------------------------------------------------------
 
 class Arty(Board):
-    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty
         Board.__init__(self, arty.BaseSoC, soc_capabilities={
@@ -102,7 +98,6 @@ class Arty(Board):
 class ArtyA7(Arty): pass
 
 class ArtyS7(Board):
-    spiflash = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import arty_s7
         Board.__init__(self, arty_s7.BaseSoC, soc_capabilities={
@@ -127,7 +122,6 @@ class ArtyS7(Board):
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
-    spiflash = MX25L6436E(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import netv2
         Board.__init__(self, netv2.BaseSoC, soc_capabilities={
@@ -135,7 +129,6 @@ class NeTV2(Board):
             "serial",
             "ethernet",
             # Storage
-            "spiflash",
             "sdcard",
             # GPIOs
             "leds",
@@ -328,7 +321,6 @@ class SDS1104XE(Board):
 # QMTECH WuKong support ---------------------------------------------------------------------------
 
 class Qmtech_WuKong(Board):
-    spiflash   = S25FL128L(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import qmtech_wukong
         Board.__init__(self, qmtech_wukong.BaseSoC, soc_capabilities={
@@ -336,8 +328,6 @@ class Qmtech_WuKong(Board):
             # Communication
             "serial",
             "ethernet",
-            # Storage
-            "spiflash",
             # Video
             "framebuffer",
         })
@@ -374,15 +364,12 @@ class STLV7325(Board):
 # Versa ECP5 support -------------------------------------------------------------------------------
 
 class VersaECP5(Board):
-    spiflash   = N25Q128A13(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import versa_ecp5
         Board.__init__(self, versa_ecp5.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             "ethernet",
-            # Storage
-            "spiflash",
         })
 
 # ULX3S support ------------------------------------------------------------------------------------
@@ -395,7 +382,7 @@ class ULX3S(Board):
             # Communication
             "serial",
             # Storage
-            "spisdcard",
+            "sdcard",
             # Video,
             "framebuffer",
         })
@@ -403,15 +390,12 @@ class ULX3S(Board):
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
-    spiflash   = W25Q128JV(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import hadbadge
         Board.__init__(self, hadbadge.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            # Storage
-            "spiflash",
         })
 
     def load(self, filename):
@@ -474,7 +458,6 @@ class TrellisBoard(Board):
 # ECPIX5 support -----------------------------------------------------------------------------------
 
 class ECPIX5(Board):
-    spiflash   = IS25LP256D(Codes.READ_1_1_1)
     def __init__(self):
         from litex_boards.targets import ecpix5
         Board.__init__(self, ecpix5.BaseSoC, soc_capabilities={
@@ -483,7 +466,6 @@ class ECPIX5(Board):
             "ethernet",
             # Storage
             "sdcard",
-            "spiflash",
         })
 
 # Colorlight i5 support ----------------------------------------------------------------------------
@@ -501,7 +483,6 @@ class Colorlight_i5(Board):
 # Icesugar Pro support -----------------------------------------------------------------------------
 
 class IcesugarPro(Board):
-    spiflash   = W25Q256JV(Codes.READ_1_1_1)
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
     def __init__(self):
         from litex_boards.targets import muselab_icesugar_pro
@@ -509,6 +490,7 @@ class IcesugarPro(Board):
             # Communication
             "serial",
             # Storage
+            "spiflash",
             "sdcard",
         })
 
@@ -743,6 +725,8 @@ def main():
             soc_kwargs.update(with_led_chaser=True)
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
+        if "spiflash" in board.soc_capabilities:
+            soc_kwargs.update(with_spi_flash=True)
         if "sata" in board.soc_capabilities:
             soc_kwargs.update(with_sata=True)
         if "video_terminal" in board.soc_capabilities:
@@ -769,8 +753,6 @@ def main():
 
         if "mmcm" in board.soc_capabilities:
             soc.add_mmcm(2)
-        if "spiflash" in board.soc_capabilities:
-            soc.add_spi_flash(mode="1x", module=board.spiflash, with_master=False)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
