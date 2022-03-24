@@ -9,7 +9,6 @@
 import json
 import argparse
 
-from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 from migen import *
 
 from litex.build.generic_platform import *
@@ -21,6 +20,7 @@ from litex.soc.interconnect.csr import *
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 from litex.soc.interconnect import wishbone
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from litedram import modules as litedram_modules
 from litedram.phy.model import SDRAMPHYModel
@@ -73,9 +73,15 @@ class SoCLinux(SoCCore):
         sdram_module     = "MT48LC16M16",
         sdram_data_width = 32,
         sdram_verbosity  = 0):
-        platform     = Platform()
+
+        # Parameters.
         sys_clk_freq = int(100e6)
 
+        # Platform.
+        platform     = Platform()
+        self.comb += platform.trace.eq(1)
+
+        # RAM Initialization.
         ram_init = []
         if init_memories:
             ram_init = get_mem_data("images/boot.json", endianness="little", offset=0x40000000)
