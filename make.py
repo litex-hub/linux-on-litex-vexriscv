@@ -56,7 +56,7 @@ class Acorn(Board):
 # Acorn PCIe support -------------------------------------------------------------------------------
 
 class AcornPCIe(Board):
-    soc_kwargs = {"with_pcie": True, "uart_name": "crossover", "sys_clk_freq": int(125e6)}
+    soc_kwargs = {"uart_name": "crossover", "sys_clk_freq": int(125e6)}
     def __init__(self):
         from litex_boards.targets import sqrl_acorn
         Board.__init__(self, sqrl_acorn.BaseSoC, soc_capabilities={
@@ -357,6 +357,19 @@ class STLV7325(Board):
             "sdcard",
         })
 
+# Decklink Quad HDMI Recorder ----------------------------------------------------------------------
+
+class DecklinkQuadHDMIRecorder(Board):
+    soc_kwargs = {"uart_name": "crossover",  "sys_clk_freq": int(125e6)}
+    def __init__(self):
+        from litex_boards.targets import decklink_quad_hdmi_recorder
+        Board.__init__(self, decklink_quad_hdmi_recorder.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "pcie",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -608,52 +621,53 @@ class TitaniumTi60F225DevKit(Board):
 
 supported_boards = {
     # Xilinx
-    "acorn":            Acorn,
-    "acorn_pcie":       AcornPCIe,
-    "arty":             Arty,
-    "arty_a7":          ArtyA7,
-    "arty_s7":          ArtyS7,
-    "netv2":            NeTV2,
-    "genesys2":         Genesys2,
-    "kc705":            KC705,
-    "vc707":            VC707,
-    "kcu105":           KCU105,
-    "zcu104":           ZCU104,
-    "nexys4ddr":        Nexys4DDR,
-    "nexys_video":      NexysVideo,
-    "minispartan6":     MiniSpartan6,
-    "pipistrello":      Pipistrello,
-    "xcu1525":          XCU1525,
-    "alveo_u280":       AlveoU280,
-    "alveo_u250":       AlveoU250,
-    "qmtech_wukong":    Qmtech_WuKong,
-    "sds1104xe":        SDS1104XE,
-    "mnt_rkx7":         MNT_RKX7,
-    "stlv7325":         STLV7325,
+    "acorn"                       : Acorn,
+    "acorn_pcie"                  : AcornPCIe,
+    "arty"                        : Arty,
+    "arty_a7"                     : ArtyA7,
+    "arty_s7"                     : ArtyS7,
+    "netv2"                       : NeTV2,
+    "genesys2"                    : Genesys2,
+    "kc705"                       : KC705,
+    "vc707"                       : VC707,
+    "kcu105"                      : KCU105,
+    "zcu104"                      : ZCU104,
+    "nexys4ddr"                   : Nexys4DDR,
+    "nexys_video"                 : NexysVideo,
+    "minispartan6"                : MiniSpartan6,
+    "pipistrello"                 : Pipistrello,
+    "xcu1525"                     : XCU1525,
+    "alveo_u280"                  : AlveoU280,
+    "alveo_u250"                  : AlveoU250,
+    "qmtech_wukong"               : Qmtech_WuKong,
+    "sds1104xe"                   : SDS1104XE,
+    "mnt_rkx7"                    : MNT_RKX7,
+    "stlv7325"                    : STLV7325,
+    "decklink_quad_hdmi_recorder" : DecklinkQuadHDMIRecorder,
 
     # Lattice
-    "versa_ecp5":      VersaECP5,
-    "ulx3s":           ULX3S,
-    "hadbadge":        HADBadge,
-    "orangecrab":      OrangeCrab,
-    "butterstick":     ButterStick,
-    "camlink_4k":      CamLink4K,
-    "trellisboard":    TrellisBoard,
-    "ecpix5":          ECPIX5,
-    "colorlight_i5":   Colorlight_i5,
-    "icesugar_pro":    IcesugarPro,
+    "versa_ecp5"                  : VersaECP5,
+    "ulx3s"                       : ULX3S,
+    "hadbadge"                    : HADBadge,
+    "orangecrab"                  : OrangeCrab,
+    "butterstick"                 : ButterStick,
+    "camlink_4k"                  : CamLink4K,
+    "trellisboard"                : TrellisBoard,
+    "ecpix5"                      : ECPIX5,
+    "colorlight_i5"               : Colorlight_i5,
+    "icesugar_pro"                : IcesugarPro,
 
     # Altera/Intel
-    "de0nano":         De0Nano,
-    "de10nano":        De10Nano,
-    "de1soc":          De1SoC,
-    "qmtech_ep4ce15":  Qmtech_EP4CE15,
-    "qmtech_ep4ce55":  Qmtech_EP4CE55,
+    "de0nano"                     : De0Nano,
+    "de10nano"                    : De10Nano,
+    "de1soc"                      : De1SoC,
+    "qmtech_ep4ce15"              : Qmtech_EP4CE15,
+    "qmtech_ep4ce55"              : Qmtech_EP4CE55,
 
     # Efinix
-    "trion_t120_bga576_dev_kit" : TrionT120BGA576DevKit,
-    "titanium_ti60_f225_dev_kit": TitaniumTi60F225DevKit,
-}
+    "trion_t120_bga576_dev_kit"   : TrionT120BGA576DevKit,
+    "titanium_ti60_f225_dev_kit"  : TitaniumTi60F225DevKit,
+    }
 
 def main():
     description = "Linux on LiteX-VexRiscv\n\n"
@@ -725,6 +739,8 @@ def main():
             soc_kwargs.update(with_led_chaser=True)
         if "ethernet" in board.soc_capabilities:
             soc_kwargs.update(with_ethernet=True)
+        if "pcie" in board.soc_capabilities:
+            soc_kwargs.update(with_pcie=True)
         if "spiflash" in board.soc_capabilities:
             soc_kwargs.update(with_spi_flash=True)
         if "sata" in board.soc_capabilities:
