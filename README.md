@@ -80,6 +80,7 @@ The current list of boards that have been tested and are supported can be obtain
     ├── trellisboard
     ├── trion_t120_bga576_dev_kit
     ├── ulx3s
+    ├── u420t
     ├── vc707
     ├── versa_ecp5
     ├── xcu1525
