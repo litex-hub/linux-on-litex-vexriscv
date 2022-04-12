@@ -238,6 +238,19 @@ class NexysVideo(Board):
             "framebuffer",
         })
 
+## Kintex-7 xc7k420t / u420t board ----------------------------------------------------------------
+class u420t(Board):
+    def __init__(self):
+        from litex_boards.targets import u420t
+        Board.__init__(self, u420t.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+	    # user leds
+            "leds",
+            #"spiflash",
+        })
+
+
 # MiniSpartan6 support -----------------------------------------------------------------------------
 
 class MiniSpartan6(Board):
@@ -633,6 +646,7 @@ supported_boards = {
     "kcu105"                      : KCU105,
     "zcu104"                      : ZCU104,
     "nexys4ddr"                   : Nexys4DDR,
+    "u420t"                       : u420t,
     "nexys_video"                 : NexysVideo,
     "minispartan6"                : MiniSpartan6,
     "pipistrello"                 : Pipistrello,
