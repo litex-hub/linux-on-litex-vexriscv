@@ -426,7 +426,7 @@ class OrangeCrab(Board):
             # Buses
             "i2c",
             # Storage
-            "sdcard",
+            "spisdcard",
         })
 
 # Butterstick support ------------------------------------------------------------------------------
