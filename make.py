@@ -426,7 +426,7 @@ class OrangeCrab(Board):
             # Buses
             "i2c",
             # Storage
-            "sdcard",
+            "spisdcard",
         })
 
 # Butterstick support ------------------------------------------------------------------------------
@@ -762,7 +762,7 @@ def main():
             board.platform.add_extension(_sdcard_pmod_io)
 
         if board_name in ["orangecrab"]:
-            from litex_boards.platforms.orangecrab import feather_i2c
+            from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
 
         if "mmcm" in board.soc_capabilities:
