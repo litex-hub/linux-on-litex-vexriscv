@@ -426,7 +426,7 @@ class OrangeCrab(Board):
             # Buses
             "i2c",
             # Storage
-            "spisdcard",
+            "sdcard",
         })
 
 # Butterstick support ------------------------------------------------------------------------------
@@ -758,7 +758,7 @@ def main():
 
         # SoC peripherals --------------------------------------------------------------------------
         if board_name in ["arty", "arty_a7"]:
-            from litex_boards.platforms.arty import _sdcard_pmod_io
+            from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
         if board_name in ["orangecrab"]:
