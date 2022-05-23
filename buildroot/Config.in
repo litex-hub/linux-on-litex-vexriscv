@@ -1,3 +1,4 @@
+source "$BR2_EXTERNAL_LITEX_VEXRISCV_PATH/package/dhrystone-opt/Config.in"
 
 config BR2_PACKAGE_VEXRISCV_AES
 	bool "VexRiscv AES custom instruction"
