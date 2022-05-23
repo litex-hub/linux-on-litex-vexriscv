@@ -268,8 +268,8 @@ class Pipistrello(Board):
 
 class XCU1525(Board):
     def __init__(self):
-        from litex_boards.targets import xilinx_xcu1525
-        Board.__init__(self, xilinx_xcu1525.BaseSoC, soc_capabilities={
+        from litex_boards.targets import sqrl_xcu1525
+        Board.__init__(self, sqrl_xcu1525.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
