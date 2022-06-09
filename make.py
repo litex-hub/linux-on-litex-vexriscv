@@ -199,6 +199,20 @@ class KCU105(Board):
             "sdcard",
         })
 
+# AESKU40 support -----------------------------------------------------------------------------------
+
+class AESKU40(Board):
+    soc_kwargs = {"uart_baudrate": 115.2e3} 
+    def __init__(self):
+        from litex_boards.targets import avnet_aesku40
+        Board.__init__(self, avnet_aesku40.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "sdcard",
+        })
+
 # ZCU104 support -----------------------------------------------------------------------------------
 
 class ZCU104(Board):
@@ -621,6 +635,7 @@ supported_boards = {
     # Xilinx
     "acorn"                       : Acorn,
     "acorn_pcie"                  : AcornPCIe,
+    "aesku40"                     : AESKU40,
     "arty"                        : Arty,
     "arty_a7"                     : ArtyA7,
     "arty_s7"                     : ArtyS7,
@@ -759,6 +774,10 @@ def main():
         # SoC peripherals --------------------------------------------------------------------------
         if board_name in ["arty", "arty_a7"]:
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
+            board.platform.add_extension(_sdcard_pmod_io)
+
+        if board_name in ["aesku40"]:
+            from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
         if board_name in ["orangecrab"]:
