@@ -582,6 +582,22 @@ class Qmtech_EP4CE55(Board):
             "serial",
         })
 
+
+# QMTECH 5CEFA2 support
+# It is possible to build the SoC --cpu-count=2 for this chip
+class Qmtech_5CEFA2(Board):
+    soc_kwargs = {
+        "variant" : "5cefa2",
+        "l2_size" :  2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size" : 0x800,
+    }
+    def __init__(self):
+        from litex_boards.targets import qmtech_5cefa2
+        Board.__init__(self, qmtech_5cefa2.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Efinix Boards
 #---------------------------------------------------------------------------------------------------
@@ -661,6 +677,7 @@ supported_boards = {
     "de1soc"                      : De1SoC,
     "qmtech_ep4ce15"              : Qmtech_EP4CE15,
     "qmtech_ep4ce55"              : Qmtech_EP4CE55,
+    "qmtech_5cefa2"               : Qmtech_5CEFA2,
 
     # Efinix
     "trion_t120_bga576_dev_kit"   : TrionT120BGA576DevKit,
