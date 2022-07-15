@@ -523,8 +523,8 @@ class IcesugarPro(Board):
 class Schoko(Board):
     soc_kwargs = {"l2_size" : 8192}
     def __init__(self):
-        from litex_boards.targets import ld_schoko
-        Board.__init__(self, ld_schoko.BaseSoC, soc_capabilities={
+        from litex_boards.targets import machdyne_schoko
+        Board.__init__(self, machdyne_schoko.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             "usb_host",
