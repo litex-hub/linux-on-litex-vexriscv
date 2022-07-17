@@ -702,6 +702,7 @@ supported_boards = {
     "ecpix5"                      : ECPIX5,
     "colorlight_i5"               : Colorlight_i5,
     "icesugar_pro"                : IcesugarPro,
+    "schoko"                      : Schoko,
 
     # Altera/Intel
     "de0nano"                     : De0Nano,
