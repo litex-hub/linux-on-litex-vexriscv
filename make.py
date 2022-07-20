@@ -763,6 +763,9 @@ def main():
         else:
             args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
 
+        if "usb_host" in board.soc_capabilities:
+            args.with_coherent_dma = True
+
         VexRiscvSMP.args_read(args)
 
         # SoC parameters ---------------------------------------------------------------------------
