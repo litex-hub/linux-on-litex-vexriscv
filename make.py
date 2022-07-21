@@ -519,6 +519,23 @@ class IcesugarPro(Board):
             "sdcard",
         })
 
+# Schoko support -----------------------------------------------------------------------------------
+class Schoko(Board):
+    soc_kwargs = {"l2_size" : 8192}
+    def __init__(self):
+        from litex_boards.targets import machdyne_schoko
+        Board.__init__(self, machdyne_schoko.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "usb_host",
+            # Storage
+            "spiflash",
+            #"sdcard",
+            "spisdcard",
+            # Video,
+            "framebuffer",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
@@ -685,6 +702,7 @@ supported_boards = {
     "ecpix5"                      : ECPIX5,
     "colorlight_i5"               : Colorlight_i5,
     "icesugar_pro"                : IcesugarPro,
+    "schoko"                      : Schoko,
 
     # Altera/Intel
     "de0nano"                     : De0Nano,
@@ -745,6 +763,9 @@ def main():
         else:
             args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
 
+        if "usb_host" in board.soc_capabilities:
+            args.with_coherent_dma = True
+
         VexRiscvSMP.args_read(args)
 
         # SoC parameters ---------------------------------------------------------------------------
@@ -779,6 +800,8 @@ def main():
             soc_kwargs.update(with_video_terminal=True)
         if "framebuffer" in board.soc_capabilities:
             soc_kwargs.update(with_video_framebuffer=True)
+        if "usb_host" in board.soc_capabilities:
+            soc_kwargs.update(with_usb_host=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)

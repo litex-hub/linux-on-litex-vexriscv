@@ -311,6 +311,16 @@ $ make
 ```
 The binaries are located in *output/images/*.
 
+[> Generating the Linux binaries with USB host support (optional)
+-----------------------------------------------------------------
+```sh
+$ git clone http://github.com/buildroot/buildroot
+$ cd buildroot
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_usbhost_defconfig
+$ make
+```
+The binaries are located in *output/images/*.
+
 [> Generating the OpenSBI binary (optional)
 -------------------------------------------
 ```sh
