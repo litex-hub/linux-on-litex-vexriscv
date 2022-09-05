@@ -562,7 +562,10 @@ class De10Nano(Board):
 # De0Nano support ----------------------------------------------------------------------------------
 
 class De0Nano(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    soc_kwargs = {
+        "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size" : 0x800,
+    }
     def __init__(self):
         from litex_boards.targets import terasic_de0nano
         Board.__init__(self, terasic_de0nano.BaseSoC, soc_capabilities={
