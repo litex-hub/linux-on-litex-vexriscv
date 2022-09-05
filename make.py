@@ -854,7 +854,7 @@ def main():
         build_dir = os.path.join("build", board_name)
         builder   = Builder(soc,
             output_dir   = os.path.join("build", board_name),
-            bios_options = ["TERM_MINI"],
+            bios_console = "lite",
             csr_json     = os.path.join(build_dir, "csr.json"),
             csr_csv      = os.path.join(build_dir, "csr.csv")
         )
