@@ -546,6 +546,7 @@ class De10Nano(Board):
     soc_kwargs = {
         "with_mister_sdram" : True, # Add MiSTer SDRAM extension.
         "l2_size"           : 2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
     }
     def __init__(self):
         from litex_boards.targets import terasic_de10nano
@@ -564,7 +565,7 @@ class De10Nano(Board):
 class De0Nano(Board):
     soc_kwargs = {
         "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
-        "integrated_sram_size" : 0x800,
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
     }
     def __init__(self):
         from litex_boards.targets import terasic_de0nano
@@ -576,7 +577,10 @@ class De0Nano(Board):
 # De1-SoC support ----------------------------------------------------------------------------------
 
 class De1SoC(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    soc_kwargs = {
+        "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
+    }
     def __init__(self):
         from litex_boards.targets import terasic_de1soc
         Board.__init__(self, terasic_de1soc.BaseSoC, soc_capabilities={
@@ -593,7 +597,7 @@ class Qmtech_EP4CE15(Board):
     soc_kwargs = {
         "variant" : "ep4ce15",
         "l2_size" : 2048, # Use Wishbone and L2 for memory accesses.
-        "integrated_sram_size" : 0x800,
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4cex5
@@ -608,6 +612,7 @@ class Qmtech_EP4CE55(Board):
     soc_kwargs = {
         "variant" : "ep4ce55",
         "l2_size" :  2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_ep4cex5
@@ -623,7 +628,7 @@ class Qmtech_5CEFA2(Board):
     soc_kwargs = {
         "variant" : "5cefa2",
         "l2_size" :  2048, # Use Wishbone and L2 for memory accesses.
-        "integrated_sram_size" : 0x800,
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
     }
     def __init__(self):
         from litex_boards.targets import qmtech_5cefa2
