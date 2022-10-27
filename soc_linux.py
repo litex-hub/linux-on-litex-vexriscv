@@ -125,12 +125,12 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
         # DTS generation ---------------------------------------------------------------------------
-        def generate_dts(self, board_name):
+        def generate_dts(self, board_name, **kwargs):
             json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
 
             with open(json_src) as json_file, open(dts, "w") as dts_file:
-                dts_content = generate_dts(json.load(json_file), polling=False)
+                dts_content = generate_dts(json.load(json_file), polling=False, **kwargs)
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------

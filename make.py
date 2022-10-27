@@ -663,6 +663,21 @@ class TitaniumTi60F225DevKit(Board):
             "leds",
         })
 
+class TitaniumTi180M484DevKit(Board):
+    soc_kwargs = {
+        "sys_clk_freq"  : 200e6,
+    }
+    def __init__(self):
+        from litex_boards.targets import titanium_ti180_m484_dev_kit
+        Board.__init__(self, titanium_ti180_m484_dev_kit.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+            # "spisdcard",
+            # GPIOs
+            "leds",
+        })
 #---------------------------------------------------------------------------------------------------
 # Build
 #---------------------------------------------------------------------------------------------------
@@ -718,6 +733,7 @@ supported_boards = {
     # Efinix
     "trion_t120_bga576_dev_kit"   : TrionT120BGA576DevKit,
     "titanium_ti60_f225_dev_kit"  : TitaniumTi60F225DevKit,
+    "titanium_ti180_m484_dev_kit"  : TitaniumTi180M484DevKit,
     }
 
 def main():
@@ -740,6 +756,7 @@ def main():
     parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
+    parser.add_argument("--initrd-size",    default=8*1048576, type=int, help="Size of initrd (default=8MB).")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -861,7 +878,7 @@ def main():
         builder.build(run=args.build, build_name=board_name)
 
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name)
+        soc.generate_dts(board_name, initrd_size=args.initrd_size)
         soc.compile_dts(board_name, args.fdtoverlays)
 
         # DTB --------------------------------------------------------------------------------------
