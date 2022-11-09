@@ -45,7 +45,7 @@ def SoCLinux(soc_cls, **kwargs):
         # Switches ---------------------------------------------------------------------------------
         def add_switches(self):
             self.submodules.switches = GPIOIn(Cat(self.platform.request_all("user_sw")), with_irq=True)
-            self.add_interrupt("switches")
+            self.irq.add("switches")
 
         # SPI --------------------------------------------------------------------------------------
         def add_spi(self, data_width, clk_freq):
