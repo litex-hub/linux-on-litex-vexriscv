@@ -126,6 +126,9 @@ $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ub
 $ sudo apt install verilator
 $ sudo apt install libevent-dev libjson-c-dev
 ```
+
+Check that the installed verilator version is >= 4.2xx. If not, you will have to compile it from sources.
+
 [> Installing OpenOCD (only needed for hardware test)
 -----------------------------------------------------
 ```sh
@@ -140,6 +143,7 @@ $ sudo make install
 
 [> Running the LiteX simulation
 -------------------------------
+You need to extract linux_???.zip from https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164 into the images folder first, then :
 ```sh
 $ ./sim.py
 ```
