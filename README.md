@@ -64,6 +64,9 @@ The current list of boards that have been tested and are supported can be obtain
     ├── icesugar_pro
     ├── kc705
     ├── kcu105
+    ├── machdyne_konfekt
+    ├── machdyne_noir
+    ├── machdyne_schoko
     ├── minispartan6
     ├── mnt_rkx7
     ├── netv2
