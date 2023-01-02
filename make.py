@@ -536,6 +536,40 @@ class Schoko(Board):
             "framebuffer",
         })
 
+# Konfekt support -----------------------------------------------------------------------------------
+class Konfekt(Board):
+    soc_kwargs = {"l2_size" : 0}
+    def __init__(self):
+        from litex_boards.targets import machdyne_konfekt
+        Board.__init__(self, machdyne_konfekt.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "usb_host",
+            # Storage
+            #"spiflash",
+            "spisdcard",
+            #"sdcard",
+            # Video,
+            "framebuffer",
+        })
+
+# Noir support -----------------------------------------------------------------------------------
+class Noir(Board):
+    soc_kwargs = {"l2_size" : 8192}
+    def __init__(self):
+        from litex_boards.targets import machdyne_noir
+        Board.__init__(self, machdyne_noir.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "usb_host",
+            # Storage
+            "spiflash",
+            "spisdcard",
+            #"sdcard",
+            # Video,
+            "framebuffer",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
@@ -711,6 +745,8 @@ supported_boards = {
     "colorlight_i5"               : Colorlight_i5,
     "icesugar_pro"                : IcesugarPro,
     "schoko"                      : Schoko,
+    "konfekt"                     : Konfekt,
+    "noir"                        : Noir,
 
     # Altera/Intel
     "de0nano"                     : De0Nano,
