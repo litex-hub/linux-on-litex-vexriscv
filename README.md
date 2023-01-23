@@ -279,7 +279,7 @@ All the boards support Serial loading of the Linux images and this is the only w
 
 To load the Linux images over Serial, use the [litex_term](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
 ```sh
-$ litex_term --images=images/boot.json /dev/ttyUSBX
+$ litex_term --images=images/boot.json /dev/ttyUSBX (--safe : In case of CRC Error, slower but should always work)
 ```
 The images should load and you should see Linux booting :)
 
