@@ -414,6 +414,21 @@ class ULX3S(Board):
             "framebuffer",
         })
 
+# ULX4M-LD-V2 support ------------------------------------------------------------------------------------
+class ULX4M_LD_V2(Board):
+    soc_kwargs = {"uart_name": "serial", "sys_clk_freq": int(50e6), "l2_size" : 2048} #2048 } #32768} # Use Wishbone and L2 for memory accesse$
+    def __init__(self):
+        from litex_boards.targets import radiona_ulx4m_ld_v2
+        Board.__init__(self, radiona_ulx4m_ld_v2.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+            # Video,
+            "framebuffer",
+            "video_terminal",
+        })
+        
 # HADBadge support ---------------------------------------------------------------------------------
 
 class HADBadge(Board):
@@ -736,6 +751,7 @@ supported_boards = {
     # Lattice
     "versa_ecp5"                  : VersaECP5,
     "ulx3s"                       : ULX3S,
+    "ulx4m_ld_v2"                 : ULX4M_LD_V2,
     "hadbadge"                    : HADBadge,
     "orangecrab"                  : OrangeCrab,
     "butterstick"                 : ButterStick,
