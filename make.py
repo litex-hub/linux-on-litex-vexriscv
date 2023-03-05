@@ -585,6 +585,22 @@ class Noir(Board):
             "framebuffer",
         })
 
+# Kopflos support -----------------------------------------------------------------------------------
+class Kopflos(Board):
+    soc_kwargs = {"l2_size" : 0}
+    def __init__(self):
+        from litex_boards.targets import machdyne_kopflos
+        Board.__init__(self, machdyne_kopflos.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "usb_host",
+            "ethernet",
+            # Storage
+            #"spiflash",
+            #"sdcard",
+            "spisdcard",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
@@ -763,6 +779,7 @@ supported_boards = {
     "schoko"                      : Schoko,
     "konfekt"                     : Konfekt,
     "noir"                        : Noir,
+    "kopflos"                     : Kopflos,
 
     # Altera/Intel
     "de0nano"                     : De0Nano,

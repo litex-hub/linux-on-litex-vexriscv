@@ -65,6 +65,7 @@ The current list of boards that have been tested and are supported can be obtain
     ├── kc705
     ├── kcu105
     ├── machdyne_konfekt
+    ├── machdyne_kopflos
     ├── machdyne_noir
     ├── machdyne_schoko
     ├── minispartan6
