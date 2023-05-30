@@ -93,6 +93,7 @@ class Arty(Board):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
+            "can",
         })
 
 class ArtyA7(Arty): pass
@@ -949,6 +950,8 @@ def main():
             soc.add_xadc()
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
+        if "can" in board.soc_capabilities:
+            soc.add_can()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
