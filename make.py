@@ -363,8 +363,18 @@ class MNT_RKX7(Board):
 
 class STLV7325(Board):
     def __init__(self):
-        from litex_boards.targets import aliexpress_stlv7325
-        Board.__init__(self, aliexpress_stlv7325.BaseSoC, soc_capabilities={
+        from litex_boards.targets import sitlinv_stlv7325_v1
+        Board.__init__(self, sitlinv_stlv7325_v1.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+        })
+
+class STLV7325_v2(Board):
+    def __init__(self):
+        from litex_boards.targets import sitlinv_stlv7325_v2
+        Board.__init__(self, sitlinv_stlv7325_v2.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
@@ -746,6 +756,7 @@ supported_boards = {
     "sds1104xe"                   : SDS1104XE,
     "mnt_rkx7"                    : MNT_RKX7,
     "stlv7325"                    : STLV7325,
+    "stlv7325_v2"                 : STLV7325_v2,
     "decklink_quad_hdmi_recorder" : DecklinkQuadHDMIRecorder,
 
     # Lattice
