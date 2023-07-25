@@ -13,12 +13,21 @@ jobs:
       # Install Tools
       - name: Install Tools
         run: |
+          sudo add-apt-repository -y ppa:openjdk-r/ppa
           sudo apt update
           sudo apt install -y wget build-essential python3 python3-pip \
             verilator libevent-dev libjson-c-dev device-tree-compiler \
             python3-setuptools python3-requests python3-pexpect \
             python3-colorama python3-serial python3-packaging python3-yaml \
-            ninja-build
+            ninja-build curl apt-transport-https gnupg openjdk-8-jdk -y
+          sudo update-alternatives --config java
+          sudo update-alternatives --config javac
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo -H gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import
+          sudo chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
+          sudo apt update
+          sudo apt -y install sbt
           pip3 install meson
 
       # Install (n)Migen / LiteX / Cores
