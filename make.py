@@ -363,8 +363,8 @@ class MNT_RKX7(Board):
 
 class STLV7325(Board):
     def __init__(self):
-        from litex_boards.targets import aliexpress_stlv7325
-        Board.__init__(self, aliexpress_stlv7325.BaseSoC, soc_capabilities={
+        from litex_boards.targets import sitlinv_stlv7325_v1
+        Board.__init__(self, sitlinv_stlv7325_v1.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             # Storage
