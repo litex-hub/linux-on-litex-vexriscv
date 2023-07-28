@@ -24,6 +24,9 @@ BR2_TARGET_GENERIC_GETTY_PORT="console"
 # Filesystem
 BR2_TARGET_ROOTFS_CPIO=y
 
+# Kernel header version
+BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_1=y
+
 # Kernel (litex-rebase branch)
 BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_GIT=y
@@ -35,8 +38,6 @@ BR2_LINUX_KERNEL_IMAGE=y
 
 # Rootfs customisation
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/rootfs_overlay"
-
-#BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_5_18=y
 
 # Extra packages
 #BR2_PACKAGE_DHRYSTONE_OPT=y
