@@ -24,6 +24,9 @@ BR2_TARGET_GENERIC_GETTY_PORT="console"
 # Filesystem
 BR2_TARGET_ROOTFS_CPIO=y
 
+# Image
+BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/post-image.sh"
+
 # Kernel header version
 BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_1=y
 
@@ -46,6 +49,11 @@ BR2_TARGET_OPENSBI_INSTALL_DYNAMIC_IMG=n
 
 # Rootfs customisation
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/rootfs_overlay"
+
+# Required tools to create the SD image
+BR2_PACKAGE_HOST_DOSFSTOOLS=y
+BR2_PACKAGE_HOST_GENIMAGE=y
+BR2_PACKAGE_HOST_MTOOLS=y
 
 # Extra packages
 #BR2_PACKAGE_DHRYSTONE_OPT=y
