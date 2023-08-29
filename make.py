@@ -731,7 +731,7 @@ class TitaniumTi60F225DevKit(Board):
 # Gowin Boards
 #---------------------------------------------------------------------------------------------------
 
-# Sipeed Tang nano 20K support -------------------------------------------------------------------------------
+# Sipeed Tang Nano 20K support ---------------------------------------------------------------------
 
 class Sipeed_tang_nano_20k(Board):
     soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
@@ -741,6 +741,18 @@ class Sipeed_tang_nano_20k(Board):
             # Communication
             "serial",
             "sdcard",
+        })
+
+# Sipeed Tang Primer 20K support -------------------------------------------------------------------
+
+class Sipeed_tang_primer_20k(Board):
+    soc_kwargs = {"l2_size" : 512} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import sipeed_tang_primer_20k
+        Board.__init__(self, sipeed_tang_primer_20k.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "spisdcard",
         })
 
 #---------------------------------------------------------------------------------------------------
@@ -805,6 +817,7 @@ supported_boards = {
 
     # Gowin
     "sipeed_tang_nano_20k"        : Sipeed_tang_nano_20k,
+    "sipeed_tang_primer_20k"      : Sipeed_tang_primer_20k,
     }
 
 def main():
