@@ -371,6 +371,16 @@ class STLV7325(Board):
             "sdcard",
         })
 
+class STLV7325_v2(Board):
+    def __init__(self):
+        from litex_boards.targets import sitlinv_stlv7325_v2
+        Board.__init__(self, sitlinv_stlv7325_v2.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sdcard",
+        })
+
 # Decklink Quad HDMI Recorder ----------------------------------------------------------------------
 
 class DecklinkQuadHDMIRecorder(Board):
@@ -762,6 +772,7 @@ supported_boards = {
     "sds1104xe"                   : SDS1104XE,
     "mnt_rkx7"                    : MNT_RKX7,
     "stlv7325"                    : STLV7325,
+    "stlv7325_v2"                 : STLV7325_v2,
     "decklink_quad_hdmi_recorder" : DecklinkQuadHDMIRecorder,
 
     # Lattice
