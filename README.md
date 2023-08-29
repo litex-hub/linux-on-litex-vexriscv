@@ -316,7 +316,7 @@ $ cd buildroot
 $ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_defconfig
 $ make
 ```
-The binaries are located in *output/images/*.
+The binaries are located in *output/images/* and *images/*.
 
 [> Generating the Linux binaries with USB host support (optional)
 -----------------------------------------------------------------
@@ -326,12 +326,12 @@ $ cd buildroot
 $ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_usbhost_defconfig
 $ make
 ```
-The binaries are located in *output/images/*.
+The binaries are located in *output/images/* and *images/*.
 
-[> Generating the OpenSBI binary (optional)
+[> Generating the OpenSBI binary (optional / part of the buildroot build sequence)
 -------------------------------------------
 ```sh
-$ git clone https://github.com/litex-hub/opensbi --branch 0.8-linux-on-litex-vexriscv
+$ git clone https://github.com/litex-hub/opensbi --branch 1.3.1-linux-on-litex-vexriscv
 $ cd opensbi
 $ make CROSS_COMPILE=riscv-none-embed- PLATFORM=litex/vexriscv
 ```
