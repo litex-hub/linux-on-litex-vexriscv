@@ -4,11 +4,18 @@ BR2_RISCV_32=y
 
 # Instruction Set Extensions
 BR2_riscv_custom=y
+# Backward compat (buildroot 2023.02.5 LTS).
 BR2_RISCV_ISA_CUSTOM_RVM=y
 BR2_RISCV_ISA_CUSTOM_RVA=y
 BR2_RISCV_ISA_CUSTOM_RVC=n
 #BR2_RISCV_ISA_CUSTOM_RVF=y  # Uncomment to enable FPU
 #BR2_RISCV_ISA_CUSTOM_RVD=y  # Uncomment to enable FPU
+# Since commit cbd91e89e4 (2023-08-18 / 2023.11).
+BR2_RISCV_ISA_RVM=y
+BR2_RISCV_ISA_RVA=y
+BR2_RISCV_ISA_RVC=n
+#BR2_RISCV_ISA_RVF=y  # Uncomment to enable FPU
+#BR2_RISCV_ISA_RVD=y  # Uncomment to enable FPU
 BR2_RISCV_ABI_ILP32=y
 
 # Patches
