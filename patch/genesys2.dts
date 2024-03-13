@@ -1,0 +1,175 @@
+
+/dts-v1/;
+
+/ {
+        #address-cells = <1>;
+        #size-cells    = <1>;
+
+
+        chosen {
+            bootargs = "console=liteuart earlycon=liteuart,0xf0001000 rootwait root=/dev/ram0 ip=192.168.1.50:192.168.1.100:192.168.1.100:255.255.255.0::eth0:off:::";
+            linux,initrd-start = <0x41000000>;
+            linux,initrd-end   = <0x41800000>;
+        };
+
+        sys_clk: pll {
+            compatible = "fixed-clock";
+            #clock-cells = <0>;
+            clock-frequency  = <100000000>;
+        };
+
+        cpus {
+            #address-cells = <1>;
+            #size-cells    = <0>;
+            timebase-frequency = <100000000>;
+
+            CPU0: cpu@0 {
+                device_type = "cpu";
+                compatible = "riscv";
+                riscv,isa = "rv32i2p0_ma";
+                mmu-type = "riscv,sv32";
+                reg = <0>;
+                clock-frequency = <100000000>;
+                status = "okay";
+
+                d-cache-size = <4096>;
+                d-cache-sets = <1>;
+                d-cache-block-size = <64>;
+
+                i-cache-size = <4096>;
+                i-cache-sets = <1>;
+                i-cache-block-size = <64>;
+
+
+                d-tlb-size = <4>;
+                d-tlb-sets = <4>;
+
+                i-tlb-size = <4>;
+                i-tlb-sets = <4>;
+
+                L0: interrupt-controller {
+                    #address-cells = <0>;
+                    #interrupt-cells = <0x00000001>;
+                    interrupt-controller;
+                    compatible = "riscv,cpu-intc";
+                };
+            };
+
+
+        };
+
+        memory@40000000 {
+            device_type = "memory";
+            reg = <0x40000000 0x40000000>;
+        };
+
+        reserved-memory {
+            #address-cells = <1>;
+            #size-cells    = <1>;
+            ranges;
+
+            opensbi@40f00000 {
+                reg = <0x40f00000 0x80000>;
+            };
+
+        };
+
+        vreg_mmc: vreg_mmc {
+            compatible = "regulator-fixed";
+            regulator-name = "vreg_mmc";
+            regulator-min-microvolt = <3300000>;
+            regulator-max-microvolt = <3300000>;
+            regulator-always-on;
+        };
+
+        soc {
+            #address-cells = <1>;
+            #size-cells    = <1>;
+            compatible = "simple-bus";
+            interrupt-parent = <&intc0>;
+            ranges;
+
+            soc_ctrl0: soc_controller@f0000000 {
+                compatible = "litex,soc-controller";
+                reg = <0xf0000000 0xc>;
+                status = "okay";
+            };
+
+            intc0: interrupt-controller@f0c00000 {
+                compatible = "sifive,fu540-c000-plic", "sifive,plic-1.0.0";
+                reg = <0xf0c00000 0x400000>;
+                #address-cells = <0>;
+                #interrupt-cells = <1>;
+                interrupt-controller;
+                interrupts-extended = <
+                    &L0 11 &L0 9>;
+                riscv,ndev = <32>;
+            };
+
+	    CTU_CAN_FD@80010000 {
+		compatible = "ctu,ctucanfd";
+		reg = <0x80010000 0x10000>;
+		interrupt-parent = <0x01>;
+		interrupts = <0x00 0x1e 0x04>;
+		clocks = <0x03>;
+		status = "okay";
+	    };
+
+            liteuart0: serial@f0001000 {
+                compatible = "litex,liteuart";
+                reg = <0xf0001000 0x100>;
+                interrupts = <1>;
+                status = "okay";
+            };
+
+            mac0: mac@f0002000 {
+                compatible = "litex,liteeth";
+                reg = <0xf0002000 0x7c>,
+                      <0xf0002800 0x0a>,
+                      <0x80000000 0x2000>;
+                reg-names = "mac", "mdio", "buffer";
+                litex,rx-slots = <2>;
+                litex,tx-slots = <2>;
+                litex,slot-size = <2048>;
+                interrupts = <3>;
+                status = "okay";
+            };
+
+            mmc0: mmc@f0006000 {
+                compatible = "litex,mmc";
+                reg = <0xf0006000 0x100>,
+                      <0xf0004800 0x100>,
+                      <0xf0004000 0x100>,
+                      <0xf0005800 0x100>,
+                      <0xf0005000 0x100>;
+                reg-names = "phy", "core", "reader", "writer", "irq";
+                clocks = <&sys_clk>;
+                vmmc-supply = <&vreg_mmc>;
+                bus-width = <0x04>;
+                interrupts = <4>;
+                status = "okay";
+            };
+
+            leds: gpio@f0003800 {
+                compatible = "litex,gpio";
+                reg = <0xf0003800 0x4>;
+                gpio-controller;
+                #gpio-cells = <2>;
+                litex,direction = "out";
+                status = "disabled";
+            };
+
+        };
+
+        aliases {
+
+                serial0 = &liteuart0;
+
+        };
+
+};
+
+&leds {
+        litex,ngpio = <4>;
+        status = "okay";
+};
