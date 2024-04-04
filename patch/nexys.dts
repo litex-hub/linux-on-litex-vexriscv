@@ -1,0 +1,167 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <0x01>;
+	#size-cells = <0x01>;
+
+	chosen {
+		bootargs = "console=liteuart earlycon=liteuart,0xf0001000 rootwait root=/dev/ram0 ip=192.168.1.50:192.168.1.100:192.168.1.100:255.255.255.0::eth0:off:::";
+		linux,initrd-start = <0x41000000>;
+		linux,initrd-end = <0x41800000>;
+	};
+
+	pll {
+		compatible = "fixed-clock";
+		#clock-cells = <0x00>;
+		clock-frequency = <0x47868c0>;
+		phandle = <0x03>;
+	};
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <0x47868c0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			riscv,isa = "rv32i2p0_ma";
+			mmu-type = "riscv,sv32";
+			reg = <0x00>;
+			clock-frequency = <0x47868c0>;
+			status = "okay";
+			d-cache-size = <0x1000>;
+			d-cache-sets = <0x01>;
+			d-cache-block-size = <0x40>;
+			i-cache-size = <0x1000>;
+			i-cache-sets = <0x01>;
+			i-cache-block-size = <0x40>;
+			d-tlb-size = <0x04>;
+			d-tlb-sets = <0x04>;
+			i-tlb-size = <0x04>;
+			i-tlb-sets = <0x04>;
+
+			interrupt-controller {
+				#address-cells = <0x00>;
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				phandle = <0x02>;
+			};
+		};
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x8000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		ranges;
+
+		opensbi@40f00000 {
+			reg = <0x40f00000 0x80000>;
+		};
+
+		framebuffer@40c00000 {
+			reg = <0x40c00000 0x1d4c00>;
+		};
+	};
+
+	vreg_mmc {
+		compatible = "regulator-fixed";
+		regulator-name = "vreg_mmc";
+		regulator-min-microvolt = <0x325aa0>;
+		regulator-max-microvolt = <0x325aa0>;
+		regulator-always-on;
+		phandle = <0x04>;
+	};
+
+	soc {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "simple-bus";
+		interrupt-parent = <0x01>;
+		ranges;
+
+		soc_controller@f0000000 {
+			compatible = "litex,soc-controller";
+			reg = <0xf0000000 0x0c>;
+			status = "okay";
+		};
+
+		interrupt-controller@f0c00000 {
+			compatible = "sifive,fu540-c000-plic\0sifive,plic-1.0.0";
+			reg = <0xf0c00000 0x400000>;
+			#address-cells = <0x00>;
+			#interrupt-cells = <0x01>;
+			interrupt-controller;
+			interrupts-extended = <0x02 0x0b 0x02 0x09>;
+			riscv,ndev = <0x20>;
+			phandle = <0x01>;
+		};
+
+		CTU_CAN_FD@80010000 {
+			compatible = "ctu,ctucanfd";
+			reg = <0x80010000 0x10000>;
+			interrupt-parent = <0x01>;
+			interrupts = <0x00 0x1e 0x04>;
+			clocks = <0x03>;
+			status = "okay";
+		};
+
+		serial@f0001000 {
+			compatible = "litex,liteuart";
+			reg = <0xf0001000 0x100>;
+			interrupts = <0x01>;
+			status = "okay";
+		};
+
+		mac@f0002000 {
+			compatible = "litex,liteeth";
+			reg = <0xf0002000 0x7c 0xf0002800 0x0a 0x80000000 0x2000>;
+			reg-names = "mac\0mdio\0buffer";
+			litex,rx-slots = <0x02>;
+			litex,tx-slots = <0x02>;
+			litex,slot-size = <0x800>;
+			interrupts = <0x03>;
+			status = "okay";
+		};
+
+		mmc@f0006000 {
+			compatible = "litex,mmc";
+			reg = <0xf0006000 0x100 0xf0004800 0x100 0xf0004000 0x100 0xf0005800 0x100 0xf0005000 0x100>;
+			reg-names = "phy\0core\0reader\0writer\0irq";
+			clocks = <0x03>;
+			vmmc-supply = <0x04>;
+			bus-width = <0x04>;
+			interrupts = <0x04>;
+			status = "okay";
+		};
+
+		gpio@f0003800 {
+			compatible = "litex,gpio";
+			reg = <0xf0003800 0x04>;
+			gpio-controller;
+			#gpio-cells = <0x02>;
+			litex,direction = "out";
+			status = "okay";
+			litex,ngpio = <0x04>;
+		};
+
+		framebuffer@40c00000 {
+			compatible = "simple-framebuffer";
+			reg = <0x40c00000 0x1d4c00>;
+			width = <0x320>;
+			height = <0x258>;
+			stride = <0xc80>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	aliases {
+		serial0 = "/soc/serial@f0001000";
+	};
+};

@@ -238,6 +238,7 @@ class Nexys4DDR(Board):
             "sdcard",
             # Video
             "framebuffer",
+            "can",
         })
 
 # NexysVideo support -------------------------------------------------------------------------------
