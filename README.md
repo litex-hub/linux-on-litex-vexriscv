@@ -123,6 +123,14 @@ $ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-201
 $ tar -xvf riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
 $ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14/bin/
 ```
+
+[> Installing SBT (Only required for custom CPU configs)
+--------------------------------
+Some regular VexRiscv-smp configuration are already pregenerated, 
+but for others, it need to run som SpinalHDL hardware generation, which require sbt.
+
+Please visit: https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Linux.html#Installing+sbt+on+Linux
+
 [> Installing Verilator (only needed for simulation)
 ----------------------------------------------------
 ```sh
