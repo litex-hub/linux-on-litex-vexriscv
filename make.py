@@ -394,6 +394,16 @@ class DecklinkQuadHDMIRecorder(Board):
             "pcie",
         })
 
+# HSEDA XC7A35T -----------------------------------------------------------------------------------
+class HSEDA_xc7a35t(Board):
+    soc_kwargs = {"sys_clk_freq": int(80e6)}
+    def __init__(self):
+        from litex_boards.targets import hseda_xc7a35t
+        Board.__init__(self, hseda_xc7a35t.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -786,6 +796,7 @@ supported_boards = {
     "stlv7325"                    : STLV7325,
     "stlv7325_v2"                 : STLV7325_v2,
     "decklink_quad_hdmi_recorder" : DecklinkQuadHDMIRecorder,
+    "hseda_xc7a35t"               : HSEDA_xc7a35t,
 
     # Lattice
     "versa_ecp5"                  : VersaECP5,
