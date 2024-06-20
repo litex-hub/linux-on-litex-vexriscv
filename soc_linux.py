@@ -23,6 +23,18 @@ from litex.soc.cores.icap import ICAPBitstream
 from litex.soc.cores.clock import S7MMCM
 
 from litex.tools.litex_json2dts_linux import generate_dts
+from litex.build.generic_platform import Subsignal, Pins, IOStandard
+from ctucan import CTUCAN, CTUCANWishboneWrapper
+from litex.soc.integration.soc import SoCRegion
+
+def can_io(pmod):
+    return [(
+        "can",
+        0,
+        Subsignal("rx", Pins(f"{pmod}:2")),
+        Subsignal("tx", Pins(f"{pmod}:7")),
+        IOStandard("LVCMOS33"),
+    )]
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -55,6 +67,15 @@ def SoCLinux(soc_cls, **kwargs):
         # I2C --------------------------------------------------------------------------------------
         def add_i2c(self):
             self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
+
+        # CAN --------------------------------------------------------------------------------------
+        def add_can(self):
+            self.platform.add_extension(can_io("pmodc"))
+            can_pads = self.platform.request("can")
+            self.submodules.can = CTUCAN(self.platform, can_pads, "vhdl")
+            can_region = SoCRegion(origin=self.mem_map.get("can", None), size=self.can.wbwrapper.size, cached=False)
+            self.bus.add_slave(name="can", slave=self.can.wbwrapper.bus, region=can_region)
+            self.irq.add("can")
 
         # XADC (Xilinx only) -----------------------------------------------------------------------
         def add_xadc(self):

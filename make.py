@@ -93,6 +93,7 @@ class Arty(Board):
             # 7-Series specific
             "mmcm",
             "icap_bitstream",
+            "can",
         })
 
 class ArtyA7(Arty): pass
@@ -149,6 +150,7 @@ class Genesys2(Board):
             "ethernet",
             # Storage
             "sdcard",
+            "can",
         })
 
 # KC705 support ---------------------------------------------------------------------------------
@@ -236,6 +238,7 @@ class Nexys4DDR(Board):
             "sdcard",
             # Video
             "framebuffer",
+            "can",
         })
 
 # NexysVideo support -------------------------------------------------------------------------------
@@ -949,6 +952,8 @@ def main():
             soc.add_xadc()
         if "icap_bitstream" in board.soc_capabilities:
             soc.add_icap_bitstream()
+        if "can" in board.soc_capabilities:
+            soc.add_can()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
