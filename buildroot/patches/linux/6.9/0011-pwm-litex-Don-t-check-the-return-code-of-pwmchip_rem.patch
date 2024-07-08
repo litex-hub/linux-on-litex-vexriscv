@@ -1,0 +1,34 @@
+From 8105c0288fc0624cbcab338aa1df9cabf849ad75 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 14 Sep 2021 12:14:25 +0200
+Subject: [PATCH 11/19] pwm: litex: Don't check the return code of
+ pwmchip_remove()
+
+Since commit 8083f58d08fd52f5 ("pwm: Make pwmchip_remove() return
+void"), pwmchip_remove() returns always 0. Don't use the value to make
+it possible to eventually change the function to return void. Also the
+driver core ignores the return value of litex_pwm_remove().
+
+Fixes: 6ba87034c6d168cd ("LiteX: driver for PWM")
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/pwm/pwm-litex.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pwm/pwm-litex.c b/drivers/pwm/pwm-litex.c
+index f2644f22ca67..c6b99b6e0983 100644
+--- a/drivers/pwm/pwm-litex.c
++++ b/drivers/pwm/pwm-litex.c
+@@ -154,7 +154,8 @@ static int litex_pwm_remove(struct platform_device *pdev)
+ {
+ 	struct litex_pwm_chip *litex = platform_get_drvdata(pdev);
+ 
+-	return pwmchip_remove(&litex->chip);
++	pwmchip_remove(&litex->chip);
++	return 0;
+ }
+ 
+ static const struct of_device_id litex_of_match[] = {
+-- 
+2.43.0
+

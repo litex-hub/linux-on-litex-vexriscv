@@ -1,0 +1,577 @@
+From 7bb24a2e75b4054f2b5570aaff314c536bf10ec6 Mon Sep 17 00:00:00 2001
+From: Robert Winkler <rwinkler@antmicro.com>
+Date: Tue, 22 Dec 2020 16:40:27 -0500
+Subject: [PATCH 17/19] LiteX: driver for LiteVideo
+
+Signed-off-by: Robert Winkler <rwinkler@antmicro.com>
+Signed-off-by: Filip Kokosinski <fkokosinski@antmicro.com>
+
+FIXME: still needs register offsets re-calculated based on subreg width (gls)!
+FIXME: not updated or tested for 32-bit CSR data width, 64-bit CPU (gls)
+---
+ .../bindings/gpu/litex,litevideo.txt          |  34 ++
+ drivers/gpu/drm/Kconfig                       |   2 +
+ drivers/gpu/drm/Makefile                      |   1 +
+ drivers/gpu/drm/litevideo/Kconfig             |  18 ++
+ drivers/gpu/drm/litevideo/Makefile            |   3 +
+ drivers/gpu/drm/litevideo/litevideo.c         | 300 ++++++++++++++++++
+ drivers/gpu/drm/litevideo/litevideo.h         |  86 +++++
+ drivers/gpu/drm/litevideo/mmcm.h              |  46 +++
+ 8 files changed, 490 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/gpu/litex,litevideo.txt
+ create mode 100644 drivers/gpu/drm/litevideo/Kconfig
+ create mode 100644 drivers/gpu/drm/litevideo/Makefile
+ create mode 100644 drivers/gpu/drm/litevideo/litevideo.c
+ create mode 100644 drivers/gpu/drm/litevideo/litevideo.h
+ create mode 100644 drivers/gpu/drm/litevideo/mmcm.h
+
+diff --git a/Documentation/devicetree/bindings/gpu/litex,litevideo.txt b/Documentation/devicetree/bindings/gpu/litex,litevideo.txt
+new file mode 100644
+index 000000000000..a6e8f61f289d
+--- /dev/null
++++ b/Documentation/devicetree/bindings/gpu/litex,litevideo.txt
+@@ -0,0 +1,34 @@
++DRM LiteX LiteVideo driver
++
++Required properties:
++- compatible: should be "litex,litevideo"
++- reg: base address of configuration registers with length
++- litevideo,pixel-clock: pixel clock frequency in kHz
++- litevideo,h-active: horizontal active pixels
++- litevideo,h-blanking: total horizontal blanking
++- litevideo,h-sync: horizontal sync width
++- litevideo,h-front-porch: horizontal front porch
++- litevideo,v-active: vertical active pixels
++- litevideo,v-blanking: vertical total blanking
++- litevideo,v-sync: vertical sync width
++- litevideo,v-front-porch: vertical front porch
++- litevideo,dma-offset: dma offset in memory
++- litevideo,dma-length: size of memory used for storing the image
++
++Examples:
++
++litevideo0: gpu@f0009800 {
++	compatible = "litex,litevideo";
++	reg = <0x0 0xf0009800 0x0 0x100>;
++	litevideo,pixel-clock = <148500>;
++	litevideo,h-active = <1920>;
++	litevideo,h-blanking = <280>;
++	litevideo,h-sync = <44>;
++	litevideo,h-front-porch = <148>;
++	litevideo,v-active = <1080>;
++	litevideo,v-blanking = <45>;
++	litevideo,v-sync = <5>;
++	litevideo,v-front-porch = <36>;
++	litevideo,dma-offset = <0x8000000>;
++	litevideo,dma-length = <0x7e9000>;
++};
+diff --git a/drivers/gpu/drm/Kconfig b/drivers/gpu/drm/Kconfig
+index c7edba18a6f0..09772cc00ff4 100644
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -400,6 +400,8 @@ source "drivers/gpu/drm/sprd/Kconfig"
+ 
+ source "drivers/gpu/drm/imagination/Kconfig"
+ 
++source "drivers/gpu/drm/litevideo/Kconfig"
++
+ config DRM_HYPERV
+ 	tristate "DRM Support for Hyper-V synthetic video device"
+ 	depends on DRM && PCI && MMU && HYPERV
+diff --git a/drivers/gpu/drm/Makefile b/drivers/gpu/drm/Makefile
+index 104b42df2e95..9b7989995851 100644
+--- a/drivers/gpu/drm/Makefile
++++ b/drivers/gpu/drm/Makefile
+@@ -187,5 +187,6 @@ obj-y			+= gud/
+ obj-$(CONFIG_DRM_HYPERV) += hyperv/
+ obj-y			+= solomon/
+ obj-$(CONFIG_DRM_SPRD) += sprd/
++obj-$(CONFIG_DRM_LITEVIDEO) += litevideo/
+ obj-$(CONFIG_DRM_LOONGSON) += loongson/
+ obj-$(CONFIG_DRM_POWERVR) += imagination/
+diff --git a/drivers/gpu/drm/litevideo/Kconfig b/drivers/gpu/drm/litevideo/Kconfig
+new file mode 100644
+index 000000000000..27a4c7660d4a
+--- /dev/null
++++ b/drivers/gpu/drm/litevideo/Kconfig
+@@ -0,0 +1,18 @@
++# SPDX-License-Identifier: GPL-2.0
++
++# Copyright (C) 2020 Antmicro <www.antmicro.com>
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License version 2
++# as published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++config DRM_LITEVIDEO
++	tristate "LiteVideo support"
++	depends on DRM && LITEX_SOC_CONTROLLER
++	help
++	  This enables DRM driver for LiteX LiteVideo.
+diff --git a/drivers/gpu/drm/litevideo/Makefile b/drivers/gpu/drm/litevideo/Makefile
+new file mode 100644
+index 000000000000..d752ef770bc3
+--- /dev/null
++++ b/drivers/gpu/drm/litevideo/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++
++obj-$(CONFIG_DRM_LITEVIDEO) += litevideo.o
+diff --git a/drivers/gpu/drm/litevideo/litevideo.c b/drivers/gpu/drm/litevideo/litevideo.c
+new file mode 100644
+index 000000000000..f028a8fa883d
+--- /dev/null
++++ b/drivers/gpu/drm/litevideo/litevideo.c
+@@ -0,0 +1,300 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2020 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <drm/drm_device.h>
++#include <drm/drm_drv.h>
++#include <drm/drm_ioctl.h>
++#include <drm/drm_prime.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/wait.h>
++#include <linux/platform_device.h>
++#include <linux/types.h>
++#include <linux/litex.h>
++#include <linux/errno.h>
++
++#include "litevideo.h"
++#include "mmcm.h"
++
++#define DRIVER_NAME     "litevideo"
++
++#define DMA_DISABLE     0
++#define DMA_ENABLE      1
++
++static void litevideo_get_md(u32 pixel_clock, u32 *best_m, u32 *best_d)
++{
++	u32 ideal_m, ideal_d, curr_m, curr_d, m, d;
++	u32 curr_diff, test_diff;
++
++	ideal_m = pixel_clock;
++	ideal_d = LITEVIDEO_IDEAL_DIV_VALUE;
++
++	/* Start searching from minimum values */
++
++	curr_m = MMCM_MIN_M;
++	curr_d = MMCM_MIN_D;
++
++	for (d = MMCM_MIN_D; d < MMCM_MAX_D; d++) {
++		for (m = MMCM_MIN_M; m < MMCM_MAX_M; m++) {
++
++			/* Clocks cannot be set perfectly, therefore all
++			 * combinations for multiplier (m) and divisor (d)
++			 * are checked to find the closest possible clock value
++			 */
++
++			curr_diff = abs((d * ideal_d * curr_m) -
++					(d * curr_d * ideal_m));
++			test_diff = abs((curr_d * ideal_d * m) -
++					(d * curr_d * ideal_m));
++
++			if (test_diff < curr_diff) {
++				curr_m = m;
++				curr_d = d;
++			}
++		}
++	}
++
++	*best_m = curr_m;
++	*best_d = curr_d;
++}
++
++static int litevideo_mmcm_write(struct litevideo_prv *prv, u32 addr, u32 data)
++{
++	/* write MMCM register address */
++
++	litex_write8(prv->base + LITEVIDEO_MMCM_ADDR_OFF, addr);
++
++	/* write data to send to MMCM register */
++
++	litex_write16(prv->base + LITEVIDEO_MMCM_DATA_OFF, data);
++
++	/* send the data */
++
++	litex_write8(prv->base + LITEVIDEO_MMCM_WRITE_OFF, MMCM_WRITE);
++
++	/* wait for transfer finish */
++
++	if (!wait_event_timeout(prv->wq,
++			litex_read8(prv->base + LITEVIDEO_MMCM_READY_OFF),
++			HZ))
++		return -ETIMEDOUT;
++
++	return 0;
++}
++
++static int litevideo_clkgen_write(struct litevideo_prv *prv, u32 m, u32 d)
++{
++	/* write M */
++
++	int ret;
++
++	ret = litevideo_mmcm_write(prv, MMCM_CLKFBOUT1,
++				   MMCM_HT_FALLING_EDGE |
++				   (m / 2) << MMCM_HT_SHIFT |
++				   (m / 2 + (m % 2)) << MMCM_LT_SHIFT);
++
++	if (ret < 0)
++		return ret;
++
++	/* write D */
++
++	if (d == 1)
++		ret = litevideo_mmcm_write(prv, MMCM_DIVCLK,
++					   MMCM_HT_FALLING_EDGE);
++	else
++		ret = litevideo_mmcm_write(prv, MMCM_DIVCLK,
++					   (d / 2) << MMCM_HT_SHIFT |
++					   (d / 2 + (d % 2)) << MMCM_LT_SHIFT);
++
++	if (ret < 0)
++		return ret;
++
++	/* clkout0_divide = 10 */
++
++	ret = litevideo_mmcm_write(prv, MMCM_CLKOUT0,
++				   MMCM_HT_FALLING_EDGE |
++				   MMCM_CLKOUT_DIV10 << MMCM_HT_SHIFT |
++				   MMCM_CLKOUT_DIV10 << MMCM_LT_SHIFT);
++
++	if (ret < 0)
++		return ret;
++
++	/* clkout1_divide = 2 */
++
++	ret = litevideo_mmcm_write(prv, MMCM_CLKOUT1,
++				   MMCM_HT_FALLING_EDGE |
++				   MMCM_CLKOUT_DIV2 << MMCM_HT_SHIFT |
++				   MMCM_CLKOUT_DIV2 << MMCM_LT_SHIFT);
++
++	return ret;
++}
++
++static int litevideo_drv_init(struct litevideo_prv *prv, u32 m, u32 d)
++{
++	int ret;
++
++	/* initialize waitqueue for timeouts in litex_mmcm_write() */
++
++	init_waitqueue_head(&prv->wq);
++
++	/* generate clock */
++
++	ret = litevideo_clkgen_write(prv, m, d);
++	if (ret < 0)
++		return ret;
++
++	/* timings - horizontal */
++
++	litex_write16(prv->base + LITEVIDEO_CORE_HRES_OFF,
++		      prv->h_active);
++	litex_write16(prv->base + LITEVIDEO_CORE_HSYNC_START_OFF,
++		      prv->h_active + prv->h_front_porch);
++	litex_write16(prv->base + LITEVIDEO_CORE_HSYNC_END_OFF,
++		      prv->h_active + prv->h_front_porch + prv->v_sync);
++	litex_write16(prv->base + LITEVIDEO_CORE_HSCAN_OFF,
++		      prv->h_active + prv->h_blanking);
++
++	/* timings - vertical */
++
++	litex_write16(prv->base + LITEVIDEO_CORE_VRES_OFF,
++		      prv->v_active);
++	litex_write16(prv->base + LITEVIDEO_CORE_VSYNC_START_OFF,
++		      prv->v_active + prv->v_front_porch);
++	litex_write16(prv->base + LITEVIDEO_CORE_VSYNC_END_OFF,
++		      prv->v_active + prv->v_front_porch + prv->v_sync);
++	litex_write16(prv->base + LITEVIDEO_CORE_VSCAN_OFF,
++		      prv->v_active + prv->v_blanking);
++
++	/* configure DMA */
++
++	litex_write8(prv->base + LITEVIDEO_DMA_ENABLE_OFF, DMA_DISABLE);
++	// FIXME: gateware and this call should be updated to 64-bit base addr!
++	litex_write32(prv->base + LITEVIDEO_DMA_BASE_ADDR_OFF, prv->dma_offset);
++	litex_write32(prv->base + LITEVIDEO_DMA_LENGTH_OFF, prv->dma_length);
++	litex_write8(prv->base + LITEVIDEO_DMA_ENABLE_OFF, DMA_ENABLE);
++
++	return 0;
++}
++
++static int litevideo_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct litevideo_prv *prv;
++	struct resource *res;
++	int ret;
++	u32 val;
++	u32 m, d;
++
++	/* no device tree */
++
++	if (!np)
++		return -ENODEV;
++
++	prv = devm_kzalloc(&pdev->dev, sizeof(*prv), GFP_KERNEL);
++	if (!prv)
++		return -ENOMEM;
++
++	/* pixel clock */
++
++	ret = of_property_read_u32(np, "litevideo,pixel-clock", &val);
++	if (ret)
++		return -EINVAL;
++	prv->pixel_clock = val;
++
++	/* timings - vertical */
++
++	ret = of_property_read_u32(np, "litevideo,v-active", &val);
++	if (ret)
++		return -EINVAL;
++	prv->v_active = val;
++
++	ret = of_property_read_u32(np, "litevideo,v-blanking", &val);
++	if (ret)
++		return -EINVAL;
++	prv->v_blanking = val;
++
++	ret = of_property_read_u32(np, "litevideo,v-front-porch", &val);
++	if (ret)
++		return -EINVAL;
++	prv->v_front_porch = val;
++
++	ret = of_property_read_u32(np, "litevideo,v-sync", &val);
++	if (ret)
++		return -EINVAL;
++	prv->v_sync = val;
++
++	/* timings - horizontal */
++
++	ret = of_property_read_u32(np, "litevideo,h-active", &val);
++	if (ret)
++		return -EINVAL;
++	prv->h_active = val;
++
++	ret = of_property_read_u32(np, "litevideo,h-blanking", &val);
++	if (ret)
++		return -EINVAL;
++	prv->h_blanking = val;
++
++	ret = of_property_read_u32(np, "litevideo,h-front-porch", &val);
++	if (ret)
++		return -EINVAL;
++	prv->h_front_porch = val;
++
++	ret = of_property_read_u32(np, "litevideo,h-sync", &val);
++	if (ret)
++		return -EINVAL;
++	prv->h_sync = val;
++
++	/* DMA */
++
++	ret = of_property_read_u32(np, "litevideo,dma-offset", &val);
++	if (ret)
++		return -EINVAL;
++	prv->dma_offset = val;
++
++	ret = of_property_read_u32(np, "litevideo,dma-length", &val);
++	if (ret)
++		return -EINVAL;
++	prv->dma_length = val;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	prv->base = devm_ioremap_resource(&pdev->dev, res);
++	if (!prv->base)
++		return -ENXIO;
++
++	litevideo_get_md(prv->pixel_clock, &m, &d);
++	return litevideo_drv_init(prv, m, d);
++}
++
++static const struct of_device_id litevideo_of_match[] = {
++	{ .compatible = "litex,litevideo" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, litevideo_of_match);
++
++static struct platform_driver litevideo_platform_driver = {
++	.probe = litevideo_probe,
++	.driver = {
++		.name = DRIVER_NAME,
++		.owner = THIS_MODULE,
++		.of_match_table = litevideo_of_match,
++	},
++};
++
++module_platform_driver(litevideo_platform_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("LiteVideo driver");
++MODULE_AUTHOR("Antmicro <www.antmicro.com>");
++MODULE_ALIAS("platform:" DRIVER_NAME);
+diff --git a/drivers/gpu/drm/litevideo/litevideo.h b/drivers/gpu/drm/litevideo/litevideo.h
+new file mode 100644
+index 000000000000..c0fbaaa83d9f
+--- /dev/null
++++ b/drivers/gpu/drm/litevideo/litevideo.h
+@@ -0,0 +1,86 @@
++/* SPDX-License-Identifier: GPL-2.0
++ *
++ * Copyright (C) 2020 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _LITEVIDEO_LITEVIDEO_H_
++#define _LITEVIDEO_LITEVIDEO_H_
++
++#include <drm/drm.h>
++#include <linux/of.h>
++#include <linux/clk.h>
++#include <linux/wait.h>
++
++/* register offsets */
++
++#define LITEVIDEO_CORE_HRES_OFF          0x1c
++#define LITEVIDEO_CORE_HSYNC_START_OFF   0x24
++#define LITEVIDEO_CORE_HSYNC_END_OFF     0x2c
++#define LITEVIDEO_CORE_HSCAN_OFF         0x34
++#define LITEVIDEO_CORE_VRES_OFF          0x3c
++#define LITEVIDEO_CORE_VSYNC_START_OFF   0x44
++#define LITEVIDEO_CORE_VSYNC_END_OFF     0x4c
++#define LITEVIDEO_CORE_VSCAN_OFF         0x54
++
++#define LITEVIDEO_MMCM_WRITE_OFF         0x94
++#define LITEVIDEO_MMCM_READY_OFF         0x98
++#define LITEVIDEO_MMCM_ADDR_OFF          0x9c
++#define LITEVIDEO_MMCM_DATA_OFF          0xa0
++
++#define LITEVIDEO_DMA_ENABLE_OFF         0x18
++#define LITEVIDEO_DMA_BASE_ADDR_OFF      0x5c
++#define LITEVIDEO_DMA_LENGTH_OFF         0x6c
++
++/* register sizes */
++
++#define LITEVIDEO_CORE_HRES_SIZE         2
++#define LITEVIDEO_CORE_HSYNC_START_SIZE  2
++#define LITEVIDEO_CORE_HSYNC_END_SIZE    2
++#define LITEVIDEO_CORE_HSCAN_SIZE        2
++#define LITEVIDEO_CORE_VRES_SIZE         2
++#define LITEVIDEO_CORE_VSYNC_START_SIZE  2
++#define LITEVIDEO_CORE_VSYNC_END_SIZE    2
++#define LITEVIDEO_CORE_VSCAN_SIZE        2
++
++#define LITEVIDEO_MMCM_WRITE_SIZE        1
++#define LITEVIDEO_MMCM_READY_SIZE        1
++#define LITEVIDEO_MMCM_ADDR_SIZE         1
++#define LITEVIDEO_MMCM_DATA_SIZE         2
++
++#define LITEVIDEO_DMA_ENABLE_SIZE        1
++#define LITEVIDEO_DMA_BASE_ADDR_SIZE     4
++#define LITEVIDEO_DMA_LENGTH_SIZE        4
++
++/* constants */
++
++/* clk100 has to be used for LiteX VideoOut */
++#define LITEVIDEO_IDEAL_DIV_VALUE 10000
++
++struct litevideo_prv {
++	struct drm_device *drm_dev;
++	void __iomem *base;
++	struct clk *hdmi_clk;
++	wait_queue_head_t wq;
++	u32 h_active;
++	u32 h_blanking;
++	u32 h_front_porch;
++	u32 h_sync;
++	u32 v_active;
++	u32 v_blanking;
++	u32 v_front_porch;
++	u32 v_sync;
++	u32 dma_offset;
++	u32 dma_length;
++	u32 pixel_clock;
++};
++
++#endif /* _LITEVIDEO_LITEVIDEO_H_ */
+diff --git a/drivers/gpu/drm/litevideo/mmcm.h b/drivers/gpu/drm/litevideo/mmcm.h
+new file mode 100644
+index 000000000000..de25c5a0ac95
+--- /dev/null
++++ b/drivers/gpu/drm/litevideo/mmcm.h
+@@ -0,0 +1,46 @@
++/* SPDX-License-Identifier: GPL-2.0
++ *
++ * Copyright (C) 2020 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _LITEVIDEO_MMCM_H_
++#define _LITEVIDEO_MMCM_H_
++
++/* mmcm addresses */
++
++#define MMCM_CLKFBOUT1     0x14
++#define MMCM_DIVCLK        0x16
++#define MMCM_CLKOUT0       0x08
++#define MMCM_CLKOUT1       0x0a
++
++/* predefined values and shifts */
++
++#define MMCM_HT_FALLING_EDGE   0x1000
++#define MMCM_HT_SHIFT          6
++#define MMCM_LT_SHIFT          0
++
++/* This values should be set both to HIGH_TIME and LOW_TIME in CLKOUTx
++ * - clk division time = 2*VALUE   // (i.e. MMCM_CLKOUT_DIV10)
++ * - duty              = 50%       // (HIGH_TIME / (HIGH_TIME + LOW_TIME))
++ */
++
++#define MMCM_CLKOUT_DIV10  5
++#define MMCM_CLKOUT_DIV2   1
++
++#define MMCM_WRITE         1
++
++#define MMCM_MIN_M         2
++#define MMCM_MAX_M         128
++#define MMCM_MIN_D         1
++#define MMCM_MAX_D         128
++
++#endif /* _LITEVIDEO_MMCM_H_ */
+-- 
+2.43.0
+

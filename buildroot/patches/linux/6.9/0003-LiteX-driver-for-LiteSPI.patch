@@ -1,0 +1,287 @@
+From c6cacb184c63a701241a53a59119208f05cbc87f Mon Sep 17 00:00:00 2001
+From: Filip Kokosinski <fkokosinski@internships.antmicro.com>
+Date: Tue, 22 Dec 2020 11:24:43 -0500
+Subject: [PATCH 03/19] LiteX: driver for LiteSPI
+
+Original author: Filip Kokosinski <fkokosinski@internships.antmicro.com>
+Cleanup, 32-bit CSR, 64-bit CPU update: Gabriel Somlo <gsomlo@gmail.com>
+Misc. fixes and maintenance: Geert Uytterhoeven <geert@linux-m68k.org>
+
+Signed-off-by: Filip Kokosinski <fkokosinski@internships.antmicro.com>
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Gabriel Somlo <gsomlo@gmail.com>
+---
+ .../devicetree/bindings/spi/litex,litespi.txt |  19 ++
+ drivers/spi/Kconfig                           |   7 +
+ drivers/spi/Makefile                          |   1 +
+ drivers/spi/spi-litespi.c                     | 202 ++++++++++++++++++
+ 4 files changed, 229 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/litex,litespi.txt
+ create mode 100644 drivers/spi/spi-litespi.c
+
+diff --git a/Documentation/devicetree/bindings/spi/litex,litespi.txt b/Documentation/devicetree/bindings/spi/litex,litespi.txt
+new file mode 100644
+index 000000000000..d5ddb4ec6ce4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/litex,litespi.txt
+@@ -0,0 +1,19 @@
++LiteSPI controller
++
++Required properties:
++- compatible should be "litex,litespi"
++- reg: base address and length of the register set for this device
++- litespi,max-bpw: maximum value of bits per word
++- litespi,sck-frequency: SPI clock frequency
++- litespi,num-cs: number of chip select lines available
++
++Example:
++
++litespi0: spi@f0005800 {
++	compatible = "litex,litespi";
++	reg = <0xf0005800 0x100>;
++
++	litespi,max-bpw = <8>;
++	litespi,sck-frequency = <1000000>;
++	litespi,num-cs = <1>;
++};
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index ddae0fde798e..472182f70fc4 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -514,6 +514,13 @@ config SPI_JCORE
+ 	  This enables support for the SPI master controller in the J-Core
+ 	  synthesizable, open source SoC.
+ 
++config SPI_LITESPI
++	tristate "LiteSPI SPI master driver"
++	depends on OF && LITEX
++	help
++	  This enables support for LiteSPI, the SPI master controller of
++	  the LiteX FPGA SoC builder.
++
+ config SPI_LM70_LLP
+ 	tristate "Parallel port adapter for LM70 eval board (DEVELOPMENT)"
+ 	depends on PARPORT
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index 4ff8d725ba5e..2c535c6ff5f3 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -71,6 +71,7 @@ obj-$(CONFIG_SPI_INTEL_PCI)		+= spi-intel-pci.o
+ obj-$(CONFIG_SPI_INTEL_PLATFORM)	+= spi-intel-platform.o
+ obj-$(CONFIG_SPI_LANTIQ_SSC)		+= spi-lantiq-ssc.o
+ obj-$(CONFIG_SPI_JCORE)			+= spi-jcore.o
++obj-$(CONFIG_SPI_LITESPI)		+= spi-litespi.o
+ obj-$(CONFIG_SPI_LJCA)			+= spi-ljca.o
+ obj-$(CONFIG_SPI_LM70_LLP)		+= spi-lm70llp.o
+ obj-$(CONFIG_SPI_LOONGSON_CORE)		+= spi-loongson-core.o
+diff --git a/drivers/spi/spi-litespi.c b/drivers/spi/spi-litespi.c
+new file mode 100644
+index 000000000000..59ce4f038560
+--- /dev/null
++++ b/drivers/spi/spi-litespi.c
+@@ -0,0 +1,202 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * LiteSPI controller (LiteX) Driver
++ *
++ * Copyright (C) 2019 Antmicro Ltd. <www.antmicro.com>
++ */
++
++#include <linux/device.h>
++#include <linux/litex.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++
++#define DRIVER_NAME "litespi"
++
++/* register sizes */
++#define LITESPI_SZ_CTRL		2
++#define LITESPI_SZ_STAT		1
++#define LITESPI_SZ_MOSI		4
++#define LITESPI_SZ_MISO		4
++#define LITESPI_SZ_CS		1
++
++/* register offsets */
++#define LITESPI_OFF_CTRL	0x00
++#define LITESPI_OFF_STAT	0x04
++#define LITESPI_OFF_MOSI	0x08
++#define LITESPI_OFF_MISO	0x0C
++#define LITESPI_OFF_CS		0x10
++
++#define LITESPI_CTRL_SHIFT_BPW	8
++#define LITESPI_CTRL_START_BIT	0
++
++struct litespi_hw {
++	struct spi_controller *ctlr;
++	void __iomem *base;
++};
++
++static inline void litespi_wait_xfer_end(struct litespi_hw *hw)
++{
++	while (!litex_read8(hw->base + LITESPI_OFF_STAT))
++		cpu_relax();
++}
++
++static int litespi_rxtx(struct spi_controller *ctlr, struct spi_device *spi,
++			struct spi_transfer *t)
++{
++	struct litespi_hw *hw = spi_controller_get_devdata(ctlr);
++	u16 ctl_word = t->bits_per_word << LITESPI_CTRL_SHIFT_BPW;
++	int i;
++
++	/* set chip select */
++	litex_write8(hw->base + LITESPI_OFF_CS, BIT(spi_get_chipselect(spi, 0)));
++
++	/* set word size */
++	litex_write16(hw->base + LITESPI_OFF_CTRL, ctl_word);
++
++	/* add start bit to ctl_word */
++	ctl_word |= BIT(LITESPI_CTRL_START_BIT);
++
++	/*
++	 * Validated SPI transfer length is multiple of SPI word size, which
++	 * is itself a power-of-two multiple, and fits in a litex subregister
++	 */
++	if (t->bits_per_word <= 8) {
++		const u8 *tx = t->tx_buf;
++		u8 *rx = t->rx_buf;
++
++		/* word size is 1 byte */
++		for (i = 0; i < t->len; i++) {
++			if (tx)
++				litex_write8(hw->base +
++						 LITESPI_OFF_MOSI, *tx++);
++
++			litex_write16(hw->base + LITESPI_OFF_CTRL, ctl_word);
++			litespi_wait_xfer_end(hw);
++
++			if (rx)
++				*rx++ = litex_read8(hw->base +
++							LITESPI_OFF_MISO);
++		}
++	} else if (t->bits_per_word <= 16) {
++		const u16 *tx = t->tx_buf;
++		u16 *rx = t->rx_buf;
++
++		/* word size is 2 bytes */
++		for (i = 0; i < t->len / 2; i++) {
++			if (tx)
++				litex_write16(hw->base + LITESPI_OFF_MOSI,
++						 be16_to_cpu(*tx++));
++
++			litex_write16(hw->base + LITESPI_OFF_CTRL, ctl_word);
++			litespi_wait_xfer_end(hw);
++
++			if (rx)
++				*rx++ = cpu_to_be16(litex_read16(
++						hw->base + LITESPI_OFF_MISO));
++		}
++	} else {
++		const u32 *tx = t->tx_buf;
++		u32 *rx = t->rx_buf;
++
++		/* word size is 4 bytes */
++		for (i = 0; i < t->len / 4; i++) {
++			if (tx)
++				litex_write32(hw->base + LITESPI_OFF_MOSI,
++						 be32_to_cpu(*tx++));
++
++			litex_write16(hw->base + LITESPI_OFF_CTRL, ctl_word);
++			litespi_wait_xfer_end(hw);
++
++			if (rx)
++				*rx++ = cpu_to_be32(litex_read32(
++						hw->base + LITESPI_OFF_MISO));
++		}
++	}
++
++	return 0;
++}
++
++static int litespi_probe(struct platform_device *pdev)
++{
++	struct device_node *node = pdev->dev.of_node;
++	struct spi_controller *ctlr;
++	struct litespi_hw *hw;
++	struct resource *res;
++	int ret;
++	u32 val;
++
++	ctlr = spi_alloc_host(&pdev->dev, sizeof(*hw));
++	if (!ctlr)
++		return -ENOMEM;
++
++	ctlr->dev.of_node = pdev->dev.of_node;
++	ctlr->bus_num = pdev->id;
++	ctlr->transfer_one = litespi_rxtx;
++	ctlr->mode_bits = SPI_MODE_0 | SPI_CS_HIGH;
++	ctlr->flags = SPI_CONTROLLER_MUST_RX | SPI_CONTROLLER_MUST_TX;
++
++	/* get bits per word property */
++	ret = of_property_read_u32(node, "litespi,max-bpw", &val);
++	if (ret)
++		goto err;
++	if (val > 8*sizeof(u32)) { // (val > LITEX_SUBREG_SIZE * 8)
++		ret = -EINVAL;
++		goto err;
++	}
++	ctlr->bits_per_word_mask = SPI_BPW_RANGE_MASK(1, val);
++
++	/* get sck frequency */
++	ret = of_property_read_u32(node, "litespi,sck-frequency", &val);
++	if (ret)
++		goto err;
++	ctlr->max_speed_hz = val;
++
++	/* get num cs */
++	ret = of_property_read_u32(node, "litespi,num-cs", &val);
++	if (ret)
++		goto err;
++	ctlr->num_chipselect = val;
++
++	hw = spi_controller_get_devdata(ctlr);
++	hw->ctlr = ctlr;
++
++	/* get base address */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	hw->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(hw->base)) {
++		ret = PTR_ERR(hw->base);
++		goto err;
++	}
++
++	/* register controller */
++	ret = devm_spi_register_controller(&pdev->dev, ctlr);
++	if (ret)
++		goto err;
++
++	return 0;
++
++err:
++	spi_controller_put(ctlr);
++	return ret;
++}
++
++static const struct of_device_id litespi_match[] = {
++	{ .compatible = "litex,litespi" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, litespi_match);
++
++static struct platform_driver litespi_driver = {
++	.probe = litespi_probe,
++	.driver = {
++		.name = DRIVER_NAME,
++		.of_match_table = of_match_ptr(litespi_match)
++	}
++};
++module_platform_driver(litespi_driver)
++
++MODULE_AUTHOR("Antmicro Ltd <www.antmicro.com>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:" DRIVER_NAME);
+-- 
+2.43.0
+

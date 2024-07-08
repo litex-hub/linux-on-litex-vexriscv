@@ -1,0 +1,272 @@
+From 0d3595f8c3b1f01ffd7e9f26e14dada62ce0af09 Mon Sep 17 00:00:00 2001
+From: Robert Winkler <rwinkler@antmicro.com>
+Date: Tue, 22 Dec 2020 16:36:35 -0500
+Subject: [PATCH 14/19] LiteX: driver for ICAPBitstream fpga manager
+
+Signed-off-by: Robert Winkler <rwinkler@antmicro.com>
+
+FIXME: still needs register offsets re-calculated based on subreg width (gls)!
+FIXME: not updated or tested for 32-bit CSR data width, 64-bit CPU (gls)
+---
+ .../devicetree/bindings/fpga/litex-fpga.txt   |  12 ++
+ drivers/fpga/Kconfig                          |   6 +
+ drivers/fpga/Makefile                         |   1 +
+ drivers/fpga/litex-fpga.c                     | 198 ++++++++++++++++++
+ 4 files changed, 217 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/fpga/litex-fpga.txt
+ create mode 100644 drivers/fpga/litex-fpga.c
+
+diff --git a/Documentation/devicetree/bindings/fpga/litex-fpga.txt b/Documentation/devicetree/bindings/fpga/litex-fpga.txt
+new file mode 100644
+index 000000000000..5e9c4893ddc4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/fpga/litex-fpga.txt
+@@ -0,0 +1,12 @@
++LiteX ICAPBitstream fpga manager
++
++Required properties:
++- compatible: should be "litex,fpga-icap"
++- reg: base address of configuration registers with length
++
++Examples:
++
++fpga_man: icap@f0007000 {
++	compatible = "litex,fpga-icap";
++	reg = <0x0 0xf0007000 0x0 0x14>;
++};
+diff --git a/drivers/fpga/Kconfig b/drivers/fpga/Kconfig
+index 2f689ac4ba3a..d2c3135183e1 100644
+--- a/drivers/fpga/Kconfig
++++ b/drivers/fpga/Kconfig
+@@ -91,6 +91,12 @@ config FPGA_MGR_TS73XX
+ 	  FPGA manager driver support for the Altera Cyclone II FPGA
+ 	  present on the TS-73xx SBC boards.
+ 
++config FPGA_MGR_LITEX
++	tristate "LiteX ICAPBitstream FPGA Manager"
++	depends on OF && HAS_IOMEM && LITEX_SOC_CONTROLLER
++	help
++	  FPGA Manager for LiteX SoC builder that uses ICAPBitstream.
++
+ config FPGA_BRIDGE
+ 	tristate "FPGA Bridge Framework"
+ 	help
+diff --git a/drivers/fpga/Makefile b/drivers/fpga/Makefile
+index 352a2612623e..6abb1b8f841c 100644
+--- a/drivers/fpga/Makefile
++++ b/drivers/fpga/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_FPGA)			+= fpga-mgr.o
+ obj-$(CONFIG_FPGA_MGR_ALTERA_CVP)	+= altera-cvp.o
+ obj-$(CONFIG_FPGA_MGR_ALTERA_PS_SPI)	+= altera-ps-spi.o
+ obj-$(CONFIG_FPGA_MGR_ICE40_SPI)	+= ice40-spi.o
++obj-$(CONFIG_FPGA_MGR_LITEX)		+= litex-fpga.o
+ obj-$(CONFIG_FPGA_MGR_MACHXO2_SPI)	+= machxo2-spi.o
+ obj-$(CONFIG_FPGA_MGR_SOCFPGA)		+= socfpga.o
+ obj-$(CONFIG_FPGA_MGR_SOCFPGA_A10)	+= socfpga-a10.o
+diff --git a/drivers/fpga/litex-fpga.c b/drivers/fpga/litex-fpga.c
+new file mode 100644
+index 000000000000..c3a4f38a6610
+--- /dev/null
++++ b/drivers/fpga/litex-fpga.c
+@@ -0,0 +1,198 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/fpga/fpga-mgr.h>
++#include <linux/of.h>
++#include <linux/bits.h>
++#include <linux/types.h>
++#include <linux/kconfig.h>
++#include <linux/litex.h>
++#include <asm/byteorder.h>
++
++#define OFFSET_REG_SINK_DATA     0x0
++#define OFFSET_REG_SINK_READY    0x10
++
++#define REG_SINK_DATA_SIZE       0x4
++#define REG_SINK_READY_SIZE      0x1
++
++#define INITIAL_HEADER_SIZE      -1 /* Set to maximum value */
++#define ALLOWED_FPGA_MGR_FLAGS   (FPGA_MGR_PARTIAL_RECONFIG | \
++				 FPGA_MGR_COMPRESSED_BITSTREAM)
++#define BITSTREAM_INSTR_SIZE     sizeof(uint32_t)
++
++/* Macros for accessing ICAP registers */
++
++#define WRITE_SINK_DATA(mem, val) litex_write32(mem + OFFSET_REG_SINK_DATA, val)
++#define READ_SINK_READY(mem)      litex_read8(mem + OFFSET_REG_SINK_READY)
++
++struct litex_fpga {
++	void __iomem *membase;
++};
++
++/* Helper functions */
++
++static inline bool bit_has_sync(uint8_t *buf, size_t count)
++{
++	int i;
++
++	for (i = 0; i < count - BITSTREAM_INSTR_SIZE; i += BITSTREAM_INSTR_SIZE)
++	/* Sync word is 0xAA995566 */
++		if (buf[i] == 0xAA &&
++		    buf[i + 1] == 0x99 &&
++		    buf[i + 2] == 0x55 &&
++		    buf[i + 3] == 0x66)
++			return true;
++	return false;
++}
++
++static inline bool bit_is_aligned(uint8_t *buf, size_t count)
++{
++	return !(count % BITSTREAM_INSTR_SIZE);
++}
++
++/* API functions */
++
++static enum fpga_mgr_states litex_fpga_state(struct fpga_manager *mgr)
++{
++	return FPGA_MGR_STATE_UNKNOWN;
++}
++
++static int litex_fpga_write_init(struct fpga_manager *mgr,
++				 struct fpga_image_info *info,
++				 const char *buf, size_t count)
++{
++	/* Check if driver supports given operations */
++	if (info->flags & ~ALLOWED_FPGA_MGR_FLAGS) {
++		dev_err(&mgr->dev, "Unsupported bitstream flags occurred\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int litex_fpga_write(struct fpga_manager *mgr,
++			    const char *buf, size_t count)
++{
++	const struct litex_fpga *fpga_s = (const struct litex_fpga *) mgr->priv;
++	uint32_t *buf32;
++	int i, count32;
++
++	/* Bitstream should consist of 32bit words*/
++	if (!bit_is_aligned((uint8_t *) buf, count)) {
++		dev_err(&mgr->dev, "Invalid bitstream alignment\n");
++		return -EINVAL;
++	}
++
++	/* Correct bitstream contains sync word */
++	if (!bit_has_sync((uint8_t *) buf, count)) {
++		dev_err(&mgr->dev, "Bitstream has no sync word\n");
++		return -EINVAL;
++	}
++
++	buf32 = (uint32_t *) buf;
++	count32 = count / BITSTREAM_INSTR_SIZE;
++	for (i = 0; i < count32; ++i) {
++		while (!READ_SINK_READY(fpga_s->membase))
++			;
++		WRITE_SINK_DATA(fpga_s->membase, be32_to_cpu(buf32[i]));
++	}
++
++	return 0;
++}
++
++static int litex_fpga_write_complete(struct fpga_manager *mgr,
++				     struct fpga_image_info *info)
++{
++	return 0;
++}
++
++static const struct fpga_manager_ops litex_fpga_manager_ops = {
++	.initial_header_size   = INITIAL_HEADER_SIZE,
++	.state                 = litex_fpga_state,
++	.write_init            = litex_fpga_write_init,
++	.write                 = litex_fpga_write,
++	.write_complete        = litex_fpga_write_complete,
++};
++
++/* Driver functions */
++
++static int litex_fpga_remove(struct platform_device *pdev)
++{
++	struct fpga_manager *mgr;
++
++	mgr = platform_get_drvdata(pdev);
++	fpga_mgr_unregister(mgr);
++
++	return 0;
++}
++
++static int litex_fpga_probe(struct platform_device *pdev)
++{
++	struct device_node *node = pdev->dev.of_node;
++	struct litex_fpga *fpga_s;
++	struct fpga_manager *mgr;
++	struct resource *res;
++
++	if (!node)
++		return -ENODEV;
++
++	fpga_s = devm_kzalloc(&pdev->dev, sizeof(*fpga_s), GFP_KERNEL);
++	if (!fpga_s)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EBUSY;
++
++	fpga_s->membase = devm_of_iomap(&pdev->dev, node, 0, &res->end);
++	if (IS_ERR_OR_NULL(fpga_s->membase))
++		return -EIO;
++
++	mgr = devm_fpga_mgr_create(&pdev->dev,
++				   "LiteX ICAPBitstream FPGA Manager",
++				   &litex_fpga_manager_ops, fpga_s);
++	if (!mgr)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, mgr);
++	return fpga_mgr_register(mgr);
++}
++
++static const struct of_device_id litex_of_match[] = {
++	{.compatible = "litex,fpga-icap"},
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, litex_of_match);
++
++static struct platform_driver litex_fpga_driver = {
++	.driver		= {
++		.name		= "litex-icap-fpga-mgr",
++		.of_match_table = of_match_ptr(litex_of_match)
++	},
++	.probe		= litex_fpga_probe,
++	.remove	= litex_fpga_remove
++};
++
++module_platform_driver(litex_fpga_driver);
++
++MODULE_DESCRIPTION("LiteX ICAPBitstream FPGA Manager driver");
++MODULE_AUTHOR("Antmicro <www.antmicro.com>");
++MODULE_LICENSE("GPL v2");
+-- 
+2.43.0
+

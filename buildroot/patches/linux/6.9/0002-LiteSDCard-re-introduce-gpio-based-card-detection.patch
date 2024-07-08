@@ -1,0 +1,47 @@
+From e4912261137f29a582455989e329b8a7ee35bf80 Mon Sep 17 00:00:00 2001
+From: Gabriel Somlo <gsomlo@gmail.com>
+Date: Wed, 8 Dec 2021 07:43:45 -0500
+Subject: [PATCH 02/19] LiteSDCard: re-introduce gpio-based card detection
+
+This is untested, and therefore unsuitable for upstreaming at this
+time. We need an example configuration in Doc/dt/bindings/mmc/litex*
+and a successful `tested-by` on hardware before we should consider
+pushing this into upstream linux.
+
+Signed-off-by: Gabriel Somlo <gsomlo@gmail.com>
+---
+ drivers/mmc/host/litex_mmc.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/litex_mmc.c b/drivers/mmc/host/litex_mmc.c
+index 4ec8072dc60b..960a19ce7d4b 100644
+--- a/drivers/mmc/host/litex_mmc.c
++++ b/drivers/mmc/host/litex_mmc.c
+@@ -23,6 +23,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>
+ #include <linux/mmc/sd.h>
++#include <linux/mmc/slot-gpio.h>
+ 
+ #define LITEX_PHY_CARDDETECT  0x00
+ #define LITEX_PHY_CLOCKERDIV  0x04
+@@ -240,7 +241,15 @@ static int litex_mmc_get_cd(struct mmc_host *mmc)
+ 	if (!mmc_card_is_removable(mmc))
+ 		return 1;
+ 
+-	ret = !litex_read8(host->sdphy + LITEX_PHY_CARDDETECT);
++	ret = mmc_gpio_get_cd(mmc);
++	if (ret >= 0) {
++		/* GPIO based card-detect explicitly specified in DTS */
++		ret = !!ret;
++	} else {
++		/* Use gateware card-detect bit by default */
++		ret = !litex_read8(host->sdphy + LITEX_PHY_CARDDETECT);
++	}
++
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+2.43.0
+

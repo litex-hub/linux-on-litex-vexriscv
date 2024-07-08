@@ -1,0 +1,20 @@
+Index: linux-6.8-rc7/drivers/pwm/pwm-litex.c
+===================================================================
+--- linux-6.8-rc7.orig/drivers/pwm/pwm-litex.c
++++ linux-6.8-rc7/drivers/pwm/pwm-litex.c
+@@ -79,7 +79,6 @@ static int litex_pwm_apply(struct pwm_ch
+ 
+ static const struct pwm_ops litex_pwm_ops = {
+ 	.apply = litex_pwm_apply,
+-	.owner = THIS_MODULE,
+ };
+ 
+ static int litex_pwm_probe(struct platform_device *pdev)
+@@ -125,7 +124,6 @@ static int litex_pwm_probe(struct platfo
+ 
+ 	litex->chip.dev = &pdev->dev;
+ 	litex->chip.ops = &litex_pwm_ops;
+-	litex->chip.base = -1;
+ 	litex->chip.npwm = 1;
+ 
+ 	ret = pwmchip_add(&litex->chip);

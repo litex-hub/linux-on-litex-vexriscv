@@ -1,0 +1,291 @@
+From 71954f6d53f661ff2860ff36e55b34017f5a3f7d Mon Sep 17 00:00:00 2001
+From: Robert Winkler <rwinkler@internships.antmicro.com>
+Date: Tue, 22 Dec 2020 16:31:32 -0500
+Subject: [PATCH 09/19] LiteX: driver for XADC hwmon
+
+Signed-off-by: Robert Winkler <rwinkler@internships.antmicro.com>
+
+FIXME: still needs register offsets re-calculated based on subreg width (gls)!
+FIXME: not updated or tested for 32-bit CSR data width, 64-bit CPU (gls)
+
+Maintenance/fixes provided by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ .../devicetree/bindings/hwmon/litex-hwmon.txt |  12 +
+ drivers/hwmon/Kconfig                         |   6 +
+ drivers/hwmon/Makefile                        |   1 +
+ drivers/hwmon/litex-hwmon.c                   | 215 ++++++++++++++++++
+ 4 files changed, 234 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/hwmon/litex-hwmon.txt
+ create mode 100644 drivers/hwmon/litex-hwmon.c
+
+diff --git a/Documentation/devicetree/bindings/hwmon/litex-hwmon.txt b/Documentation/devicetree/bindings/hwmon/litex-hwmon.txt
+new file mode 100644
+index 000000000000..be2ceba1663c
+--- /dev/null
++++ b/Documentation/devicetree/bindings/hwmon/litex-hwmon.txt
+@@ -0,0 +1,12 @@
++LiteX XADC hwmon controller
++
++Required properties:
++- compatible: should be "litex,hwmon-xadc"
++- reg: base address of configuration registers with length
++
++Examples:
++
++hwmon@f0003000 {
++	compatible = "litex,hwmon-xadc";
++	reg = <0x0 0xf0003000 0x0 0x20>;
++};
+diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
+index a608264da87d..36da17ba5d55 100644
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1317,6 +1317,12 @@ config SENSORS_ADCXX
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called adcxx.
+ 
++config SENSORS_LITEX_HWMON
++	tristate "LiteX XADC hardware monitor"
++	depends on OF && HAS_IOMEM && LITEX_SOC_CONTROLLER
++	help
++	  This enables hardware monitoring using LiteX XADC.
++
+ config SENSORS_LM63
+ 	tristate "National Semiconductor LM63 and compatibles"
+ 	depends on I2C
+diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
+index 47be39af5c03..e785f37a1883 100644
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -106,6 +106,7 @@ obj-$(CONFIG_SENSORS_K8TEMP)	+= k8temp.o
+ obj-$(CONFIG_SENSORS_K10TEMP)	+= k10temp.o
+ obj-$(CONFIG_SENSORS_LAN966X)	+= lan966x-hwmon.o
+ obj-$(CONFIG_SENSORS_LINEAGE)	+= lineage-pem.o
++obj-$(CONFIG_SENSORS_LITEX_HWMON) += litex-hwmon.o
+ obj-$(CONFIG_SENSORS_LOCHNAGAR)	+= lochnagar-hwmon.o
+ obj-$(CONFIG_SENSORS_LM63)	+= lm63.o
+ obj-$(CONFIG_SENSORS_LM70)	+= lm70.o
+diff --git a/drivers/hwmon/litex-hwmon.c b/drivers/hwmon/litex-hwmon.c
+new file mode 100644
+index 000000000000..e721fe9537ff
+--- /dev/null
++++ b/drivers/hwmon/litex-hwmon.c
+@@ -0,0 +1,215 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2019 Antmicro <www.antmicro.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/of.h>
++#include <linux/hwmon.h>
++#include <linux/litex.h>
++
++#define TEMP_REG_OFFSET               0x0
++#define TEMP_REG_SIZE                 2
++#define VCCINT_REG_OFFSET             0x8
++#define VCCINT_REG_SIZE               2
++#define VCCAUX_REG_OFFSET             0x10
++#define VCCAUX_REG_SIZE               2
++#define VCCBRAM_REG_OFFSET            0x18
++#define VCCBRAM_REG_SIZE              2
++
++#define CHANNEL_TEMP                  0
++#define CHANNEL_VCCINT                0
++#define CHANNEL_VCCAUX                1
++#define CHANNEL_VCCBRAM               2
++
++struct litex_hwmon {
++	void __iomem     *membase;
++	struct device    *hdev;
++};
++
++/* Transfer functions taken from XILINX UG480 (v1.10.1)
++ * www.xilinx.com/support/documentation/user_guides/ug480_7Series_XADC.pdf
++ */
++
++static inline long litex_temp_transfer_fun(long val)
++{
++	return ((val * 503975ULL) / 4096ULL) - 273150ULL;
++}
++
++static inline long litex_supp_transfer_fun(long val)
++{
++	return ((val * 3000) / 4096);
++}
++
++static inline int litex_read_temp(struct litex_hwmon *hwmon_s, u32 attr,
++				  int channel, long *val)
++{
++	unsigned long raw_data;
++
++	if (attr != hwmon_temp_input)
++		return -ENOTSUPP;
++
++	if (channel != CHANNEL_TEMP)
++		return -EINVAL;
++
++	raw_data = litex_read16(hwmon_s->membase + TEMP_REG_OFFSET);
++	*val = litex_temp_transfer_fun(raw_data);
++	return 0;
++}
++
++static inline int litex_read_in(struct litex_hwmon *hwmon_s, u32 attr,
++				int channel, long *val)
++{
++	int offset;
++	unsigned long raw_data;
++
++	if (attr != hwmon_in_input)
++		return -ENOTSUPP;
++
++	switch (channel) {
++	case CHANNEL_VCCINT:
++		offset = VCCINT_REG_OFFSET;
++		break;
++	case CHANNEL_VCCAUX:
++		offset = VCCAUX_REG_OFFSET;
++		break;
++	case CHANNEL_VCCBRAM:
++		offset = VCCBRAM_REG_OFFSET;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	raw_data = litex_read16(hwmon_s->membase + offset);
++	*val = litex_supp_transfer_fun(raw_data);
++	return 0;
++}
++
++/* API functions */
++
++static umode_t litex_hwmon_is_visible(const void *drvdata,
++				      enum hwmon_sensor_types type, u32 attr,
++				      int channel)
++{
++	return 0444;
++}
++
++static int litex_hwmon_read(struct device *dev, enum hwmon_sensor_types type,
++			    u32 attr, int channel, long *val)
++{
++	struct litex_hwmon *hwmon_s = dev_get_drvdata(dev);
++
++	switch (type) {
++	case hwmon_temp:
++		return litex_read_temp(hwmon_s, attr, channel, val);
++	case hwmon_in:
++		return litex_read_in(hwmon_s, attr, channel, val);
++	default:
++		return -ENOTSUPP;
++	}
++
++	return 0;
++}
++
++static const struct hwmon_ops litex_hwmon_ops = {
++	.is_visible   = litex_hwmon_is_visible,
++	.read         = litex_hwmon_read,
++};
++
++/* Attribute management */
++
++static const unsigned int litex_temp_config[] = {
++	HWMON_T_INPUT,
++	0
++};
++
++static const struct hwmon_channel_info litex_hwmon_temp = {
++	.type = hwmon_temp,
++	.config = litex_temp_config
++};
++
++static const unsigned int litex_vcc_config[] = {
++	HWMON_I_INPUT,
++	HWMON_I_INPUT,
++	HWMON_I_INPUT,
++	0
++};
++
++static const struct hwmon_channel_info litex_hwmon_vcc = {
++	.type = hwmon_in,
++	.config = litex_vcc_config
++};
++
++static const struct hwmon_channel_info *litex_hwmon_channel_info[] = {
++	&litex_hwmon_temp,
++	&litex_hwmon_vcc,
++	NULL
++};
++
++static const struct hwmon_chip_info litex_chip_info = {
++	.ops = &litex_hwmon_ops,
++	.info = litex_hwmon_channel_info
++};
++
++/* Driver functions */
++
++static int litex_hwmon_probe(struct platform_device *pdev)
++{
++	struct device_node *node = pdev->dev.of_node;
++	struct litex_hwmon *hwmon_s;
++	struct resource *res;
++
++	if (!node)
++		return -ENODEV;
++
++	hwmon_s = devm_kzalloc(&pdev->dev, sizeof(*hwmon_s), GFP_KERNEL);
++	if (!hwmon_s)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EBUSY;
++
++	hwmon_s->membase = devm_of_iomap(&pdev->dev, node, 0, &res->end);
++	if (IS_ERR_OR_NULL(hwmon_s->membase))
++		return -EIO;
++
++	hwmon_s->hdev = devm_hwmon_device_register_with_info(&pdev->dev,
++							     "litex_xadc",
++							     hwmon_s,
++							     &litex_chip_info,
++							     NULL);
++	platform_set_drvdata(pdev, hwmon_s);
++	return PTR_ERR_OR_ZERO(hwmon_s->hdev);
++}
++
++static const struct of_device_id litex_of_match[] = {
++	{.compatible = "litex,hwmon-xadc"},
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, litex_of_match);
++
++static struct platform_driver litex_hwmon_driver = {
++	.driver		= {
++		.name		= "litex-hwmon",
++		.of_match_table = of_match_ptr(litex_of_match)
++	},
++	.probe		= litex_hwmon_probe,
++};
++
++module_platform_driver(litex_hwmon_driver);
+-- 
+2.43.0
+
