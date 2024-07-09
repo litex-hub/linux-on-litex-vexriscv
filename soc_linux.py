@@ -14,13 +14,13 @@ from migen import *
 from litex.soc.interconnect.csr import *
 
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
-from litex.soc.cores.gpio import GPIOOut, GPIOIn
-from litex.soc.cores.spi import SPIMaster
+from litex.soc.cores.gpio    import GPIOOut, GPIOIn
+from litex.soc.cores.spi     import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
-from litex.soc.cores.xadc import XADC
-from litex.soc.cores.pwm import PWM
-from litex.soc.cores.icap import ICAPBitstream
-from litex.soc.cores.clock import S7MMCM
+from litex.soc.cores.xadc    import XADC
+from litex.soc.cores.pwm     import PWM
+from litex.soc.cores.icap    import ICAPBitstream
+from litex.soc.cores.clock   import S7MMCM
 
 from litex.tools.litex_json2dts_linux import generate_dts
 
@@ -31,46 +31,51 @@ def SoCLinux(soc_cls, **kwargs):
         def __init__(self, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------
-            soc_cls.__init__(self,
-                cpu_type       = "vexriscv_smp",
-                cpu_variant    = "linux",
-                **kwargs)
+
+            soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
 
         # RGB Led ----------------------------------------------------------------------------------
+
         def add_rgb_led(self):
             rgb_led_pads = self.platform.request("rgb_led", 0)
             for n in "rgb":
-                setattr(self.submodules, "rgb_led_{}0".format(n), PWM(getattr(rgb_led_pads, n)))
+                self.add_module(name=f"rgb_led_{n}0", PWM(getattr(rgb_led_pads, n)))
 
         # Switches ---------------------------------------------------------------------------------
+
         def add_switches(self):
-            self.submodules.switches = GPIOIn(Cat(self.platform.request_all("user_sw")), with_irq=True)
+            self.switches = GPIOIn(Cat(self.platform.request_all("user_sw")), with_irq=True)
             self.irq.add("switches")
 
         # SPI --------------------------------------------------------------------------------------
+
         def add_spi(self, data_width, clk_freq):
             spi_pads = self.platform.request("spi")
-            self.submodules.spi = SPIMaster(spi_pads, data_width, self.clk_freq, clk_freq)
+            self.spi = SPIMaster(spi_pads, data_width, self.clk_freq, clk_freq)
 
         # I2C --------------------------------------------------------------------------------------
+
         def add_i2c(self):
-            self.submodules.i2c0 = I2CMaster(self.platform.request("i2c", 0))
+            self.i2c0 = I2CMaster(self.platform.request("i2c", 0))
 
         # XADC (Xilinx only) -----------------------------------------------------------------------
+
         def add_xadc(self):
-            self.submodules.xadc = XADC()
+            self.xadc = XADC()
 
         # ICAP Bitstream (Xilinx only) -------------------------------------------------------------
+
         def add_icap_bitstream(self):
-            self.submodules.icap_bit = ICAPBitstream();
+            self.icap_bit = ICAPBitstream();
 
         # MMCM (Xilinx only) -----------------------------------------------------------------------
+
         def add_mmcm(self, nclkout):
             if (nclkout > 7):
                 raise ValueError("nclkout cannot be above 7!")
 
             self.cd_mmcm_clkout = []
-            self.submodules.mmcm = S7MMCM(speedgrade=-1)
+            self.mmcm = S7MMCM(speedgrade=-1)
             self.mmcm.register_clkin(self.crg.cd_sys.clk, self.clk_freq)
 
             for n in range(nclkout):
@@ -110,6 +115,7 @@ def SoCLinux(soc_cls, **kwargs):
             self.comb += self.mmcm.reset.eq(self.mmcm.drp_reset.re)
 
         # Ethernet configuration -------------------------------------------------------------------
+
         def configure_ethernet(self, remote_ip):
             remote_ip = remote_ip.split(".")
             try: # FIXME: Improve.
@@ -125,6 +131,7 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
 
         # DTS generation ---------------------------------------------------------------------------
+
         def generate_dts(self, board_name):
             json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
@@ -134,6 +141,7 @@ def SoCLinux(soc_cls, **kwargs):
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------
+
         def compile_dts(self, board_name, symbols=False):
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             dtb = os.path.join("build", board_name, "{}.dtb".format(board_name))
@@ -141,6 +149,7 @@ def SoCLinux(soc_cls, **kwargs):
                 "dtc {} -O dtb -o {} {}".format("-@" if symbols else "", dtb, dts), shell=True)
 
         # DTB combination --------------------------------------------------------------------------
+
         def combine_dtb(self, board_name, overlays=""):
             dtb_in = os.path.join("build", board_name, "{}.dtb".format(board_name))
             dtb_out = os.path.join("images", "rv32.dtb")
