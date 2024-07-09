@@ -88,11 +88,6 @@ class Arty(Board):
             # Buses
             "spi",
             "i2c",
-            # Monitoring
-            "xadc",
-            # 7-Series specific
-            "mmcm",
-            "icap_bitstream",
         })
 
 class ArtyA7(Arty): pass
@@ -112,11 +107,6 @@ class ArtyS7(Board):
             # Buses
             "spi",
             "i2c",
-            # Monitoring
-            "xadc",
-            # 7-Series specific
-            "mmcm",
-            "icap_bitstream",
         })
 
 # NeTV2 support ------------------------------------------------------------------------------------
@@ -134,8 +124,6 @@ class NeTV2(Board):
             "leds",
             # Video
             "framebuffer",
-            # Monitoring
-            "xadc",
         })
 
 # Genesys2 support ---------------------------------------------------------------------------------
@@ -165,8 +153,6 @@ class KC705(Board):
             #"sata",
             # GPIOs
             "leds",
-            # Monitoring
-            "xadc",
         })
 
 # VC707 support ---------------------------------------------------------------------------------
@@ -182,8 +168,6 @@ class VC707(Board):
             "sdcard",
             # GPIOs
             "leds",
-            # Monitoring
-            "xadc",
         })
 
 # KCU105 support -----------------------------------------------------------------------------------
@@ -938,8 +922,6 @@ def main():
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
 
-        if "mmcm" in board.soc_capabilities:
-            soc.add_mmcm(2)
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
@@ -956,10 +938,6 @@ def main():
             soc.add_spi(args.spi_data_width, args.spi_clk_freq)
         if "i2c" in board.soc_capabilities:
             soc.add_i2c()
-        if "xadc" in board.soc_capabilities:
-            soc.add_xadc()
-        if "icap_bitstream" in board.soc_capabilities:
-            soc.add_icap_bitstream()
 
         # Build ------------------------------------------------------------------------------------
         build_dir = os.path.join("build", board_name)
