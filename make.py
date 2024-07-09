@@ -21,9 +21,14 @@ from soc_linux import SoCLinux
 # Helpers
 #---------------------------------------------------------------------------------------------------
 
+def camel_to_snake(name):
+    name = re.sub(r'(?<=[a-z])(?=[A-Z])', '_', name)
+    return name.lower()
+
 def get_supported_boards():
     board_classes = {}
     for name, obj in globals().items():
+        name = camel_to_snake(name)
         if isinstance(obj, type) and issubclass(obj, Board) and obj is not Board:
             board_classes[name] = obj
     return board_classes
@@ -127,15 +132,15 @@ def main():
             soc.add_constant(k, v)
 
         # SoC peripherals --------------------------------------------------------------------------
-        if board_name in ["Arty", "ArtyA7"]:
+        if board_name in ["arty", "arty_a7"]:
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["AESKU40"]:
+        if board_name in ["aesku40"]:
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["OrangeCrab"]:
+        if board_name in ["orangecrab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
 
