@@ -140,7 +140,7 @@ def main():
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["orangecrab"]:
+        if board_name in ["orange_crab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
 
