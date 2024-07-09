@@ -9,7 +9,7 @@
                     / /__/ / __/ -_)>  </___/ |/ / -_) \ // __/ (_-</ __/ |/ /
                    /____/_/\__/\__/_/|_|    |___/\__/_\_\/_/ /_/___/\__/|___/
 
-                   Copyright (c) 2019-2022, Linux-on-LiteX-VexRiscv Developers
+                   Copyright (c) 2019-2024, Linux-on-LiteX-VexRiscv Developers
 ```
 [![](https://github.com/litex-hub/linux-on-litex-vexriscv/workflows/ci/badge.svg)](https://github.com/litex-hub/linux-on-litex-vexriscv/actions) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
 > **Note:** Tested on Ubuntu 18.04/20.04 LTS.
