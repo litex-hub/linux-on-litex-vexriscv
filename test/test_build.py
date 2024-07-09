@@ -28,6 +28,7 @@ class TestBuild(unittest.TestCase):
 
     def test_boards(self):
         excluded_boards = [
+            "schoko",                     # USB OHCI netlist generation issue.
             "trion_t120_bga576_dev_kit",  # Reason: Require Efinity toolchain.
             "titanium_ti60_f225_dev_kit", # Reason: Require Efinity toolchain.
         ]
