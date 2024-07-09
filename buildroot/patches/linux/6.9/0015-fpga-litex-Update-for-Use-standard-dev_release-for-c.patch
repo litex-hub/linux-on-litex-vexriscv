@@ -1,0 +1,76 @@
+From 5a66b27721c6e75d7cb551e6787bd5aeef0d1bd6 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Jan 2022 09:06:30 +0100
+Subject: [PATCH 15/19] fpga: litex: Update for "Use standard dev_release for
+ class driver"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+As of commit 4ba0b2c294fe6919 ("fpga: mgr: Use standard dev_release for
+class driver"):
+
+    drivers/fpga/litex-fpga.c: In function ‘litex_fpga_probe’:
+    drivers/fpga/litex-fpga.c:168:8: error: implicit declaration of function ‘devm_fpga_mgr_create’; did you mean ‘devm_fpga_mgr_register’? [-Werror=implicit-function-declaration]
+      168 |  mgr = devm_fpga_mgr_create(&pdev->dev,
+	  |        ^~~~~~~~~~~~~~~~~~~~
+	  |        devm_fpga_mgr_register
+    drivers/fpga/litex-fpga.c:168:6: warning: assignment to ‘struct fpga_manager *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+      168 |  mgr = devm_fpga_mgr_create(&pdev->dev,
+	  |      ^
+    drivers/fpga/litex-fpga.c:175:27: error: passing argument 1 of ‘fpga_mgr_register’ from incompatible pointer type [-Werror=incompatible-pointer-types]
+      175 |  return fpga_mgr_register(mgr);
+	  |                           ^~~
+	  |                           |
+	  |                           struct fpga_manager *
+    In file included from drivers/fpga/litex-fpga.c:21:
+    include/linux/fpga/fpga-mgr.h:217:1: note: expected ‘struct device *’ but argument is of type ‘struct fpga_manager *’
+      217 | fpga_mgr_register(struct device *parent, const char *name,
+	  | ^~~~~~~~~~~~~~~~~
+    drivers/fpga/litex-fpga.c:175:9: error: too few arguments to function ‘fpga_mgr_register’
+      175 |  return fpga_mgr_register(mgr);
+	  |         ^~~~~~~~~~~~~~~~~
+    In file included from drivers/fpga/litex-fpga.c:21:
+    include/linux/fpga/fpga-mgr.h:217:1: note: declared here
+      217 | fpga_mgr_register(struct device *parent, const char *name,
+	  | ^~~~~~~~~~~~~~~~~
+    drivers/fpga/litex-fpga.c:176:1: error: control reaches end of non-void function [-Werror=return-type]
+      176 | }
+	  | ^
+
+Update the LiteX ICAPBitstream FPGA Manager driver accordingly.
+
+Fixes: 0b11c29cec385479 ("LiteX: driver for ICAPBitstream fpga manager")
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/fpga/litex-fpga.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/fpga/litex-fpga.c b/drivers/fpga/litex-fpga.c
+index c3a4f38a6610..b3918c916ad7 100644
+--- a/drivers/fpga/litex-fpga.c
++++ b/drivers/fpga/litex-fpga.c
+@@ -165,14 +165,14 @@ static int litex_fpga_probe(struct platform_device *pdev)
+ 	if (IS_ERR_OR_NULL(fpga_s->membase))
+ 		return -EIO;
+ 
+-	mgr = devm_fpga_mgr_create(&pdev->dev,
+-				   "LiteX ICAPBitstream FPGA Manager",
+-				   &litex_fpga_manager_ops, fpga_s);
+-	if (!mgr)
+-		return -ENOMEM;
++	mgr = devm_fpga_mgr_register(&pdev->dev,
++				     "LiteX ICAPBitstream FPGA Manager",
++				     &litex_fpga_manager_ops, fpga_s);
++	if (IS_ERR(mgr))
++		return PTR_ERR(mgr);
+ 
+ 	platform_set_drvdata(pdev, mgr);
+-	return fpga_mgr_register(mgr);
++	return 0;
+ }
+ 
+ static const struct of_device_id litex_of_match[] = {
+-- 
+2.43.0
+
