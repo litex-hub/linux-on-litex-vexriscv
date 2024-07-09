@@ -1,6 +1,6 @@
 {
-	"Image":       "0x40000000",
-	"rv32.dtb":    "0x40ef0000",
-	"rootfs.cpio": "0x41000000",
-	"opensbi.bin": "0x40f00000"
+	"Image"       : "0x40000000",
+	"rv32.dtb"    : "0x40ef0000",
+	"rootfs.cpio" : "0x41000000",
+	"opensbi.bin" : "0x40f00000"
 }
