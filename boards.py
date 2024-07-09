@@ -530,6 +530,7 @@ class IcesugarPro(Board):
         })
 
 # Schoko support -----------------------------------------------------------------------------------
+
 class Schoko(Board):
     soc_kwargs = {"l2_size" : 8192}
     def __init__(self):
@@ -547,6 +548,7 @@ class Schoko(Board):
         })
 
 # Konfekt support -----------------------------------------------------------------------------------
+
 class Konfekt(Board):
     soc_kwargs = {"l2_size" : 0}
     def __init__(self):
@@ -564,6 +566,7 @@ class Konfekt(Board):
         })
 
 # Noir support -----------------------------------------------------------------------------------
+
 class Noir(Board):
     soc_kwargs = {"l2_size" : 8192}
     def __init__(self):

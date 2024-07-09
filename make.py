@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import os
+import re
 import sys
 import argparse
 
@@ -17,70 +18,21 @@ from boards import *
 from soc_linux import SoCLinux
 
 #---------------------------------------------------------------------------------------------------
-# Build
+# Helpers
 #---------------------------------------------------------------------------------------------------
 
-supported_boards = {
-    # Xilinx
-    "acorn"                       : Acorn,
-    "acorn_pcie"                  : AcornPCIe,
-    "aesku40"                     : AESKU40,
-    "arty"                        : Arty,
-    "arty_a7"                     : ArtyA7,
-    "arty_s7"                     : ArtyS7,
-    "netv2"                       : NeTV2,
-    "genesys2"                    : Genesys2,
-    "kc705"                       : KC705,
-    "vc707"                       : VC707,
-    "kcu105"                      : KCU105,
-    "zcu104"                      : ZCU104,
-    "nexys4ddr"                   : Nexys4DDR,
-    "nexys_video"                 : NexysVideo,
-    "minispartan6"                : MiniSpartan6,
-    "pipistrello"                 : Pipistrello,
-    "xcu1525"                     : XCU1525,
-    "alveo_u280"                  : AlveoU280,
-    "alveo_u250"                  : AlveoU250,
-    "qmtech_wukong"               : Qmtech_WuKong,
-    "sds1104xe"                   : SDS1104XE,
-    "mnt_rkx7"                    : MNT_RKX7,
-    "stlv7325"                    : STLV7325,
-    "stlv7325_v2"                 : STLV7325_v2,
-    "decklink_quad_hdmi_recorder" : DecklinkQuadHDMIRecorder,
-    "hseda_xc7a35t"               : HSEDA_xc7a35t,
+def get_supported_boards():
+    board_classes = {}
+    for name, obj in globals().items():
+        if isinstance(obj, type) and issubclass(obj, Board) and obj is not Board:
+            board_classes[name] = obj
+    return board_classes
 
-    # Lattice
-    "versa_ecp5"                  : VersaECP5,
-    "ulx3s"                       : ULX3S,
-    "ulx4m_ld_v2"                 : ULX4M_LD_V2,
-    "hadbadge"                    : HADBadge,
-    "orangecrab"                  : OrangeCrab,
-    "butterstick"                 : ButterStick,
-    "camlink_4k"                  : CamLink4K,
-    "trellisboard"                : TrellisBoard,
-    "ecpix5"                      : ECPIX5,
-    "colorlight_i5"               : Colorlight_i5,
-    "icesugar_pro"                : IcesugarPro,
-    "schoko"                      : Schoko,
-    "konfekt"                     : Konfekt,
-    "noir"                        : Noir,
+supported_boards = get_supported_boards()
 
-    # Altera/Intel
-    "de0nano"                     : De0Nano,
-    "de10nano"                    : De10Nano,
-    "de1soc"                      : De1SoC,
-    "qmtech_ep4ce15"              : Qmtech_EP4CE15,
-    "qmtech_ep4ce55"              : Qmtech_EP4CE55,
-    "qmtech_5cefa2"               : Qmtech_5CEFA2,
-
-    # Efinix
-    "trion_t120_bga576_dev_kit"   : TrionT120BGA576DevKit,
-    "titanium_ti60_f225_dev_kit"  : TitaniumTi60F225DevKit,
-
-    # Gowin
-    "sipeed_tang_nano_20k"        : Sipeed_tang_nano_20k,
-    "sipeed_tang_primer_20k"      : Sipeed_tang_primer_20k,
-    }
+#---------------------------------------------------------------------------------------------------
+# Build
+#---------------------------------------------------------------------------------------------------
 
 def main():
     description = "Linux on LiteX-VexRiscv\n\n"
@@ -109,8 +61,6 @@ def main():
     if args.board == "all":
         board_names = list(supported_boards.keys())
     else:
-        args.board = args.board.lower()
-        args.board = args.board.replace(" ", "_")
         board_names = [args.board]
 
     # Board(s) iteration ---------------------------------------------------------------------------
@@ -177,15 +127,15 @@ def main():
             soc.add_constant(k, v)
 
         # SoC peripherals --------------------------------------------------------------------------
-        if board_name in ["arty", "arty_a7"]:
+        if board_name in ["Arty", "ArtyA7"]:
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["aesku40"]:
+        if board_name in ["AESKU40"]:
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["orangecrab"]:
+        if board_name in ["OrangeCrab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
 
