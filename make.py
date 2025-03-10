@@ -122,8 +122,6 @@ def main():
             soc_kwargs.update(with_video_framebuffer=True)
         if "usb_host" in board.soc_capabilities:
             soc_kwargs.update(with_usb_host=True)
-        if "ps_ddr" in board.soc_capabilities:
-            soc_kwargs.update(with_ps_ddr=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
