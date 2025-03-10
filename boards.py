@@ -100,6 +100,23 @@ class ArtyS7(Board):
             "i2c",
         })
 
+# alinx support -------------------------------------------------------------------------------------
+
+class Ax7020(Board):
+    def __init__(self):
+        from litex_boards.targets import alinx_ax7020
+        Board.__init__(self, alinx_ax7020.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            #"ethernet",
+            # Storage
+            #"sdcard",
+            # GPIOs
+            "leds",
+            "buttons",
+            "ps_ddr",
+        })
+
 # NeTV2 support ------------------------------------------------------------------------------------
 
 class NeTV2(Board):
