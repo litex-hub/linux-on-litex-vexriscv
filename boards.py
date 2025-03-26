@@ -44,6 +44,19 @@ class Acorn(Board):
             "sata",
         })
 
+# Acorn Baseboard Mini -----------------------------------------------------------------------------
+
+class AcornBaseboardMini(Board):
+    soc_kwargs = {"sys_clk_freq": int(150e6)}
+    def __init__(self):
+        from litex_boards.targets import litex_acorn_baseboard_mini
+        Board.__init__(self, litex_acorn_baseboard_mini.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sata",
+        })
+
 # Acorn PCIe support -------------------------------------------------------------------------------
 
 class AcornPCIe(Board):
