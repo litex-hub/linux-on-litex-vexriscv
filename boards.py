@@ -121,12 +121,10 @@ class Ax7020(Board):
         Board.__init__(self, alinx_ax7020.BaseSoC, soc_capabilities={
             # Communication
             "serial",
-            #"ethernet",
-            # Storage
-            #"sdcard",
             # GPIOs
             "leds",
             "buttons",
+            # Memory (PS DDR)
             "ps_ddr",
         })
 
