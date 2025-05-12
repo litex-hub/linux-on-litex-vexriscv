@@ -770,3 +770,14 @@ class Sipeed_tang_primer_20k(Board):
             "serial",
             "spisdcard",
         })
+
+class Embedfire_rise_pro(Board):
+    def __init__(self):
+        from litex_boards.targets import embedfire_rise_pro
+        Board.__init__(self, embedfire_rise_pro.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "leds",
+            "switches",
+            "sdcard",
+        })
