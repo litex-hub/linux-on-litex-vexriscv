@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import argparse
+import shutil
 
 from litex.soc.integration.builder import Builder
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
@@ -182,6 +183,9 @@ def main():
 
         # DTB --------------------------------------------------------------------------------------
         soc.combine_dtb(board_name, args.fdtoverlays)
+
+        # boot.json --------------------------------------------------------------------------------
+        shutil.copyfile(f"images/boot_{args.rootfs}.json", "images/boot.json")
 
         # PCIe Driver ------------------------------------------------------------------------------
         if "pcie" in board.soc_capabilities:
