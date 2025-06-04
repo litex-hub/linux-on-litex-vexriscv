@@ -770,3 +770,18 @@ class Sipeed_tang_primer_20k(Board):
             "serial",
             "spisdcard",
         })
+
+#---------------------------------------------------------------------------------------------------
+# Gatemate Boards
+#---------------------------------------------------------------------------------------------------
+
+# CologneChip GateMate EVB support ---------------------------------------------------------------------
+
+class Colognechip_gatemate_evb(Board):
+    soc_kwargs = {"sys_clk_freq": int(24e6)}
+    def __init__(self):
+        from litex_boards.targets import colognechip_gatemate_evb
+        Board.__init__(self, colognechip_gatemate_evb.BaseSoC, soc_capabilities={
+            "serial",
+            "sdcard",
+        })
