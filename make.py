@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import argparse
+import shutil
 
 from litex.soc.integration.builder import Builder
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
@@ -59,6 +60,9 @@ def main():
     parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
+    parser.add_argument("--rootfs",         default="ram0",              help="Location of the RootFS.",
+        choices=["ram0", "mmcblk0p2"]
+    )
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -174,11 +178,14 @@ def main():
         builder.build(run=args.build, build_name=board_name)
 
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name)
+        soc.generate_dts(board_name, args.rootfs)
         soc.compile_dts(board_name, args.fdtoverlays)
 
         # DTB --------------------------------------------------------------------------------------
         soc.combine_dtb(board_name, args.fdtoverlays)
+
+        # boot.json --------------------------------------------------------------------------------
+        shutil.copyfile(f"images/boot_{args.rootfs}.json", "images/boot.json")
 
         # PCIe Driver ------------------------------------------------------------------------------
         if "pcie" in board.soc_capabilities:
