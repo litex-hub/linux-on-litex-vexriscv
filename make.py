@@ -57,6 +57,9 @@ def main():
     parser.add_argument("--doc",            action="store_true",         help="Build documentation.")
     parser.add_argument("--local-ip",       default="192.168.1.50",      help="Local IP address.")
     parser.add_argument("--remote-ip",      default="192.168.1.100",     help="Remote IP address of TFTP server.")
+    parser.add_argument("--use-gateway",    action="store_true",         help="Use a network gateway for out-of-subnet TFTP servers.")
+    parser.add_argument("--gateway-ip",     default="192.168.1.1",       help="Default gateway IP address.")
+    parser.add_argument("--subnet-mask",    default="255.255.255.0",     help="Subnet mask.")
     parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
@@ -159,7 +162,13 @@ def main():
         if "sdcard" in board.soc_capabilities:
             soc.add_sdcard()
         if "ethernet" in board.soc_capabilities:
-            soc.configure_ethernet(remote_ip=args.remote_ip, local_ip=args.local_ip)
+            soc.configure_ethernet(
+                remote_ip   = args.remote_ip,
+                local_ip    = args.local_ip,
+                use_gateway = args.use_gateway,
+                gateway_ip  = args.gateway_ip,
+                subnet_mask = args.subnet_mask
+            )
         #if "leds" in board.soc_capabilities:
         #    soc.add_leds()
         if "rgb_led" in board.soc_capabilities:
