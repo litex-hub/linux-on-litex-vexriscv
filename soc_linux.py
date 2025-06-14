@@ -57,8 +57,12 @@ def SoCLinux(soc_cls, **kwargs):
 
         # Ethernet configuration -------------------------------------------------------------------
 
-        def configure_ethernet(self, remote_ip):
+        def configure_ethernet(self, remote_ip, local_ip, use_gateway, gateway_ip, subnet_mask):
             remote_ip = remote_ip.split(".")
+            local_ip = local_ip.split(".")
+            gateway_ip = gateway_ip.split(".")
+            subnet_mask = subnet_mask.split(".")
+
             try: # FIXME: Improve.
                 self.constants.pop("REMOTEIP1")
                 self.constants.pop("REMOTEIP2")
@@ -70,6 +74,45 @@ def SoCLinux(soc_cls, **kwargs):
             self.add_constant("REMOTEIP2", int(remote_ip[1]))
             self.add_constant("REMOTEIP3", int(remote_ip[2]))
             self.add_constant("REMOTEIP4", int(remote_ip[3]))
+
+            try: # FIXME: Improve.
+                self.constants.pop("LOCALIP1")
+                self.constants.pop("LOCALIP2")
+                self.constants.pop("LOCALIP3")
+                self.constants.pop("LOCALIP4")
+            except:
+                pass
+            self.add_constant("LOCALIP1", int(local_ip[0]))
+            self.add_constant("LOCALIP2", int(local_ip[1]))
+            self.add_constant("LOCALIP3", int(local_ip[2]))
+            self.add_constant("LOCALIP4", int(local_ip[3]))
+
+            try: # FIXME: Improve.
+                self.constants.pop("GATEWAYIP1")
+                self.constants.pop("GATEWAYIP2")
+                self.constants.pop("GATEWAYIP3")
+                self.constants.pop("GATEWAYIP4")
+            except:
+                pass
+            self.add_constant("GATEWAYIP1", int(gateway_ip[0]))
+            self.add_constant("GATEWAYIP2", int(gateway_ip[1]))
+            self.add_constant("GATEWAYIP3", int(gateway_ip[2]))
+            self.add_constant("GATEWAYIP4", int(gateway_ip[3]))
+
+            try: # FIXME: Improve.
+                self.constants.pop("SUBNETMASK1")
+                self.constants.pop("SUBNETMASK2")
+                self.constants.pop("SUBNETMASK3")
+                self.constants.pop("SUBNETMASK4")
+            except:
+                pass
+            self.add_constant("SUBNETMASK1", int(subnet_mask[0]))
+            self.add_constant("SUBNETMASK2", int(subnet_mask[1]))
+            self.add_constant("SUBNETMASK3", int(subnet_mask[2]))
+            self.add_constant("SUBNETMASK4", int(subnet_mask[3]))
+
+            if use_gateway:
+                self.add_constant("ETH_NETBOOT_USE_GATEWAY")
 
         # DTS generation ---------------------------------------------------------------------------
 
