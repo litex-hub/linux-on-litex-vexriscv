@@ -20,6 +20,7 @@ from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.pwm     import PWM
 
 from litex.tools.litex_json2dts_linux import generate_dts
+from litex.soc.integration.soc        import add_ip_address_constants
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -58,32 +59,8 @@ def SoCLinux(soc_cls, **kwargs):
         # Ethernet configuration -------------------------------------------------------------------
 
         def configure_ethernet(self, remote_ip, local_ip):
-            remote_ip = remote_ip.split(".")
-            local_ip = local_ip.split(".")
-
-            try: # FIXME: Improve.
-                self.constants.pop("REMOTEIP1")
-                self.constants.pop("REMOTEIP2")
-                self.constants.pop("REMOTEIP3")
-                self.constants.pop("REMOTEIP4")
-            except:
-                pass
-            self.add_constant("REMOTEIP1", int(remote_ip[0]))
-            self.add_constant("REMOTEIP2", int(remote_ip[1]))
-            self.add_constant("REMOTEIP3", int(remote_ip[2]))
-            self.add_constant("REMOTEIP4", int(remote_ip[3]))
-
-            try: # FIXME: Improve.
-                self.constants.pop("LOCALIP1")
-                self.constants.pop("LOCALIP2")
-                self.constants.pop("LOCALIP3")
-                self.constants.pop("LOCALIP4")
-            except:
-                pass
-            self.add_constant("LOCALIP1", int(local_ip[0]))
-            self.add_constant("LOCALIP2", int(local_ip[1]))
-            self.add_constant("LOCALIP3", int(local_ip[2]))
-            self.add_constant("LOCALIP4", int(local_ip[3]))
+            add_ip_address_constants(self, "REMOTEIP", remote_ip, check_duplicate=False)
+            add_ip_address_constants(self, "LOCALIP", local_ip, check_duplicate=False)
 
         # DTS generation ---------------------------------------------------------------------------
 
