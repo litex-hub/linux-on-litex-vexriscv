@@ -785,3 +785,14 @@ class Colognechip_gatemate_evb(Board):
             "serial",
             "sdcard",
         })
+
+# Machdyne Kolsch support ---------------------------------------------------------------------
+
+class Kolsch(Board):
+    soc_kwargs = {"sys_clk_freq": int(24e6)}
+    def __init__(self):
+        from litex_boards.targets import machdyne_kolsch
+        Board.__init__(self, machdyne_kolsch.BaseSoC, soc_capabilities={
+            "serial",
+            "spisdcard",
+        })
