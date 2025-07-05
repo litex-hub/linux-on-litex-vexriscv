@@ -113,7 +113,11 @@ def main():
         if "leds" in board.soc_capabilities:
             soc_kwargs.update(with_led_chaser=True)
         if "ethernet" in board.soc_capabilities:
-            soc_kwargs.update(with_ethernet=True)
+            soc_kwargs.update(
+                with_ethernet = True,
+                eth_ip        = args.local_ip,
+                remote_ip     = args.remote_ip,
+            )
         if "pcie" in board.soc_capabilities:
             soc_kwargs.update(with_pcie=True)
         if "spiflash" in board.soc_capabilities:
@@ -158,8 +162,6 @@ def main():
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
             soc.add_sdcard()
-        if "ethernet" in board.soc_capabilities:
-            soc.configure_ethernet(remote_ip=args.remote_ip)
         #if "leds" in board.soc_capabilities:
         #    soc.add_leds()
         if "rgb_led" in board.soc_capabilities:
