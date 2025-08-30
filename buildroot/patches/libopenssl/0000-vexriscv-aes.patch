@@ -1,7 +1,7 @@
-diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/aes/aes_core.c
---- libopenssl-1.1.1f_ori/crypto/aes/aes_core.c	2020-03-31 14:17:45.000000000 +0200
-+++ libopenssl-1.1.1f/crypto/aes/aes_core.c	2020-11-11 13:16:21.010169000 +0100
-@@ -43,6 +43,13 @@
+diff -ruN libopenssl-3.5.2_ori/crypto/aes/aes_core.c libopenssl-3.5.2/crypto/aes/aes_core.c
+--- libopenssl-3.5.2_ori/crypto/aes/aes_core.c    2025-08-05 14:09:26.000000000 +0200
++++ libopenssl-3.5.2/crypto/aes/aes_core.c   2025-08-30 10:36:20.885476522 +0200
+@@ -50,6 +50,13 @@
  #include <openssl/aes.h>
  #include "aes_local.h"
  
@@ -13,9 +13,9 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
 +#endif
 +
  #if defined(OPENSSL_AES_CONST_TIME) && !defined(AES_ASM)
- typedef union {
-     unsigned char b[8];
-@@ -668,6 +675,9 @@
+ 
+ # if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
+@@ -1314,6 +1321,9 @@
              rk[6] = rk[2] ^ rk[5];
              rk[7] = rk[3] ^ rk[6];
              if (++i == 10) {
@@ -25,7 +25,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
                  return 0;
              }
              rk += 4;
-@@ -688,6 +698,9 @@
+@@ -1334,6 +1344,9 @@
              rk[ 8] = rk[ 2] ^ rk[ 7];
              rk[ 9] = rk[ 3] ^ rk[ 8];
              if (++i == 8) {
@@ -35,7 +35,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
                  return 0;
              }
              rk[10] = rk[ 4] ^ rk[ 9];
-@@ -710,6 +723,9 @@
+@@ -1356,6 +1369,9 @@
              rk[10] = rk[ 2] ^ rk[ 9];
              rk[11] = rk[ 3] ^ rk[10];
              if (++i == 7) {
@@ -45,7 +45,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
                  return 0;
              }
              temp = rk[11];
-@@ -744,6 +760,9 @@
+@@ -1390,6 +1406,9 @@
      if (status < 0)
          return status;
  
@@ -55,7 +55,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
      rk = key->rd_key;
  
      /* invert the order of the round keys: */
-@@ -777,6 +796,9 @@
+@@ -1423,6 +1442,9 @@
              Td2[Te1[(rk[3] >>  8) & 0xff] & 0xff] ^
              Td3[Te1[(rk[3]      ) & 0xff] & 0xff];
      }
@@ -65,7 +65,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
      return 0;
  }
  
-@@ -788,7 +810,11 @@
+@@ -1434,7 +1456,11 @@
                   const AES_KEY *key) {
  
      const u32 *rk;
@@ -77,7 +77,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
  #ifndef FULL_UNROLL
      int r;
  #endif /* ?FULL_UNROLL */
-@@ -796,6 +822,10 @@
+@@ -1442,6 +1468,10 @@
      assert(in && out && key);
      rk = key->rd_key;
  
@@ -88,7 +88,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
      /*
       * map byte array block to cipher state
       * and add initial round key:
-@@ -969,6 +999,7 @@
+@@ -1615,6 +1645,7 @@
          (Te1[(t2      ) & 0xff] & 0x000000ff) ^
          rk[3];
      PUTU32(out + 12, s3);
@@ -96,7 +96,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
  }
  
  /*
-@@ -980,7 +1011,9 @@
+@@ -1626,7 +1657,9 @@
  {
  
      const u32 *rk;
@@ -106,7 +106,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
  #ifndef FULL_UNROLL
      int r;
  #endif /* ?FULL_UNROLL */
-@@ -988,6 +1021,9 @@
+@@ -1634,6 +1667,9 @@
      assert(in && out && key);
      rk = key->rd_key;
  
@@ -116,7 +116,7 @@ diff -ruN libopenssl-1.1.1f_ori/crypto/aes/aes_core.c libopenssl-1.1.1f/crypto/a
      /*
       * map byte array block to cipher state
       * and add initial round key:
-@@ -1161,6 +1197,7 @@
+@@ -1807,6 +1843,7 @@
          ((u32)Td4[(t0      ) & 0xff])       ^
          rk[3];
      PUTU32(out + 12, s3);
