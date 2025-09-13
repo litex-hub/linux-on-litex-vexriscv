@@ -83,7 +83,7 @@ class SoCLinux(SoCCore):
         # RAM Init ---------------------------------------------------------------------------------
         ram_init = []
         if init_memories:
-            ram_init = get_mem_data("images/boot.json", endianness="little", offset=0x40000000)
+            ram_init = get_mem_data("images/boot_ram0.json", endianness="little", offset=0x40000000)
 
         # CRG --------------------------------------------------------------------------------------
         self.crg = CRG(platform.request("sys_clk"))
