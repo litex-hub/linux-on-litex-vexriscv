@@ -44,6 +44,19 @@ class Acorn(Board):
             "sata",
         })
 
+# Acorn Baseboard Mini -----------------------------------------------------------------------------
+
+class AcornBaseboardMini(Board):
+    soc_kwargs = {"sys_clk_freq": int(150e6)}
+    def __init__(self):
+        from litex_boards.targets import litex_acorn_baseboard_mini
+        Board.__init__(self, litex_acorn_baseboard_mini.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "sata",
+        })
+
 # Acorn PCIe support -------------------------------------------------------------------------------
 
 class AcornPCIe(Board):
@@ -98,6 +111,21 @@ class ArtyS7(Board):
             # Buses
             "spi",
             "i2c",
+        })
+
+# alinx support ------------------------------------------------------------------------------------
+
+class Ax7020(Board):
+    def __init__(self):
+        from litex_boards.targets import alinx_ax7020
+        Board.__init__(self, alinx_ax7020.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+            "leds",
+            "buttons",
+            # Memory (PS DDR)
+            "ps_ddr",
         })
 
 # NeTV2 support ------------------------------------------------------------------------------------
@@ -742,6 +770,39 @@ class Sipeed_tang_primer_20k(Board):
             "serial",
             "spisdcard",
         })
+
+
+#---------------------------------------------------------------------------------------------------
+# Gatemate Boards
+#---------------------------------------------------------------------------------------------------
+
+# CologneChip GateMate EVB support ---------------------------------------------------------------------
+
+class Colognechip_gatemate_evb(Board):
+    soc_kwargs = {"sys_clk_freq": int(24e6)}
+    def __init__(self):
+        from litex_boards.targets import colognechip_gatemate_evb
+        Board.__init__(self, colognechip_gatemate_evb.BaseSoC, soc_capabilities={
+            "serial",
+            "sdcard",
+        })
+
+# Machdyne Kolsch support ---------------------------------------------------------------------
+
+class Kolsch(Board):
+    soc_kwargs = {"sys_clk_freq": int(24e6)}
+    def __init__(self):
+        from litex_boards.targets import machdyne_kolsch
+        Board.__init__(self, machdyne_kolsch.BaseSoC, soc_capabilities={
+            "serial",
+            "spisdcard",
+        })
+
+#---------------------------------------------------------------------------------------------------
+# Embedfire Boards
+#---------------------------------------------------------------------------------------------------
+
+# Embedfire rise pro support ---------------------------------------------------------------------
 
 class Embedfire_rise_pro(Board):
     def __init__(self):

@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import argparse
+import shutil
 
 from litex.soc.integration.builder import Builder
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
@@ -59,6 +60,9 @@ def main():
     parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
+    parser.add_argument("--rootfs",         default="ram0",              help="Location of the RootFS.",
+        choices=["ram0", "mmcblk0p2"]
+    )
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -122,6 +126,8 @@ def main():
             soc_kwargs.update(with_video_framebuffer=True)
         if "usb_host" in board.soc_capabilities:
             soc_kwargs.update(with_usb_host=True)
+        if "ps_ddr" in board.soc_capabilities:
+            soc_kwargs.update(with_ps_ddr=True)
 
         # SoC creation -----------------------------------------------------------------------------
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
@@ -139,6 +145,10 @@ def main():
         if board_name in ["aesku40"]:
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
+
+        if board_name in ["colognechip_gatemate_evb"]:
+            from litex_boards.platforms.colognechip_gatemate_evb import pmods_sdcard_io
+            board.platform.add_extension(pmods_sdcard_io("PMODA"))
 
         if board_name in ["orange_crab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
@@ -172,11 +182,14 @@ def main():
         builder.build(run=args.build, build_name=board_name)
 
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name)
+        soc.generate_dts(board_name, args.rootfs)
         soc.compile_dts(board_name, args.fdtoverlays)
 
         # DTB --------------------------------------------------------------------------------------
         soc.combine_dtb(board_name, args.fdtoverlays)
+
+        # boot.json --------------------------------------------------------------------------------
+        shutil.copyfile(f"images/boot_{args.rootfs}.json", "images/boot.json")
 
         # PCIe Driver ------------------------------------------------------------------------------
         if "pcie" in board.soc_capabilities:
