@@ -771,6 +771,7 @@ class Sipeed_tang_primer_20k(Board):
             "spisdcard",
         })
 
+
 #---------------------------------------------------------------------------------------------------
 # Gatemate Boards
 #---------------------------------------------------------------------------------------------------
@@ -795,4 +796,21 @@ class Kolsch(Board):
         Board.__init__(self, machdyne_kolsch.BaseSoC, soc_capabilities={
             "serial",
             "spisdcard",
+        })
+
+#---------------------------------------------------------------------------------------------------
+# Embedfire Boards
+#---------------------------------------------------------------------------------------------------
+
+# Embedfire rise pro support ---------------------------------------------------------------------
+
+class Embedfire_rise_pro(Board):
+    def __init__(self):
+        from litex_boards.targets import embedfire_rise_pro
+        Board.__init__(self, embedfire_rise_pro.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "leds",
+            "switches",
+            "sdcard",
         })
