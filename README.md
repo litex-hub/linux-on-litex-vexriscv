@@ -65,6 +65,7 @@ The current list of boards that have been tested and are supported can be obtain
     ├── genesys2
     ├── hadbadge
     ├── hseda_xc7a35t
+    ├── icepi_zero
     ├── icesugar_pro
     ├── kc705
     ├── kcu105
