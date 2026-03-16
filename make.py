@@ -78,6 +78,9 @@ def main():
         choices=["ram0", "mmcblk0p2"]
     )
     parser.add_argument("soc_kwargs", nargs=argparse.REMAINDER)
+    # CLIC support - additional parameters (--with-clic is added by VexRiscvSMP.args_fill)
+    parser.add_argument("--clic-num-interrupts",  default=64, type=int, help="Number of CLIC interrupts (default: 64).")
+    parser.add_argument("--clic-ipriolen",        default=8,  type=int, help="CLIC interrupt priority bits (default: 8).")
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
@@ -146,8 +149,20 @@ def main():
             soc_kwargs.update(with_ps_ddr=True)
 
         # SoC creation -----------------------------------------------------------------------------
+        # Add CLIC parameters to soc_kwargs if enabled
+        if args.with_clic:
+            soc_kwargs.update(
+                with_clic=True,
+                clic_num_interrupts=args.clic_num_interrupts,
+                clic_ipriolen=args.clic_ipriolen
+            )
+            
         soc = SoCLinux(board.soc_cls, **soc_kwargs)
         board.platform = soc.platform
+        
+        # CLIC configuration info -----------------------------------------------------------------
+        if args.with_clic:
+            print(f"[INFO] CLIC enabled with {args.clic_num_interrupts} interrupts and {args.clic_ipriolen}-bit priority")
 
         # SoC constants ----------------------------------------------------------------------------
         for k, v in board.soc_constants.items():
