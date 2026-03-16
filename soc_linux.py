@@ -55,22 +55,6 @@ def SoCLinux(soc_cls, **kwargs):
         def add_i2c(self):
             self.i2c0 = I2CMaster(self.platform.request("i2c", 0))
 
-        # Ethernet configuration -------------------------------------------------------------------
-
-        def configure_ethernet(self, remote_ip):
-            remote_ip = remote_ip.split(".")
-            try: # FIXME: Improve.
-                self.constants.pop("REMOTEIP1")
-                self.constants.pop("REMOTEIP2")
-                self.constants.pop("REMOTEIP3")
-                self.constants.pop("REMOTEIP4")
-            except:
-                pass
-            self.add_constant("REMOTEIP1", int(remote_ip[0]))
-            self.add_constant("REMOTEIP2", int(remote_ip[1]))
-            self.add_constant("REMOTEIP3", int(remote_ip[2]))
-            self.add_constant("REMOTEIP4", int(remote_ip[3]))
-
         # DTS generation ---------------------------------------------------------------------------
 
         def generate_dts(self, board_name, rootfs="ram0"):
