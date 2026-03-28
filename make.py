@@ -63,6 +63,7 @@ def main():
     parser.add_argument("--board",          required=True,               help="FPGA board.")
     parser.add_argument("--device",         default=None,                help="FPGA device.")
     parser.add_argument("--variant",        default=None,                help="FPGA board variant.")
+    parser.add_argument("--revision",       default=None,                help="FPGA board revision.")
     parser.add_argument("--toolchain",      default=None,                help="Toolchain use to build.")
     parser.add_argument("--uart-baudrate",  default=115.2e3, type=float, help="UART baudrate.")
     parser.add_argument("--build",          action="store_true",         help="Build bitstream.")
@@ -113,8 +114,11 @@ def main():
             soc_kwargs.update(device=args.device)
         if args.variant is not None:
             soc_kwargs.update(variant=args.variant)
+        if args.revision is not None:
+            soc_kwargs.update(revision=args.revision)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+
 
         # UART.
         soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
@@ -156,6 +160,10 @@ def main():
         # SoC peripherals --------------------------------------------------------------------------
         if board_name in ["arty", "arty_a7"]:
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
+            board.platform.add_extension(_sdcard_pmod_io)
+
+        if board_name in ["colorlight_i5"]:
+            from litex_boards.platforms.colorlight_i5 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
         if board_name in ["aesku40"]:
