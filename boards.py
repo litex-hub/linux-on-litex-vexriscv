@@ -407,6 +407,18 @@ class HSEDA_xc7a35t(Board):
             "serial",
         })
 
+# Colorlight i9plus support ------------------------------------------------------------------------
+
+class Colorlight_i9Plus(Board):
+    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import colorlight_i9plus
+        Board.__init__(self, colorlight_i9plus.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        })
+
 #---------------------------------------------------------------------------------------------------
 # Lattice Boards
 #---------------------------------------------------------------------------------------------------
@@ -538,6 +550,22 @@ class Colorlight_i5(Board):
     def __init__(self):
         from litex_boards.targets import colorlight_i5
         Board.__init__(self, colorlight_i5.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+        })
+
+# Colorlight 5A-75X support ------------------------------------------------------------------------
+
+class Colorlight_5A_75X(Board):
+    soc_kwargs = {
+        "board"    : "5a-75b",
+        "revision" : "8.2",
+        "l2_size"  : 2048, # Use Wishbone and L2 for memory accesses.
+    }
+    def __init__(self):
+        from litex_boards.targets import colorlight_5a_75x
+        Board.__init__(self, colorlight_5a_75x.BaseSoC, soc_capabilities={
             # Communication
             "serial",
             "ethernet",
