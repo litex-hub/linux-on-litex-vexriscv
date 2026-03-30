@@ -56,7 +56,9 @@ The current list of boards that have been tested and are supported can be obtain
     |── ax7020
     ├── butter_stick
     ├── cam_link4k
+    ├── colorlight_5a_75x
     ├── colorlight_i5
+    ├── colorlight_i9plus
     ├── de0nano
     ├── de10nano
     ├── de1so_c
@@ -278,6 +280,16 @@ Built-in commands:
 Once installed, build the bitstream with:
 ```sh
 $ ./make.py --board=XXYY --cpu-count=X --build
+```
+
+Example for the popular Colorlight 5A-75X:
+```sh
+$ ./make.py --board=colorlight_5a_75x --build
+```
+
+Example for the Colorlight i9Plus:
+```sh
+$ ./make.py --board=colorlight_i9plus --build
 ```
 
 > **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
