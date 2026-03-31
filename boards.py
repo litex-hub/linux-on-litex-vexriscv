@@ -84,6 +84,8 @@ class Arty(Board):
             "ethernet",
             # Storage
             "spiflash",
+            # Storage
+            "spiflash",
             "sdcard",
             # GPIOs
             "leds",
@@ -138,6 +140,8 @@ class NeTV2(Board):
             "serial",
             "ethernet",
             # Storage
+            "spiflash",
+            # Storage
             "sdcard",
             # GPIOs
             "leds",
@@ -155,6 +159,8 @@ class Genesys2(Board):
             "usb_fifo",
             "ethernet",
             # Storage
+            "spiflash",
+            # Storage
             "sdcard",
         })
 
@@ -167,6 +173,8 @@ class KC705(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
             # Storage
             "sdcard",
             #"sata",
@@ -184,6 +192,8 @@ class VC707(Board):
             "serial",
             "ethernet",
             # Storage
+            "spiflash",
+            # Storage
             "sdcard",
             # GPIOs
             "leds",
@@ -199,6 +209,8 @@ class KCU105(Board):
             "serial",
             "ethernet",
             # Storage
+            "spiflash",
+            # Storage
             "sdcard",
         })
 
@@ -212,6 +224,8 @@ class AESKU40(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
             # Storage
             "sdcard",
         })
@@ -235,6 +249,8 @@ class Nexys4DDR(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
             # Storage
             "sdcard",
             # Video
@@ -327,6 +343,8 @@ class SDS1104XE(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
             # Video
             "framebuffer",
         })
@@ -345,6 +363,8 @@ class Qmtech_WuKong(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
             # Video
             "framebuffer",
         })
@@ -417,6 +437,8 @@ class Colorlight_i9Plus(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
         })
 
 #---------------------------------------------------------------------------------------------------
@@ -432,6 +454,8 @@ class VersaECP5(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
         })
 
 # ULX3S support ------------------------------------------------------------------------------------
@@ -503,6 +527,8 @@ class ButterStick(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
         })
 
 # Cam Link 4K support ------------------------------------------------------------------------------
@@ -540,6 +566,8 @@ class ECPIX5(Board):
             "serial",
             "ethernet",
             # Storage
+            "spiflash",
+            # Storage
             "sdcard",
         })
 
@@ -553,6 +581,8 @@ class Colorlight_i5(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
         })
 
 # Colorlight 5A-75X support ------------------------------------------------------------------------
@@ -569,6 +599,8 @@ class Colorlight_5A_75X(Board):
             # Communication
             "serial",
             "ethernet",
+            # Storage
+            "spiflash",
         })
 
 # Icesugar Pro support -----------------------------------------------------------------------------
