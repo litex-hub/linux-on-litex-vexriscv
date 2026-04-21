@@ -353,6 +353,11 @@ class Qmtech_WuKong(Board):
 # MNT RKX7 support ---------------------------------------------------------------------------------
 
 class MNT_RKX7(Board):
+    # The mnt_rkx7 target enables ethernet with dynamic IP by default, which pulls
+    # in atoi/strtol from boot.c — symbols that are absent from LiteX's minimal
+    # libc (the default since 2026-03). Ethernet isn't wired up in this board's
+    # soc_capabilities anyway, so disable it at the target level to match intent.
+    soc_kwargs = {"with_ethernet": False}
     def __init__(self):
         from litex_boards.targets import mnt_rkx7
         Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
