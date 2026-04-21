@@ -115,11 +115,11 @@ jobs:
               -C "$HOME" \
               .local .sbt .ivy2 .cache/coursier
           sudo tar czf /tmp/riscv.tgz   -C /usr/local riscv
-          # LiteX clones: skip .git dirs — they're ~200MB of churn that the
-          # shards don't need to run a single build.
+          # Keep .git dirs in the clones tarball: SpinalHDL/VexRiscv build.sbt
+          # shells out to `git rev-parse HEAD` during Scala compile and fails
+          # with exit 128 if the submodule checkouts aren't real git repos.
           tar czf /tmp/litex-clones.tgz \
               --exclude=linux-on-litex-vexriscv \
-              --exclude='.git' \
               -C "$RUNNER_WORKSPACE" .
           ls -lh /tmp/home.tgz /tmp/riscv.tgz /tmp/litex-clones.tgz
 
