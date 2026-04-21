@@ -8,7 +8,7 @@ jobs:
     steps:
       # Checkout Repository
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Install Tools
       - name: Install Tools
