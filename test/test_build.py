@@ -38,9 +38,13 @@ class TestBuild(unittest.TestCase):
             "trion_t120bga576dev_kit",  # Reason: Require Efinity toolchain.
             "titanium_ti60f225dev_kit", # Reason: Require Efinity toolchain.
         ]
-        for board in supported_boards:
-            if board in excluded_boards:
-                continue
+        # Allow CI matrix jobs to target a single board via $LLV_BOARD.
+        single = os.environ.get("LLV_BOARD")
+        if single:
+            boards = [single]
+        else:
+            boards = [b for b in supported_boards if b not in excluded_boards]
+        for board in boards:
             with self.subTest(msg=f"board={board} build test..."):
                 self.board_build_test(board=board)
 
