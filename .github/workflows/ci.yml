@@ -94,13 +94,34 @@ jobs:
           sudo mkdir /usr/local/riscv
           sudo cp -r $PWD/riscv64-*/* /usr/local/riscv
 
-      # Pack Environment (the three paths each consumer must restore)
+      # Warm SBT / VexRiscv Caches (run one real build so Scala dependency
+      # download + SpinalHDL compile happens once here instead of in every
+      # matrix shard). Shards using the default CPU config then hit the
+      # pregenerated Verilog directly; shards with other variants still
+      # benefit from the populated ~/.sbt / ~/.ivy2 / ~/.cache/coursier.
+      - name: Warm SBT / VexRiscv caches
+        run: |
+          export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
+          ./make.py --board=arty --cpu-count=1
+
+      # Pack Environment (the paths each consumer must restore)
       - name: Pack environment
         run: |
-          tar czf /tmp/home-local.tgz    -C "$HOME"             .local
-          sudo tar czf /tmp/riscv.tgz    -C /usr/local          riscv
-          tar czf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE" --exclude=linux-on-litex-vexriscv .
-          ls -lh /tmp/home-local.tgz /tmp/riscv.tgz /tmp/litex-clones.tgz
+          # Archive user-home bits: pip --user, SBT / Ivy / Coursier caches.
+          # Some of these may not exist if the warmup didn't trigger SBT — use
+          # a tolerant pattern via --ignore-failed-read.
+          tar czf /tmp/home.tgz \
+              --ignore-failed-read \
+              -C "$HOME" \
+              .local .sbt .ivy2 .cache/coursier
+          sudo tar czf /tmp/riscv.tgz   -C /usr/local riscv
+          # LiteX clones: skip .git dirs — they're ~200MB of churn that the
+          # shards don't need to run a single build.
+          tar czf /tmp/litex-clones.tgz \
+              --exclude=linux-on-litex-vexriscv \
+              --exclude='.git' \
+              -C "$RUNNER_WORKSPACE" .
+          ls -lh /tmp/home.tgz /tmp/riscv.tgz /tmp/litex-clones.tgz
 
       # Upload Environment Artifact
       - name: Upload environment artifact
@@ -108,7 +129,7 @@ jobs:
         with:
           name: env
           path: |
-            /tmp/home-local.tgz
+            /tmp/home.tgz
             /tmp/riscv.tgz
             /tmp/litex-clones.tgz
           retention-days: 1
@@ -145,7 +166,7 @@ jobs:
           path: /tmp
       - name: Restore environment
         run: |
-          tar xzf /tmp/home-local.tgz    -C "$HOME"
+          tar xzf /tmp/home.tgz          -C "$HOME"
           sudo tar xzf /tmp/riscv.tgz    -C /usr/local
           tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
 
@@ -193,7 +214,7 @@ jobs:
           path: /tmp
       - name: Restore environment
         run: |
-          tar xzf /tmp/home-local.tgz    -C "$HOME"
+          tar xzf /tmp/home.tgz          -C "$HOME"
           sudo tar xzf /tmp/riscv.tgz    -C /usr/local
           tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
 
