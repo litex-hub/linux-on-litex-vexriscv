@@ -118,6 +118,11 @@ def main():
 
         # UART.
         soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
+        # Default to "serial" when no special UART is requested. SoCCore also
+        # defaults to "serial", but some LiteX-Boards targets read uart_name out
+        # of kwargs before forwarding (ex: lambdaconcept_ecpix5) and KeyError
+        # when the kwarg is absent, so set it unconditionally here.
+        soc_kwargs.setdefault("uart_name", "serial")
         if "crossover" in board.soc_capabilities:
             soc_kwargs.update(uart_name="crossover")
         if "usb_fifo" in board.soc_capabilities:
