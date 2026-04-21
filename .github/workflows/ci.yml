@@ -43,15 +43,12 @@ jobs:
           print("boards=" + json.dumps(boards))
           PY
 
-  # Build Boards (one matrix shard per board; fail-fast disabled so a single
-  # broken board doesn't cancel the rest).
-  build:
-    needs: discover
+  # Setup Environment (install LiteX + RISC-V toolchain once, upload as an
+  # artifact so every per-board shard can restore it in ~15s instead of
+  # re-running a 6-8 min install from scratch). LiteX is always freshly
+  # cloned here — no cross-run caching.
+  setup:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        board: ${{ fromJson(needs.discover.outputs.boards) }}
     steps:
       # Checkout Repository
       - name: Checkout
@@ -97,6 +94,61 @@ jobs:
           sudo mkdir /usr/local/riscv
           sudo cp -r $PWD/riscv64-*/* /usr/local/riscv
 
+      # Pack Environment (the three paths each consumer must restore)
+      - name: Pack environment
+        run: |
+          tar czf /tmp/home-local.tgz    -C "$HOME"             .local
+          sudo tar czf /tmp/riscv.tgz    -C /usr/local          riscv
+          tar czf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE" --exclude=linux-on-litex-vexriscv .
+          ls -lh /tmp/home-local.tgz /tmp/riscv.tgz /tmp/litex-clones.tgz
+
+      # Upload Environment Artifact
+      - name: Upload environment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: env
+          path: |
+            /tmp/home-local.tgz
+            /tmp/riscv.tgz
+            /tmp/litex-clones.tgz
+          retention-days: 1
+
+  # Build Boards (one matrix shard per board; fail-fast disabled so a single
+  # broken board doesn't cancel the rest). Each shard restores the setup
+  # artifact and only runs a slim apt install for host build tooling.
+  build:
+    needs: [discover, setup]
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        board: ${{ fromJson(needs.discover.outputs.boards) }}
+    steps:
+      # Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Tools (slim — just what's needed at build time; the rest
+      # rides along in the setup artifact)
+      - name: Install Tools
+        run: |
+          sudo apt update
+          sudo apt install -y --no-install-recommends \
+            build-essential python3 python3-pip python3-setuptools \
+            device-tree-compiler ninja-build
+
+      # Download / Restore Environment
+      - name: Download environment
+        uses: actions/download-artifact@v4
+        with:
+          name: env
+          path: /tmp
+      - name: Restore environment
+        run: |
+          tar xzf /tmp/home-local.tgz    -C "$HOME"
+          sudo tar xzf /tmp/riscv.tgz    -C /usr/local
+          tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
+
       # Test (build this shard's board via LLV_BOARD)
       - name: Build ${{ matrix.board }}
         env:
@@ -106,51 +158,44 @@ jobs:
           python3 -m unittest -v test.test_build.TestBuild.test_boards
 
   # CPU-count Coverage (keep exercising arty at 1/2/4 cores — separate job so
-  # it doesn't multiply the cost of the per-board matrix).
+  # it doesn't multiply the cost of the per-board matrix). Reuses the setup
+  # artifact. SBT is installed here because multi-core VexRiscv variants are
+  # not all pregenerated and may need SpinalHDL regeneration.
   test-cpu-count:
+    needs: setup
     runs-on: ubuntu-22.04
     steps:
       # Checkout Repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Tools
+      # Install Tools (slim + sbt/jdk for on-demand VexRiscv generation)
       - name: Install Tools
         run: |
           sudo add-apt-repository -y ppa:openjdk-r/ppa
           sudo apt update
-          sudo apt install -y wget build-essential python3 python3-pip \
-            verilator libevent-dev libjson-c-dev device-tree-compiler \
-            python3-setuptools python3-requests python3-pexpect \
-            python3-colorama python3-serial python3-packaging python3-yaml \
-            ninja-build curl apt-transport-https gnupg openjdk-8-jdk -y
-          sudo update-alternatives --config java
-          sudo update-alternatives --config javac
+          sudo apt install -y --no-install-recommends \
+            build-essential python3 python3-pip python3-setuptools \
+            device-tree-compiler ninja-build curl apt-transport-https \
+            gnupg openjdk-8-jdk
           echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
           echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
           curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo -H gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import
           sudo chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
           sudo apt update
           sudo apt -y install sbt
-          pip3 install meson
 
-      # Install (n)Migen / LiteX / Cores
-      - name: Install LiteX
+      # Download / Restore Environment
+      - name: Download environment
+        uses: actions/download-artifact@v4
+        with:
+          name: env
+          path: /tmp
+      - name: Restore environment
         run: |
-          wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
-          python3 litex_setup.py init install --user
-          # amaranth-yosys ships a Yosys binary (>= 0.40) that Amaranth's
-          # Verilog backend needs to emit the LUNA ACM core; Ubuntu 22.04's
-          # apt yosys (0.9) is too old to satisfy amaranth's version check.
-          pip3 install --user luna-usb==0.2.3 amaranth==0.5.8 amaranth-yosys
-
-      # Install RISC-V GCC
-      - name: Install RISC-V GCC
-        run: |
-          wget https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
-          tar -xf $PWD/riscv64-*.tar.gz
-          sudo mkdir /usr/local/riscv
-          sudo cp -r $PWD/riscv64-*/* /usr/local/riscv
+          tar xzf /tmp/home-local.tgz    -C "$HOME"
+          sudo tar xzf /tmp/riscv.tgz    -C /usr/local
+          tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
 
       # Test
       - name: Run test_cpu_count
