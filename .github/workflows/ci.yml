@@ -35,6 +35,9 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
           python3 litex_setup.py init install --user
+          # LUNA/Amaranth deps are required by boards using usb_acm UART (ex: orange_crab).
+          # litex_setup installs them optionally and swallows failures, so install explicitly.
+          pip3 install --user luna-usb==0.2.3 amaranth==0.5.8
 
       # Install RISC-V GCC
       - name: Install RISC-V GCC
