@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import os
+import shutil
+import subprocess
 import unittest
 
 from make import supported_boards
@@ -12,7 +14,11 @@ from make import supported_boards
 class TestBuild(unittest.TestCase):
     def board_build_test(self, board, cpu_count=1):
         # Build Board software/gateware.
-        os.system(f"rm -rf build && ./make.py --board={board} --cpu-count={cpu_count}")
+        shutil.rmtree("build", ignore_errors=True)
+        subprocess.run(
+            ["./make.py", f"--board={board}", f"--cpu-count={cpu_count}"],
+            check=True,
+        )
 
         # Check .csv/.json generation.
         self.assertEqual(os.path.isfile(f"build/{board}/csr.csv"),  True)
