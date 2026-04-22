@@ -74,6 +74,15 @@ jobs:
           sudo apt -y install sbt
           pip3 install meson
 
+      # Cache pip downloads (small win for our pinned pip deps — key on the
+      # workflow file hash so a version bump busts the cache automatically).
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: pip-${{ runner.os }}-
+
       # Install (n)Migen / LiteX / Cores
       - name: Install LiteX
         run: |
@@ -86,8 +95,19 @@ jobs:
           # apt yosys (0.9) is too old to satisfy amaranth's version check.
           pip3 install --user luna-usb==0.2.3 amaranth==0.5.8 amaranth-yosys
 
-      # Install RISC-V GCC
+      # Cache RISC-V toolchain (pinned SiFive v2020.12 tarball — immutable,
+      # so a static cache key is safe. On cache hit we skip the ~1-2 min
+      # download + extract below).
+      - name: Cache RISC-V toolchain
+        id: cache-riscv
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/riscv
+          key: riscv-sifive-v2020.12.8-ubuntu14
+
+      # Install RISC-V GCC (skipped on cache hit)
       - name: Install RISC-V GCC
+        if: steps.cache-riscv.outputs.cache-hit != 'true'
         run: |
           wget https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
           tar -xf $PWD/riscv64-*.tar.gz
