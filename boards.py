@@ -620,6 +620,29 @@ class Noir(Board):
 # Intel Boards
 #---------------------------------------------------------------------------------------------------
 
+# Atum A3 Nano -------------------------------------------------------------------------------------
+
+class AtumA3Nano(Board):
+    soc_kwargs = {
+        "l2_size"           : 2048, # Use Wishbone and L2 for memory accesses.
+        "integrated_sram_size": 0x1000, # Power of 2 so Quartus infers it properly.
+    }
+    def __init__(self):
+        from litex_boards.targets import terasic_atum_a3_nano
+        Board.__init__(self, terasic_atum_a3_nano.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # Storage
+            "sdcard",
+            # GPIOs
+            "leds",
+            "switches",
+            # Video
+            #"framebuffer",
+            #"video_terminal",
+        })
+
 # De10Nano support ---------------------------------------------------------------------------------
 
 class De10Nano(Board):
