@@ -19,10 +19,10 @@ from litex.build.sim.config       import SimConfig
 from litex.build.sim.verilator    import verilator_build_args, verilator_build_argdict
 
 from litex.soc.interconnect.csr       import *
-from litex.soc.integration.soc_core   import *
 from litex.soc.integration.builder    import *
 from litex.soc.interconnect           import wishbone
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
+from litex.soc.integration.soc_core   import *
 
 from litedram import modules as litedram_modules
 from litedram.phy.model       import SDRAMPHYModel
@@ -74,7 +74,8 @@ class SoCLinux(SoCCore):
         init_memories    = False,
         sdram_module     = "MT48LC16M16",
         sdram_data_width = 32,
-        sdram_verbosity  = 0
+        sdram_verbosity  = 0,
+        with_clic        = False
     ):
         # Platform ---------------------------------------------------------------------------------
         platform     = Platform()
@@ -94,6 +95,7 @@ class SoCLinux(SoCCore):
             cpu_variant         = "linux",
             integrated_rom_size = 0x10000,
             uart_name           = "sim",
+            with_clic           = with_clic,
         )
         self.add_config("DISABLE_DELAYS")
 
@@ -147,11 +149,14 @@ def main():
     parser.add_argument("--sdram-module",     default="MT48LC16M16", help="Select SDRAM chip.")
     parser.add_argument("--sdram-data-width", default=32,            help="Set SDRAM chip data width.")
     parser.add_argument("--sdram-verbosity",  default=0,             help="Set SDRAM checker verbosity.")
+    # VexRiscvSMP.args_fill will add --with-clic and other CPU-related arguments
     VexRiscvSMP.args_fill(parser)
     verilator_build_args(parser)
     args = parser.parse_args()
 
+    # Read CPU configuration before creating SoC
     VexRiscvSMP.args_read(args)
+    
     verilator_build_kwargs = verilator_build_argdict(args)
     sim_config = SimConfig(default_clk="sys_clk")
     sim_config.add_module("serial2console", "serial")
@@ -159,12 +164,22 @@ def main():
     for i in range(2):
         prepare = (i == 0)
         run     = (i == 1)
+        
+        # Create SoC with CPU that has CLIC support if enabled  
+        # Pass with_clic to the SoCLinux constructor
         soc = SoCLinux(
             init_memories    = run,
             sdram_module     = args.sdram_module,
             sdram_data_width = int(args.sdram_data_width),
-            sdram_verbosity  = int(args.sdram_verbosity)
+            sdram_verbosity  = int(args.sdram_verbosity),
+            with_clic        = args.with_clic
         )
+        
+        # CLIC is automatically added by SoCCore when with_clic=True is passed
+        # No need for manual addition here
+        if args.with_clic:
+            print("[INFO] CLIC enabled for simulation")
+        
         board_name = "sim"
         build_dir  = os.path.join("build", board_name)
         builder = Builder(soc, output_dir=build_dir,
