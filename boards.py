@@ -792,6 +792,23 @@ class Colognechip_gatemate_evb(Board):
             "sdcard",
         })
 
+# Icepi Zero support -----------------------------------------------------------------------------------
+
+class Icepi_zero(Board):
+    soc_kwargs = {"l2_size" : 4096} # Use Wishbone and L2 for memory accesses.
+    def __init__(self):
+        from litex_boards.targets import icepi_zero
+        Board.__init__(self, icepi_zero.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # Storage
+            "spisdcard",
+            # GPIO
+            "leds",
+            # Video
+            "video_terminal",
+        })
+
 # Machdyne Kolsch support ---------------------------------------------------------------------
 
 class Kolsch(Board):
