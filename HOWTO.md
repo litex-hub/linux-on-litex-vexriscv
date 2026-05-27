@@ -8,19 +8,25 @@ Install Java and SBT, then run :
 
 
 ## HOWTO:
-This document describes how to configure and use the periperals of your board from Linux.
+This document describes how to configure and use the peripherals of your board from Linux.
 
 **Configure/Use the Leds**:
 
-Configure the Leds GPIOs as outputs:
+Find the LiteX GPIO chip matching the LEDs in the generated DTS/DTB:
 ````
-$echo 508 > /sys/class/gpio/export
-$echo out > /sys/class/gpio/gpiochip508/direction
+$ for chip in /sys/class/gpio/gpiochip*; do echo "$(basename $chip): label=$(cat $chip/label) base=$(cat $chip/base) ngpio=$(cat $chip/ngpio)"; done
 ````
-Set the Leds value:
+Use the `base` value from the LED gpiochip as `BASE`; use `BASE + n` for LED `n`.
+Export the first LED GPIO and configure it as an output:
 ````
-$echo 0 > /sys/class/gpio/gpio508/value
-$echo 1 > /sys/class/gpio/gpio508/value
+$ LED_GPIO=BASE
+$ echo $LED_GPIO > /sys/class/gpio/export
+$ echo out > /sys/class/gpio/gpio${LED_GPIO}/direction
+````
+Set the LED value:
+````
+$ echo 0 > /sys/class/gpio/gpio${LED_GPIO}/value
+$ echo 1 > /sys/class/gpio/gpio${LED_GPIO}/value
 ````
 
 **Configure/Use the PWM RGB Led**:
