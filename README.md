@@ -134,11 +134,30 @@ For more information, please visit: https://github.com/enjoy-digital/litex/wiki/
 
 [> Installing a RISC-V toolchain
 --------------------------------
+Install a recent bare-metal RISC-V GCC toolchain and make sure its `bin`
+directory is in your `PATH`.
+
+The LiteX setup script can install one directly through the host package
+manager:
 ```sh
-$ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
-$ tar -xvf riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
-$ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14/bin/
+$ ./litex_setup.py --gcc=riscv
 ```
+Depending on the system package manager, this command may need to be run with
+sudo/root privileges.
+
+LiteX auto-detects common RISC-V GCC triples such as `riscv64-unknown-elf`,
+`riscv64-none-elf`, `riscv32-unknown-elf`, `riscv32-none-elf` and
+`riscv-none-elf`. If multiple RISC-V toolchains are installed, select the
+one to use with `LITEX_ENV_CC_TRIPLE`, for example:
+```sh
+$ export PATH=$PATH:/path/to/riscv-toolchain/bin
+$ riscv64-unknown-elf-gcc --version
+$ export LITEX_ENV_CC_TRIPLE=riscv64-unknown-elf
+```
+
+Pre-built toolchains are available from projects such as:
+- xPack GNU RISC-V Embedded GCC: https://xpack-dev-tools.github.io/riscv-none-elf-gcc-xpack/docs/install/
+- RISC-V GNU Toolchain releases: https://github.com/riscv-collab/riscv-gnu-toolchain/releases
 
 [> Installing SBT (Only required for custom CPU configs)
 --------------------------------
