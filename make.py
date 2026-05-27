@@ -13,6 +13,7 @@ import argparse
 import shutil
 
 from litex.soc.integration.builder import Builder
+from litex.soc.integration.soc import SoCBusHandler
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from boards import *
@@ -64,6 +65,7 @@ def main():
     parser.add_argument("--device",         default=None,                help="FPGA device.")
     parser.add_argument("--variant",        default=None,                help="FPGA board variant.")
     parser.add_argument("--toolchain",      default=None,                help="Toolchain use to build.")
+    parser.add_argument("--bus-standard",   default=None,                help="SoC bus standard.", choices=SoCBusHandler.supported_standard)
     parser.add_argument("--uart-baudrate",  default=115.2e3, type=float, help="UART baudrate.")
     parser.add_argument("--build",          action="store_true",         help="Build bitstream.")
     parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
@@ -115,6 +117,8 @@ def main():
             soc_kwargs.update(variant=args.variant)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
+        if args.bus_standard is not None:
+            soc_kwargs.update(bus_standard=args.bus_standard)
 
         # UART.
         soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
