@@ -198,10 +198,11 @@ jobs:
           export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
           python3 -m unittest -v test.test_build.TestBuild.test_boards
 
-  # CPU-count Coverage (keep exercising arty at 1/2/4 cores — separate job so
-  # it doesn't multiply the cost of the per-board matrix). Reuses the setup
-  # artifact. SBT is installed here because multi-core VexRiscv variants are
-  # not all pregenerated and may need SpinalHDL regeneration.
+  # CPU Variant Coverage (keep exercising arty at 1/2/4 cores and one AES/FPU
+  # variant in a separate job so it doesn't multiply the cost of the per-board
+  # matrix). Reuses the setup artifact. SBT is installed here because
+  # VexRiscv variants are not all pregenerated and may need SpinalHDL
+  # regeneration.
   test-cpu-count:
     needs: setup
     runs-on: ubuntu-22.04
@@ -239,7 +240,9 @@ jobs:
           tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
 
       # Test
-      - name: Run test_cpu_count
+      - name: Run CPU variant tests
         run: |
           export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
-          python3 -m unittest -v test.test_build.TestBuild.test_cpu_count
+          python3 -m unittest -v \
+            test.test_build.TestBuild.test_cpu_count \
+            test.test_build.TestBuild.test_cpu_variants

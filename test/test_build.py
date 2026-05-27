@@ -12,11 +12,18 @@ import unittest
 from make import supported_boards
 
 class TestBuild(unittest.TestCase):
-    def board_build_test(self, board, cpu_count=1):
+    def board_build_test(self, board, cpu_count=1, extra_args=None):
+        extra_args = extra_args or []
+
         # Build Board software/gateware.
         shutil.rmtree("build", ignore_errors=True)
         subprocess.run(
-            ["./make.py", f"--board={board}", f"--cpu-count={cpu_count}"],
+            [
+                "./make.py",
+                f"--board={board}",
+                f"--cpu-count={cpu_count}",
+                *extra_args,
+            ],
             check=True,
         )
 
@@ -53,4 +60,15 @@ class TestBuild(unittest.TestCase):
             with self.subTest(msg=f"cpu_count={cpu_count} build test..."):
                 self.board_build_test(board="arty", cpu_count=cpu_count)
 
+    def test_cpu_variants(self):
+        with self.subTest(msg="AES/FPU build test..."):
+            self.board_build_test(
+                board="arty",
+                cpu_count=1,
+                extra_args=[
+                    "--aes-instruction=True",
+                    "--with-fpu",
+                    "--cpu-per-fpu=1",
+                ],
+            )
 
