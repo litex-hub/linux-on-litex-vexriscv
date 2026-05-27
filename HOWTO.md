@@ -10,6 +10,12 @@ Install Java and SBT, then run :
 ## HOWTO:
 This document describes how to configure and use the peripherals of your board from Linux.
 
+**SMP performance notes**:
+
+For multi-core VexRiscv-SMP systems on slower FPGA/memory configurations, keep Linux's tick rate low (`CONFIG_HZ_100=y`, enabled in the default config). A higher tick rate can create a significant interrupt load since each core receives periodic timer interrupts.
+
+When reducing CPU resources to fit a device, avoid going below 4 I/D TLB entries when possible, and keep I/D caches large enough for Linux workloads. More cores are not necessarily faster if the memory path or interconnect is the bottleneck.
+
 **Configure/Use the Leds**:
 
 Find the LiteX GPIO chip matching the LEDs in the generated DTS/DTB:
