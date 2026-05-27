@@ -27,6 +27,11 @@ def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
         def __init__(self, **kwargs):
 
+            video_framebuffer_fifo_depth = kwargs.pop("video_framebuffer_fifo_depth", None)
+            if isinstance(video_framebuffer_fifo_depth, str):
+                video_framebuffer_fifo_depth = int(video_framebuffer_fifo_depth, 0)
+            self.video_framebuffer_fifo_depth = video_framebuffer_fifo_depth
+
             # SoC ----------------------------------------------------------------------------------
 
             soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
@@ -54,6 +59,13 @@ def SoCLinux(soc_cls, **kwargs):
 
         def add_i2c(self):
             self.i2c0 = I2CMaster(self.platform.request("i2c", 0))
+
+        # Video ------------------------------------------------------------------------------------
+
+        def add_video_framebuffer(self, *args, **kwargs):
+            if self.video_framebuffer_fifo_depth is not None and len(args) < 6 and "fifo_depth" not in kwargs:
+                kwargs["fifo_depth"] = self.video_framebuffer_fifo_depth
+            return soc_cls.add_video_framebuffer(self, *args, **kwargs)
 
         # DTS generation ---------------------------------------------------------------------------
 

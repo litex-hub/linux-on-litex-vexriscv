@@ -430,7 +430,10 @@ class VersaECP5(Board):
 # ULX3S support ------------------------------------------------------------------------------------
 
 class ULX3S(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    soc_kwargs = {
+        "l2_size"                      : 2048, # Use Wishbone and L2 for memory accesses.
+        "video_framebuffer_fifo_depth" : 8192,
+    }
     def __init__(self):
         from litex_boards.targets import radiona_ulx3s
         Board.__init__(self, radiona_ulx3s.BaseSoC, soc_capabilities={
