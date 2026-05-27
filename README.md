@@ -121,6 +121,8 @@ $ cd linux-on-litex-vexriscv
 
 Pre-built bitstreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
 
+When using a pre-built board bitstream archive, also use the matching `.dtb` from this board archive: copy/rename it to `images/rv32.dtb` and to the SDCard as `rv32.dtb`. The DTB must match the bitstream's CSR map and memory size; a stale or board-generic `rv32.dtb` can make Linux see the wrong RAM size or miss peripherals. The DTB can also be regenerated with `./make.py --board=XXYY`.
+
 [> Installing LiteX
 -------------------
 ```sh
