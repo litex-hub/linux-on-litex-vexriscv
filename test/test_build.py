@@ -6,13 +6,21 @@
 
 import os
 import shutil
-import subprocess
+import tempfile
 import unittest
+import subprocess
 
-from make import supported_boards
+from make import (
+    generate_buildroot_defconfig,
+    get_buildroot_base_defconfig,
+    get_buildroot_config_overrides,
+    supported_boards,
+)
 
 class TestBuild(unittest.TestCase):
-    def board_build_test(self, board, cpu_count=1, extra_args=None):
+    def board_build_test(
+        self, board, cpu_count=1, extra_args=None,
+        expected_base=None, expected_overrides=None):
         extra_args = extra_args or []
 
         # Build Board software/gateware.
@@ -39,6 +47,65 @@ class TestBuild(unittest.TestCase):
         # Check Gateware generation
         self.assertEqual(os.path.isfile(f"build/{board}/gateware/{board}.v"), True)
 
+        # Check Buildroot defconfig selection.
+        self.assertEqual(os.path.isfile(f"build/{board}/buildroot_defconfig"), True)
+        with open(f"build/{board}/buildroot_defconfig", encoding="utf-8") as f:
+            generated_defconfig = f.read()
+        if expected_base is not None:
+            base_filename = f"buildroot/configs/{expected_base}"
+            with open(base_filename, encoding="utf-8") as f:
+                base_defconfig = f.read().rstrip()
+            if not expected_overrides:
+                self.assertEqual(generated_defconfig, base_defconfig + "\n")
+        for override in expected_overrides or []:
+            self.assertIn(override, generated_defconfig)
+
+    def test_buildroot_defconfigs(self):
+        configs = [
+            (False, False, False, "litex_vexriscv_defconfig"),
+            (False, True,  False, "litex_vexriscv_defconfig"),
+            (False, False, True,  "litex_vexriscv_defconfig"),
+            (False, True,  True,  "litex_vexriscv_defconfig"),
+            (True,  False, False, "litex_vexriscv_defconfig"),
+            (True,  True,  False, "litex_vexriscv_defconfig"),
+            (True,  False, True,  "litex_vexriscv_defconfig"),
+            (True,  True,  True,  "litex_vexriscv_defconfig"),
+        ]
+        for with_usb_host, with_aes, with_fpu, expected_base in configs:
+            with self.subTest(
+                base          = expected_base,
+                with_usb_host = with_usb_host,
+                with_aes      = with_aes,
+                with_fpu      = with_fpu,
+            ):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    generated = os.path.join(tmpdir, "buildroot_defconfig")
+                    base = generate_buildroot_defconfig(
+                        filename      = generated,
+                        with_usb_host = with_usb_host,
+                        with_aes      = with_aes,
+                        with_fpu      = with_fpu,
+                    )
+                    self.assertEqual(base, expected_base)
+                    self.assertEqual(get_buildroot_base_defconfig(), expected_base)
+
+                    with open(f"buildroot/configs/{expected_base}", encoding="utf-8") as f:
+                        base_defconfig = f.read().rstrip()
+                    with open(generated, encoding="utf-8") as f:
+                        generated_defconfig = f.read()
+                    if not with_usb_host and not with_aes and not with_fpu:
+                        self.assertEqual(generated_defconfig, base_defconfig + "\n")
+                    for override in get_buildroot_config_overrides(
+                        with_usb_host = with_usb_host,
+                        with_aes      = with_aes,
+                        with_fpu      = with_fpu,
+                    ):
+                        self.assertIn(override, generated_defconfig)
+                    if with_fpu:
+                        self.assertNotIn("\nBR2_RISCV_ABI_ILP32=y\n", "\n" + generated_defconfig)
+                    if not with_aes:
+                        self.assertNotIn("\nBR2_PACKAGE_VEXRISCV_AES=y\n", "\n" + generated_defconfig)
+
     def test_boards(self):
         excluded_boards = [
             "schoko",                   # USB OHCI netlist generation issue.
@@ -53,12 +120,25 @@ class TestBuild(unittest.TestCase):
             boards = [b for b in supported_boards if b not in excluded_boards]
         for board in boards:
             with self.subTest(msg=f"board={board} build test..."):
-                self.board_build_test(board=board)
+                board_info = supported_boards[board]()
+                with_usb_host = "usb_host" in board_info.soc_capabilities
+                expected_overrides = get_buildroot_config_overrides(
+                    with_usb_host = with_usb_host,
+                )
+                self.board_build_test(
+                    board              = board,
+                    expected_base      = get_buildroot_base_defconfig(),
+                    expected_overrides = expected_overrides,
+                )
 
     def test_cpu_count(self):
         for cpu_count in [1, 2, 4]:
             with self.subTest(msg=f"cpu_count={cpu_count} build test..."):
-                self.board_build_test(board="arty", cpu_count=cpu_count)
+                self.board_build_test(
+                    board         = "arty",
+                    cpu_count     = cpu_count,
+                    expected_base = "litex_vexriscv_defconfig",
+                )
 
     def test_cpu_variants(self):
         with self.subTest(msg="AES/FPU build test..."):
@@ -70,5 +150,9 @@ class TestBuild(unittest.TestCase):
                     "--with-fpu",
                     "--cpu-per-fpu=1",
                 ],
+                expected_base      = "litex_vexriscv_defconfig",
+                expected_overrides = get_buildroot_config_overrides(
+                    with_aes = True,
+                    with_fpu = True,
+                ),
             )
-

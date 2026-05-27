@@ -361,12 +361,38 @@ $ make
 ```
 The binaries are located in *output/images/* and *images/*.
 
+For bitstreams built with board-specific Buildroot options, such as USB-host
+support or optional VexRiscv-SMP AES/FPU CPU features, use the matching
+Buildroot configuration so the generated toolchain, kernel and software agree
+with the hardware. Run `make.py` from the
+`linux-on-litex-vexriscv` checkout, then run the Buildroot command from the
+Buildroot checkout:
+
+```sh
+$ ./make.py --board=XXYY --aes-instruction=True --with-fpu --cpu-per-fpu=1
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ \
+       BR2_DEFCONFIG=../linux-on-litex-vexriscv/build/XXYY/buildroot_defconfig \
+       defconfig
+$ make
+```
+
+The generated `build/XXYY/buildroot_defconfig` starts from
+`litex_vexriscv_defconfig` and applies the USB-host, AES and FPU options
+selected by the board and on the `make.py` command line.
+
 [> Generating the Linux binaries with USB host support (optional)
 -----------------------------------------------------------------
+Run `make.py` for a USB-host capable board so it generates the matching
+Buildroot defconfig, then use this defconfig from the Buildroot checkout:
+
 ```sh
 $ git clone http://github.com/buildroot/buildroot
-$ cd buildroot
-$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_usbhost_defconfig
+$ cd linux-on-litex-vexriscv
+$ ./make.py --board=XXYY
+$ cd ../buildroot
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ \
+       BR2_DEFCONFIG=../linux-on-litex-vexriscv/build/XXYY/buildroot_defconfig \
+       defconfig
 $ make
 ```
 The binaries are located in *output/images/* and *images/*.

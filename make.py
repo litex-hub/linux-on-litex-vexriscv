@@ -49,6 +49,118 @@ def get_supported_boards():
             board_classes[name] = obj
     return board_classes
 
+def get_buildroot_base_defconfig():
+    return "litex_vexriscv_defconfig"
+
+def get_buildroot_config_overrides(
+    *,
+    with_usb_host = False,
+    with_aes      = False,
+    with_fpu      = False,
+):
+    overrides = []
+
+    if with_usb_host:
+        overrides += [
+            'BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="'
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv_usbhost/linux.config"',
+            'BR2_ROOTFS_OVERLAY="'
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv_usbhost/rootfs_overlay"',
+        ]
+
+    if with_fpu:
+        linux_fpu_config = (
+            'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="'
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-fpu.config"'
+        )
+        overrides += [
+            "BR2_RISCV_ISA_CUSTOM_RVF=y",
+            "BR2_RISCV_ISA_CUSTOM_RVD=y",
+            "BR2_RISCV_ISA_RVF=y",
+            "BR2_RISCV_ISA_RVD=y",
+            "# BR2_RISCV_ABI_ILP32 is not set",
+            "BR2_RISCV_ABI_ILP32D=y",
+            linux_fpu_config,
+        ]
+
+    if with_aes:
+        overrides += [
+            "BR2_PACKAGE_OPENSSL=y",
+            "BR2_PACKAGE_VEXRISCV_AES=y",
+        ]
+
+    return overrides
+
+def set_buildroot_config(config, symbol, value, after=None):
+    unset = f"# {symbol} is not set"
+    for i, line in enumerate(config):
+        if (
+            line.startswith(f"{symbol}=") or
+            line.startswith(f"#{symbol}=") or
+            line == unset
+        ):
+            config[i] = f"{symbol}={value}"
+            return
+
+    if after is not None:
+        after_unset = f"# {after} is not set"
+        for i, line in enumerate(config):
+            if (
+                line.startswith(f"{after}=") or
+                line.startswith(f"#{after}=") or
+                line == after_unset
+            ):
+                config.insert(i + 1, f"{symbol}={value}")
+                return
+
+    config.append(f"{symbol}={value}")
+
+def unset_buildroot_config(config, symbol):
+    unset = f"# {symbol} is not set"
+    for i, line in enumerate(config):
+        if line.startswith(f"{symbol}=") or line == unset:
+            config[i] = unset
+            return
+    config.append(unset)
+
+def generate_buildroot_defconfig(
+    filename,
+    with_usb_host = False,
+    with_aes      = False,
+    with_fpu      = False,
+):
+    base_defconfig = get_buildroot_base_defconfig()
+    base_path      = os.path.join(
+        os.path.dirname(__file__),
+        "buildroot",
+        "configs",
+        base_defconfig,
+    )
+
+    with open(base_path, encoding="utf-8") as f:
+        config = f.read().rstrip().splitlines()
+
+    insert_after = {
+        "BR2_RISCV_ABI_ILP32D"                  : "BR2_RISCV_ABI_ILP32",
+        "BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES": "BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE",
+    }
+    for option in get_buildroot_config_overrides(
+        with_usb_host = with_usb_host,
+        with_aes      = with_aes,
+        with_fpu      = with_fpu,
+    ):
+        if option.startswith("# ") and option.endswith(" is not set"):
+            unset_buildroot_config(config, option[2:-11])
+        else:
+            symbol, value = option.split("=", 1)
+            set_buildroot_config(config, symbol, value, after=insert_after.get(symbol))
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(config))
+        f.write("\n")
+
+    return base_defconfig
+
 supported_boards = get_supported_boards()
 
 #---------------------------------------------------------------------------------------------------
@@ -207,6 +319,17 @@ def main():
             csr_csv      = os.path.join(build_dir, "csr.csv")
         )
         builder.build(run=args.build, build_name=board_name)
+
+        # Buildroot defconfig ----------------------------------------------------------------------
+        buildroot_defconfig_file = os.path.join(build_dir, "buildroot_defconfig")
+        buildroot_base_defconfig = generate_buildroot_defconfig(
+            buildroot_defconfig_file,
+            with_usb_host = "usb_host" in board.soc_capabilities,
+            with_aes      = VexRiscvSMP.aes_instruction,
+            with_fpu      = VexRiscvSMP.with_fpu,
+        )
+        print(f"Buildroot defconfig: {buildroot_defconfig_file}")
+        print(f"Buildroot base defconfig: {buildroot_base_defconfig}")
 
         # DTS --------------------------------------------------------------------------------------
         soc.generate_dts(board_name, args.rootfs)
