@@ -54,6 +54,7 @@ The current list of boards that have been tested and are supported can be obtain
     ├── arty
     ├── arty_a7
     ├── arty_s7
+    ├── atum_a3_nano
     ├── ax7020
     ├── butter_stick
     ├── cam_link4k

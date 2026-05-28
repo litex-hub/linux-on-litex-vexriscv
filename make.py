@@ -343,6 +343,18 @@ def main():
             soc.add_i2c()
 
         # Build ------------------------------------------------------------------------------------
+        build_kwargs = {
+            "run"        : args.build,
+            "build_name" : board_name,
+        }
+
+        # Agilex uses quartus_syn/quartus_pfg instead of quartus_map/quartus_cpf
+        if board_name in ["atum_a3_nano"]:
+            build_kwargs.update({
+                "synth_tool" : "quartus_syn",
+                "conv_tool"  : "quartus_pfg",
+            })
+
         build_dir = os.path.join("build", board_name)
         builder   = Builder(soc,
             output_dir   = os.path.join("build", board_name),
@@ -350,7 +362,7 @@ def main():
             csr_json     = os.path.join(build_dir, "csr.json"),
             csr_csv      = os.path.join(build_dir, "csr.csv")
         )
-        builder.build(run=args.build, build_name=board_name)
+        builder.build(**build_kwargs)
 
         # Buildroot defconfig ----------------------------------------------------------------------
         buildroot_defconfig_file = os.path.join(build_dir, "buildroot_defconfig")
