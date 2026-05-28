@@ -190,6 +190,27 @@ $ make
 $ sudo make install
 ```
 
+[> VexRiscv-SMP JTAG/GDB debugging
+----------------------------------
+For VexRiscv-SMP CPU debugging with OpenOCD/GDB, see the LiteX wiki guide:
+https://github.com/enjoy-digital/litex/wiki/JTAG-GDB-Debugging-with-VexRiscv-SMP-NaxRiscv-VexiiRiscv-CPUs
+
+In this project, `--with-privileged-debug` enables the VexRiscv-SMP official
+RISC-V debug logic and `--hardware-breakpoints=N` selects the number of
+hardware breakpoints. The JTAG connection itself remains target/board
+specific: for Xilinx BSCANE/internal JTAG, keep the default tunneled JTAG
+interface and connect it as shown in the LiteX wiki; use `--jtag-tap` only
+when exposing a full JTAG TAP through simulation or external pins.
+
+The older custom VexRiscv debug plugin requires the SpinalHDL OpenOCD fork:
+https://github.com/SpinalHDL/openocd_riscv
+For the official RISC-V debug path, a recent RISC-V capable OpenOCD should be
+suitable.
+
+To load an arbitrary bare-metal ELF while the BIOS is running, reset the SoC,
+let the BIOS reach its prompt, halt the CPU from OpenOCD/GDB, load the ELF at
+an address matching the SoC memory map, set the PC/entry point, then resume.
+
 [> Running the LiteX simulation
 -------------------------------
 You need to extract linux_???.zip from https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164 into the images folder first, then :
