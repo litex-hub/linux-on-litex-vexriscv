@@ -13,6 +13,7 @@ import argparse
 import shutil
 
 from litex.soc.integration.builder import Builder
+from litex.soc.integration.soc import SoCBusHandler
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from boards import *
@@ -48,6 +49,136 @@ def get_supported_boards():
             board_classes[name] = obj
     return board_classes
 
+def get_buildroot_base_defconfig():
+    return "litex_vexriscv_defconfig"
+
+def get_buildroot_config_overrides(
+    *,
+    with_usb_host  = False,
+    with_aes       = False,
+    with_fpu       = False,
+    with_nfs_root  = False,
+):
+    overrides              = []
+    linux_config_fragments = []
+
+    if with_usb_host:
+        overrides += [
+            'BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="'
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv_usbhost/linux.config"',
+            'BR2_ROOTFS_OVERLAY="'
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv_usbhost/rootfs_overlay"',
+        ]
+
+    if with_fpu:
+        linux_config_fragments.append(
+            "$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-fpu.config"
+        )
+        overrides += [
+            "BR2_RISCV_ISA_CUSTOM_RVF=y",
+            "BR2_RISCV_ISA_CUSTOM_RVD=y",
+            "BR2_RISCV_ISA_RVF=y",
+            "BR2_RISCV_ISA_RVD=y",
+            "# BR2_RISCV_ABI_ILP32 is not set",
+            "BR2_RISCV_ABI_ILP32D=y",
+        ]
+
+    if with_aes:
+        overrides += [
+            "BR2_PACKAGE_OPENSSL=y",
+            "BR2_PACKAGE_VEXRISCV_AES=y",
+        ]
+
+    if with_nfs_root:
+        linux_config_fragments.append(
+            "$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-nfsroot.config"
+        )
+        overrides += [
+            "BR2_TARGET_ROOTFS_TAR=y",
+        ]
+
+    if linux_config_fragments:
+        overrides += [
+            'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="{}"'.format(
+                " ".join(linux_config_fragments)
+            ),
+        ]
+
+    return overrides
+
+def set_buildroot_config(config, symbol, value, after=None):
+    unset = f"# {symbol} is not set"
+    for i, line in enumerate(config):
+        if (
+            line.startswith(f"{symbol}=") or
+            line.startswith(f"#{symbol}=") or
+            line == unset
+        ):
+            config[i] = f"{symbol}={value}"
+            return
+
+    if after is not None:
+        after_unset = f"# {after} is not set"
+        for i, line in enumerate(config):
+            if (
+                line.startswith(f"{after}=") or
+                line.startswith(f"#{after}=") or
+                line == after_unset
+            ):
+                config.insert(i + 1, f"{symbol}={value}")
+                return
+
+    config.append(f"{symbol}={value}")
+
+def unset_buildroot_config(config, symbol):
+    unset = f"# {symbol} is not set"
+    for i, line in enumerate(config):
+        if line.startswith(f"{symbol}=") or line == unset:
+            config[i] = unset
+            return
+    config.append(unset)
+
+def generate_buildroot_defconfig(
+    filename,
+    with_usb_host = False,
+    with_aes      = False,
+    with_fpu      = False,
+    with_nfs_root = False,
+):
+    base_defconfig = get_buildroot_base_defconfig()
+    base_path      = os.path.join(
+        os.path.dirname(__file__),
+        "buildroot",
+        "configs",
+        base_defconfig,
+    )
+
+    with open(base_path, encoding="utf-8") as f:
+        config = f.read().rstrip().splitlines()
+
+    insert_after = {
+        "BR2_RISCV_ABI_ILP32D"                  : "BR2_RISCV_ABI_ILP32",
+        "BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES": "BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE",
+        "BR2_TARGET_ROOTFS_TAR"                 : "BR2_TARGET_ROOTFS_EXT2_4",
+    }
+    for option in get_buildroot_config_overrides(
+        with_usb_host = with_usb_host,
+        with_aes      = with_aes,
+        with_fpu      = with_fpu,
+        with_nfs_root = with_nfs_root,
+    ):
+        if option.startswith("# ") and option.endswith(" is not set"):
+            unset_buildroot_config(config, option[2:-11])
+        else:
+            symbol, value = option.split("=", 1)
+            set_buildroot_config(config, symbol, value, after=insert_after.get(symbol))
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(config))
+        f.write("\n")
+
+    return base_defconfig
+
 supported_boards = get_supported_boards()
 
 #---------------------------------------------------------------------------------------------------
@@ -65,6 +196,7 @@ def main():
     parser.add_argument("--variant",        default=None,                help="FPGA board variant.")
     parser.add_argument("--revision",       default=None,                help="FPGA board revision.")
     parser.add_argument("--toolchain",      default=None,                help="Toolchain use to build.")
+    parser.add_argument("--bus-standard",   default=None,                help="SoC bus standard.", choices=SoCBusHandler.supported_standard)
     parser.add_argument("--uart-baudrate",  default=115.2e3, type=float, help="UART baudrate.")
     parser.add_argument("--build",          action="store_true",         help="Build bitstream.")
     parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
@@ -76,8 +208,12 @@ def main():
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
     parser.add_argument("--rootfs",         default="ram0",              help="Location of the RootFS.",
-        choices=["ram0", "mmcblk0p2"]
+        choices=["ram0", "mmcblk0p2", "nfs"]
     )
+    parser.add_argument("--nfs-root",       default="/srv/nfs/litex-vexriscv",
+        help="NFS exported root directory when using --rootfs=nfs.")
+    parser.add_argument("--nfs-options",    default="vers=3,tcp,nolock",
+        help="NFS mount options when using --rootfs=nfs.")
     parser.add_argument("soc_kwargs", nargs=argparse.REMAINDER)
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
@@ -94,6 +230,9 @@ def main():
         soc_kwargs = Board.soc_kwargs
         soc_kwargs.update(board.soc_kwargs)
         soc_kwargs.update(parse_kwargs(args.soc_kwargs))
+
+        if args.rootfs == "nfs" and "ethernet" not in board.soc_capabilities:
+            raise ValueError(f"Board {board_name} does not support Ethernet required by --rootfs=nfs")
 
         # CPU parameters ---------------------------------------------------------------------------
 
@@ -118,10 +257,16 @@ def main():
             soc_kwargs.update(revision=args.revision)
         if args.toolchain is not None:
             soc_kwargs.update(toolchain=args.toolchain)
-
+        if args.bus_standard is not None:
+            soc_kwargs.update(bus_standard=args.bus_standard)
 
         # UART.
         soc_kwargs["uart_baudrate"] = int(args.uart_baudrate)
+        # Default to "serial" when no special UART is requested. SoCCore also
+        # defaults to "serial", but some LiteX-Boards targets read uart_name out
+        # of kwargs before forwarding (ex: lambdaconcept_ecpix5) and KeyError
+        # when the kwarg is absent, so set it unconditionally here.
+        soc_kwargs.setdefault("uart_name", "serial")
         if "crossover" in board.soc_capabilities:
             soc_kwargs.update(uart_name="crossover")
         if "usb_fifo" in board.soc_capabilities:
@@ -133,7 +278,11 @@ def main():
         if "leds" in board.soc_capabilities:
             soc_kwargs.update(with_led_chaser=True)
         if "ethernet" in board.soc_capabilities:
-            soc_kwargs.update(with_ethernet=True)
+            soc_kwargs.update({
+                "with_ethernet" : True,
+                "eth_ip"        : args.local_ip,
+                "remote_ip"     : args.remote_ip,
+            })
         if "pcie" in board.soc_capabilities:
             soc_kwargs.update(with_pcie=True)
         if "spiflash" in board.soc_capabilities:
@@ -162,6 +311,10 @@ def main():
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
+        if board_name in ["colorlight_i5"]:
+            from litex_boards.platforms.colorlight_i5 import _sdcard_pmod_io
+            board.platform.add_extension(_sdcard_pmod_io)
+
         if board_name in ["aesku40"]:
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
@@ -178,8 +331,6 @@ def main():
             soc.add_spi_sdcard()
         if "sdcard" in board.soc_capabilities:
             soc.add_sdcard()
-        if "ethernet" in board.soc_capabilities:
-            soc.configure_ethernet(remote_ip=args.remote_ip)
         #if "leds" in board.soc_capabilities:
         #    soc.add_leds()
         if "rgb_led" in board.soc_capabilities:
@@ -201,8 +352,26 @@ def main():
         )
         builder.build(run=args.build, build_name=board_name)
 
+        # Buildroot defconfig ----------------------------------------------------------------------
+        buildroot_defconfig_file = os.path.join(build_dir, "buildroot_defconfig")
+        buildroot_base_defconfig = generate_buildroot_defconfig(
+            buildroot_defconfig_file,
+            with_usb_host = "usb_host" in board.soc_capabilities,
+            with_aes      = VexRiscvSMP.aes_instruction,
+            with_fpu      = VexRiscvSMP.with_fpu,
+            with_nfs_root = args.rootfs == "nfs",
+        )
+        print(f"Buildroot defconfig: {buildroot_defconfig_file}")
+        print(f"Buildroot base defconfig: {buildroot_base_defconfig}")
+
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name, args.rootfs)
+        soc.generate_dts(
+            board_name,
+            args.rootfs,
+            nfs_server  = args.remote_ip,
+            nfs_root    = args.nfs_root,
+            nfs_options = args.nfs_options,
+        )
         if hasattr(soc, "get_fdtoverlays"):
             fdtoverlays = soc.get_fdtoverlays(board_name, args.fdtoverlays)
         else:

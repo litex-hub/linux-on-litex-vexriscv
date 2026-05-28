@@ -9,13 +9,13 @@ DT bindings and documentation: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Daniel Craviee <dcraviee@internships.antmicro.com>
 Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-FIXME: not updated or tested for 32-bit CSR data width, 64-bit CPU (gls)
+Updated for the current LiteSPI CSR layout used by LiteX SPI flash cores.
 ---
  .../bindings/mtd/litex,spiflash.yaml          |  57 +++
  drivers/mtd/spi-nor/Kconfig                   |   8 +
  drivers/mtd/spi-nor/Makefile                  |   2 +
- drivers/mtd/spi-nor/litex-spiflash.c          | 402 ++++++++++++++++++
- 4 files changed, 469 insertions(+)
+ drivers/mtd/spi-nor/litex-spiflash.c          | 361 ++++++++++++++++
+ 4 files changed, 428 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/mtd/litex,spiflash.yaml
  create mode 100644 drivers/mtd/spi-nor/litex-spiflash.c
 
@@ -73,13 +73,13 @@ index 000000000000..e688584c27f8
 +  - |
 +    spiflash: spi@f0005800 {
 +            compatible = "litex,spiflash";
-+            reg = <0xf0005800 0xc>;
++            reg = <0xf0005800 0x100>;
 +            #address-cells = <1>;
-+            #size-cells = <0>;
++            #size-cells = <1>;
 +
 +            flash: flash@0 {
 +                    compatible = "jedec,spi-nor";
-+                    reg = <0>;
++                    reg = <0 0x2000000>;
 +            };
 +    };
 diff --git a/drivers/mtd/spi-nor/Kconfig b/drivers/mtd/spi-nor/Kconfig
@@ -114,7 +114,7 @@ new file mode 100644
 index 000000000000..82744962d938
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/litex-spiflash.c
-@@ -0,0 +1,402 @@
+@@ -0,0 +1,361 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 Antmicro <www.antmicro.com>
@@ -133,7 +133,7 @@ index 000000000000..82744962d938
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 + */
 +
-+#include <linux/clk.h>
++#include <linux/delay.h>
 +#include <linux/err.h>
 +#include <linux/io.h>
 +#include <linux/iopoll.h>
@@ -144,275 +144,238 @@ index 000000000000..82744962d938
 +#include <linux/of.h>
 +#include <linux/of_device.h>
 +#include <linux/platform_device.h>
-+#include <linux/spi/spi.h>
 +#include <linux/jiffies.h>
 +#include <linux/litex.h>
 +
-+#define SPIFLASH_BITBANG_OFFSET 0x0
-+#define SPIFLASH_BITBANG_SIZE 0x1
-+#define SPIFLASH_MISO_OFFSET 0x4
-+#define SPIFLASH_MISO_SIZE 0x1
-+#define SPIFLASH_BITBANG_EN_OFFSET 0x8
-+#define SPIFLASH_BITBANG_EN_SIZE 0x1
++#define LITESPI_PHY_CLK_DIVISOR_OFFSET		0x00
++#define LITESPI_PHY_MODE_OFFSET			0x04
++#define LITESPI_MASTER_CS_OFFSET		0x10
++#define LITESPI_MASTER_PHYCONFIG_OFFSET		0x14
++#define LITESPI_MASTER_RXTX_OFFSET		0x18
++#define LITESPI_MASTER_STATUS_OFFSET		0x1c
++#define LITESPI_MASTER_CLK_DIVISOR_OFFSET	0x20
 +
-+#define SPIFLASH_ENABLE 0x01
-+#define SPIFLASH_DISABLE 0x00
-+#define CLK_ENABLE 0x02
-+#define CS_ENABLE 0x04
-+#define MISO_MODE 0x08
++#define LITESPI_PHYCONFIG_LEN_SHIFT		0
++#define LITESPI_PHYCONFIG_WIDTH_SHIFT		8
++#define LITESPI_PHYCONFIG_MASK_SHIFT		16
++
++#define LITESPI_PHYCONFIG_LEN(n) \
++	((n) << LITESPI_PHYCONFIG_LEN_SHIFT)
++#define LITESPI_PHYCONFIG_WIDTH(n) \
++	((n) << LITESPI_PHYCONFIG_WIDTH_SHIFT)
++#define LITESPI_PHYCONFIG_MASK(n) \
++	((n) << LITESPI_PHYCONFIG_MASK_SHIFT)
++
++#define LITESPI_STATUS_TX_READY			0x01
++#define LITESPI_STATUS_RX_READY			0x02
++#define LITESPI_SINGLE_WIDTH			1
++#define LITESPI_SINGLE_MOSI_MASK		0x01
++#define LITESPI_XFER_BITS			8
++#define LITESPI_DEFAULT_ADDR_WIDTH		3
++#define LITESPI_XFER_TIMEOUT_US			100000
 +
 +#define WRITE_ENABLE 0x06
 +#define READ_STATUS_REGISTER 0x05
 +#define WORK_IN_PROGRESS 0x01
-+#define READ_FLAG_STATUS_REGISTER 0x70
-+#define PROGRAM_ERR 0x10
-+#define ERASE_BUSY 0x80
-+#define ERASE_ERR 0x20
 +
-+#define TIMEOUT_ERASE_MS 3000
-+#define TIMEOUT_MS 50
-+#define BIT_SHIFT 7
-+#define ADDRESS_SIZE 3
-+#define DUMMY_CYCLES 8
++#define TIMEOUT_READY_MS 50
++#define TIMEOUT_PROGRAM_MS 1000
++#define TIMEOUT_ERASE_MS 60000
 +
-+struct spi {
++struct litex_spiflash {
 +	struct spi_nor nor;
 +	struct device *dev;
 +	void __iomem *base;
-+	struct clk *clk;
 +};
 +
-+static void cs(struct spi_nor *nor, u8 new_val)
++static void litex_spiflash_set_cs(struct litex_spiflash *flash, bool enable)
 +{
-+	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read8(spi->base + SPIFLASH_BITBANG_OFFSET);
-+	u8 set_val = new_val == CS_ENABLE ?
-+		curr_val | new_val : curr_val & new_val;
-+
-+	litex_write8(spi->base + SPIFLASH_BITBANG_OFFSET, set_val);
++	litex_write8(flash->base + LITESPI_MASTER_CS_OFFSET, enable ? 1 : 0);
 +}
 +
-+static void clk(struct spi_nor *nor, u8 new_val)
++static void litex_spiflash_init(struct litex_spiflash *flash)
 +{
-+	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read8(spi->base + SPIFLASH_BITBANG_OFFSET);
-+	u8 set_val = new_val == CLK_ENABLE ?
-+		curr_val | new_val : curr_val & new_val;
++	u8 clk_divisor;
++	u32 phyconfig;
 +
-+	litex_write8(spi->base + SPIFLASH_BITBANG_OFFSET, set_val);
++	clk_divisor = litex_read8(flash->base + LITESPI_PHY_CLK_DIVISOR_OFFSET);
++	phyconfig = LITESPI_PHYCONFIG_LEN(LITESPI_XFER_BITS) |
++		    LITESPI_PHYCONFIG_WIDTH(LITESPI_SINGLE_WIDTH) |
++		    LITESPI_PHYCONFIG_MASK(LITESPI_SINGLE_MOSI_MASK);
++
++	litex_write8(flash->base + LITESPI_PHY_MODE_OFFSET, 0);
++	litex_write32(flash->base + LITESPI_MASTER_PHYCONFIG_OFFSET,
++		      phyconfig);
++	litex_write8(flash->base + LITESPI_MASTER_CLK_DIVISOR_OFFSET,
++		     clk_divisor);
++	litex_spiflash_set_cs(flash, false);
 +}
 +
-+static u8 miso_read(struct spi_nor *nor)
++static int litex_spiflash_xfer(struct litex_spiflash *flash, u8 tx, u8 *rx)
 +{
-+	struct spi *spi = nor->priv;
++	u8 status;
++	u8 val;
++	int ret;
 +
-+	return litex_read8(spi->base + SPIFLASH_MISO_OFFSET) & 0x1;
++	ret = read_poll_timeout(litex_read8, status,
++				status & LITESPI_STATUS_TX_READY, 1,
++				LITESPI_XFER_TIMEOUT_US, false,
++				flash->base + LITESPI_MASTER_STATUS_OFFSET);
++	if (ret)
++		return ret;
++
++	litex_write8(flash->base + LITESPI_MASTER_RXTX_OFFSET, tx);
++
++	ret = read_poll_timeout(litex_read8, status,
++				status & LITESPI_STATUS_RX_READY, 1,
++				LITESPI_XFER_TIMEOUT_US, false,
++				flash->base + LITESPI_MASTER_STATUS_OFFSET);
++	if (ret)
++		return ret;
++
++	val = litex_read8(flash->base + LITESPI_MASTER_RXTX_OFFSET);
++	if (rx)
++		*rx = val;
++
++	return 0;
 +}
 +
-+static void mosi_set(bool mosi, struct spi_nor *nor)
++static int litex_spiflash_addr_width(struct spi_nor *nor)
 +{
-+	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read8(spi->base + SPIFLASH_BITBANG_OFFSET);
-+	u8 set_val = mosi ? curr_val | (0x01) : curr_val & (~0x01);
-+
-+	litex_write8(spi->base + SPIFLASH_BITBANG_OFFSET, set_val);
++	return nor->addr_width ? nor->addr_width : LITESPI_DEFAULT_ADDR_WIDTH;
 +}
 +
-+static void enable(struct spi_nor *nor, u8 new_val)
++static int litex_spiflash_exec_op(struct spi_nor *nor, u8 opcode,
++				  u64 addr, int addr_width,
++				  const u8 *tx, u8 *rx, size_t len)
 +{
-+	struct spi *spi = nor->priv;
-+	u8 curr_val = litex_read8(spi->base + SPIFLASH_BITBANG_OFFSET);
-+	u8 set_val = new_val == MISO_MODE ?
-+		curr_val | new_val : curr_val & new_val;
++	struct litex_spiflash *flash = nor->priv;
++	size_t i;
++	int shift;
++	int ret;
 +
-+	litex_write8(spi->base + SPIFLASH_BITBANG_OFFSET, set_val);
-+}
++	litex_spiflash_set_cs(flash, true);
 +
-+static void initial_config(struct spi_nor *nor)
-+{
-+	struct spi *spi = nor->priv;
++	ret = litex_spiflash_xfer(flash, opcode, NULL);
++	if (ret)
++		goto out;
 +
-+	clk(nor, ~CLK_ENABLE);
-+	cs(nor, CS_ENABLE);
-+	enable(nor, ~MISO_MODE);
-+	litex_write8(spi->base + SPIFLASH_BITBANG_EN_OFFSET, SPIFLASH_ENABLE);
-+}
-+
-+static void dummy_cycles(struct spi_nor *nor, int n_cycles)
-+{
-+	int i;
-+
-+	for (i = 0; i < n_cycles; i++) {
-+		clk(nor, ~CLK_ENABLE);
-+		clk(nor, CLK_ENABLE);
++	for (shift = addr_width - 1; shift >= 0; shift--) {
++		ret = litex_spiflash_xfer(flash, (u8)(addr >> (8 * shift)),
++					  NULL);
++		if (ret)
++			goto out;
 +	}
-+}
 +
-+static void spi_bitbang_send(struct spi_nor *nor, const u8 command)
-+{
-+	int i;
-+	u8 c = command;
-+
-+	for (i = BIT_SHIFT; i >= 0; i--) {
-+		// Sending on MSB order
-+		mosi_set(c & 0x80, nor);
-+		c <<= 1;
-+		clk(nor, ~CLK_ENABLE);
-+		clk(nor, CLK_ENABLE);
++	for (i = 0; i < len; i++) {
++		ret = litex_spiflash_xfer(flash, tx ? tx[i] : 0xff,
++					  rx ? &rx[i] : NULL);
++		if (ret)
++			goto out;
 +	}
-+}
 +
-+static u8 spi_bitbang_read(struct spi_nor *nor)
-+{
-+	int i;
-+	u8 byte = 0x00;
-+
-+	for (i = BIT_SHIFT; i >= 0; i--) {
-+		clk(nor, ~CLK_ENABLE);
-+		clk(nor, CLK_ENABLE);
-+		byte |= (miso_read(nor) << i);
-+	}
-+	return byte;
-+}
-+
-+static void write_command(struct spi_nor *nor, const u8 command)
-+{
-+	enable(nor, ~MISO_MODE);
-+	dummy_cycles(nor, DUMMY_CYCLES);
-+	cs(nor, ~CS_ENABLE);
-+	spi_bitbang_send(nor, command);
-+}
-+
-+static void write_address(struct spi_nor *nor, const u32 addr32)
-+{
-+	int i;
-+	u8 *addr8 = (u8 *) &addr32;
-+
-+	for (i = (ADDRESS_SIZE - 1); i >= 0; i--)
-+		spi_bitbang_send(nor, *(addr8 + i));
-+}
-+
-+static void write_data(struct spi_nor *nor, const u8 *data, int len)
-+{
-+	int i;
-+
-+	enable(nor, ~MISO_MODE);
-+	for (i = 0; i < len; i++)
-+		spi_bitbang_send(nor, data[i]);
-+}
-+
-+static void read_data(struct spi_nor *nor, u8 *buffer, int len)
-+{
-+	int i;
-+
-+	enable(nor, MISO_MODE);
-+	for (i = 0; i < len; i++)
-+		buffer[i] = spi_bitbang_read(nor);
++out:
++	litex_spiflash_set_cs(flash, false);
++	return ret;
 +}
 +
 +static int spi_flash_nor_read_reg(struct spi_nor *nor, u8 opcode, u8 *buf,
 +				  size_t len)
 +{
-+	write_command(nor, opcode);
-+	read_data(nor, buf, len);
-+	cs(nor, CS_ENABLE);
-+	return 0;
++	return litex_spiflash_exec_op(nor, opcode, 0, 0, NULL, buf, len);
 +}
 +
-+static u8 read_status(struct spi_nor *nor, const u8 status_command)
++static int read_status(struct spi_nor *nor, u8 *status)
 +{
++	return spi_flash_nor_read_reg(nor, READ_STATUS_REGISTER, status, 1);
++}
++
++static int wait_until_ready(struct spi_nor *nor, unsigned long timeout_ms)
++{
++	unsigned long end = jiffies + msecs_to_jiffies(timeout_ms);
 +	u8 status;
++	int ret;
 +
-+	spi_flash_nor_read_reg(nor, status_command, &status, 1);
-+	return status;
++	do {
++		ret = read_status(nor, &status);
++		if (ret)
++			return ret;
++		if (!(status & WORK_IN_PROGRESS))
++			return 0;
++		usleep_range(1000, 2000);
++	} while (time_before(jiffies, end));
++
++	return -ETIMEDOUT;
 +}
 +
-+static int busy(struct spi_nor *nor, int time, u8 reg, u8 flag)
++static int write_enable(struct spi_nor *nor)
 +{
-+	unsigned long end = jiffies + msecs_to_jiffies(time);
-+	/* Wait until device is ready */
-+	while (read_status(nor, reg) & flag) {
-+		if (time_after(jiffies, end))
-+			return -ETIMEDOUT;
-+	};
-+
-+	return 0;
++	return litex_spiflash_exec_op(nor, WRITE_ENABLE, 0, 0, NULL, NULL, 0);
 +}
 +
 +static int spi_flash_nor_erase(struct spi_nor *nor, loff_t offs)
 +{
-+	write_command(nor, WRITE_ENABLE);
-+	cs(nor, CS_ENABLE);
++	int ret;
 +
-+	if(busy(nor, TIMEOUT_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
++	ret = wait_until_ready(nor, TIMEOUT_READY_MS);
++	if (ret)
++		return ret;
 +
-+	write_command(nor, nor->erase_opcode);
-+	write_address(nor, offs);
-+	cs(nor, CS_ENABLE);
++	ret = write_enable(nor);
++	if (ret)
++		return ret;
 +
-+	if(busy(nor, TIMEOUT_ERASE_MS, READ_FLAG_STATUS_REGISTER, ERASE_BUSY) != 0)
-+		return -ETIMEDOUT;
++	ret = litex_spiflash_exec_op(nor, nor->erase_opcode, offs,
++				     litex_spiflash_addr_width(nor),
++				     NULL, NULL, 0);
++	if (ret)
++		return ret;
 +
-+	if(busy(nor, TIMEOUT_ERASE_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
-+
-+	return (read_status(nor, READ_FLAG_STATUS_REGISTER) & ERASE_ERR);
++	return wait_until_ready(nor, TIMEOUT_ERASE_MS);
 +}
 +
 +static ssize_t spi_flash_nor_read(struct spi_nor *nor, loff_t from,
-+		size_t length, u8 *buffer)
++				  size_t length, u8 *buffer)
 +{
-+	write_command(nor, nor->read_opcode);
-+	write_address(nor, from);
-+	read_data(nor, buffer, length);
-+	cs(nor, CS_ENABLE);
++	int ret;
 +
-+	return length;
++	ret = wait_until_ready(nor, TIMEOUT_READY_MS);
++	if (ret)
++		return ret;
++
++	ret = litex_spiflash_exec_op(nor, nor->read_opcode, from,
++				     litex_spiflash_addr_width(nor),
++				     NULL, buffer, length);
++	return ret ? ret : length;
 +}
 +
-+static ssize_t spi_flash_nor_write(struct spi_nor *nor, loff_t to, size_t len,
-+			     const u8 *buf)
++static ssize_t spi_flash_nor_write(struct spi_nor *nor, loff_t to,
++				   size_t len, const u8 *buf)
 +{
-+	/* Write WRITE ENABLE command*/
-+	write_command(nor, WRITE_ENABLE);
-+	cs(nor, CS_ENABLE);
++	int ret;
 +
-+	if(busy(nor, TIMEOUT_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
++	ret = wait_until_ready(nor, TIMEOUT_READY_MS);
++	if (ret)
++		return ret;
 +
-+	write_command(nor, nor->program_opcode);
-+	write_address(nor, to);
-+	write_data(nor, buf, len);
-+	cs(nor, CS_ENABLE);
++	ret = write_enable(nor);
++	if (ret)
++		return ret;
 +
-+	if(busy(nor, TIMEOUT_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
++	ret = litex_spiflash_exec_op(nor, nor->program_opcode, to,
++				     litex_spiflash_addr_width(nor),
++				     buf, NULL, len);
++	if (ret)
++		return ret;
 +
-+	if (read_status(nor, READ_FLAG_STATUS_REGISTER)&PROGRAM_ERR)
-+		return -EINVAL;
-+
-+	return len;
++	ret = wait_until_ready(nor, TIMEOUT_PROGRAM_MS);
++	return ret ? ret : len;
 +}
 +
 +static int spi_flash_nor_write_reg(struct spi_nor *nor, u8 opcode,
-+				       const u8 *buf, size_t len)
++				   const u8 *buf, size_t len)
 +{
-+	/* Write WRITE ENABLE command*/
-+	write_command(nor, WRITE_ENABLE);
-+	cs(nor, CS_ENABLE);
-+
-+	if(busy(nor, TIMEOUT_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
-+
-+	write_command(nor, opcode);
-+	write_data(nor, buf, len);
-+	cs(nor, CS_ENABLE);
-+
-+	if(busy(nor, TIMEOUT_MS, READ_STATUS_REGISTER, WORK_IN_PROGRESS) != 0)
-+		return -ETIMEDOUT;
-+
-+	return 0;
++	return litex_spiflash_exec_op(nor, opcode, 0, 0, buf, NULL, len);
 +}
 +
 +static const struct spi_nor_controller_ops litex_spi_controller_ops = {
@@ -427,13 +390,12 @@ index 000000000000..82744962d938
 +{
 +	struct device_node *node;
 +	struct resource *res;
++	struct litex_spiflash *flash;
 +	int ret;
-+	struct spi *spi;
 +	struct spi_nor *nor;
 +
 +	const struct spi_nor_hwcaps hwcaps = {
 +		.mask = SNOR_HWCAPS_READ |
-+			SNOR_HWCAPS_READ_FAST |
 +			SNOR_HWCAPS_PP,
 +	};
 +
@@ -442,30 +404,30 @@ index 000000000000..82744962d938
 +		return -EINVAL;
 +	}
 +
-+	spi = devm_kzalloc(&pdev->dev, sizeof(*spi), GFP_KERNEL);
-+	if (!spi)
++	flash = devm_kzalloc(&pdev->dev, sizeof(*flash), GFP_KERNEL);
++	if (!flash)
 +		return -ENOMEM;
-+	platform_set_drvdata(pdev, spi);
++	platform_set_drvdata(pdev, flash);
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	spi->base = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(spi->base))
-+		return PTR_ERR(spi->base);
++	flash->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(flash->base))
++		return PTR_ERR(flash->base);
 +
-+	spi->dev = &pdev->dev;
++	flash->dev = &pdev->dev;
 +
 +	/* Gets attached flash */
 +	node = of_get_next_available_child(pdev->dev.of_node, NULL);
 +	if (!node) {
 +		dev_err(&pdev->dev, "no SPI flash device to configure\n");
-+		ret = -ENODEV;
++		return -ENODEV;
 +	}
-+	nor = &spi->nor;
-+	nor->dev = spi->dev;
-+	nor->priv = spi;
++	nor = &flash->nor;
++	nor->dev = flash->dev;
++	nor->priv = flash;
 +	spi_nor_set_flash_node(nor, node);
 +	/* Sets initial configuration of registers */
-+	initial_config(nor);
++	litex_spiflash_init(flash);
 +	/* Fill the hooks to spi nor */
 +	nor->controller_ops = &litex_spi_controller_ops;
 +	nor->mtd.name = "spi";
@@ -487,13 +449,10 @@ index 000000000000..82744962d938
 +
 +static int litex_spi_flash_remove(struct platform_device *pdev)
 +{
-+	struct spi *spi = platform_get_drvdata(pdev);
-+	struct resource *res;
++	struct litex_spiflash *flash = platform_get_drvdata(pdev);
 +
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	spi->base = devm_ioremap_resource(&pdev->dev, res);
-+	litex_write8(spi->base + SPIFLASH_BITBANG_EN_OFFSET, SPIFLASH_DISABLE);
-+	mtd_device_unregister(&spi->nor.mtd);
++	litex_spiflash_set_cs(flash, false);
++	mtd_device_unregister(&flash->nor.mtd);
 +
 +	return 0;
 +}
@@ -510,7 +469,7 @@ index 000000000000..82744962d938
 +	.remove	= litex_spi_flash_remove,
 +	.driver	= {
 +		.name = "litex-spiflash",
-+		.of_match_table   = of_match_ptr(litex_of_match)
++		.of_match_table = of_match_ptr(litex_of_match),
 +	},
 +};
 +module_platform_driver(litex_spi_flash_driver);
@@ -519,4 +478,3 @@ index 000000000000..82744962d938
 +MODULE_AUTHOR("Antmicro <www.antmicro.com>");
 -- 
 2.43.0
-

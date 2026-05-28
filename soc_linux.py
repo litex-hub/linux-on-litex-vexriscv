@@ -27,6 +27,11 @@ def SoCLinux(soc_cls, **kwargs):
     class _SoCLinux(soc_cls):
         def __init__(self, **kwargs):
 
+            video_framebuffer_fifo_depth = kwargs.pop("video_framebuffer_fifo_depth", None)
+            if isinstance(video_framebuffer_fifo_depth, str):
+                video_framebuffer_fifo_depth = int(video_framebuffer_fifo_depth, 0)
+            self.video_framebuffer_fifo_depth = video_framebuffer_fifo_depth
+
             # SoC ----------------------------------------------------------------------------------
 
             soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
@@ -55,28 +60,31 @@ def SoCLinux(soc_cls, **kwargs):
         def add_i2c(self):
             self.i2c0 = I2CMaster(self.platform.request("i2c", 0))
 
-        # Ethernet configuration -------------------------------------------------------------------
+        # Video ------------------------------------------------------------------------------------
 
-        def configure_ethernet(self, remote_ip):
-            remote_ip = remote_ip.split(".")
-            try: # FIXME: Improve.
-                self.constants.pop("REMOTEIP1")
-                self.constants.pop("REMOTEIP2")
-                self.constants.pop("REMOTEIP3")
-                self.constants.pop("REMOTEIP4")
-            except:
-                pass
-            self.add_constant("REMOTEIP1", int(remote_ip[0]))
-            self.add_constant("REMOTEIP2", int(remote_ip[1]))
-            self.add_constant("REMOTEIP3", int(remote_ip[2]))
-            self.add_constant("REMOTEIP4", int(remote_ip[3]))
+        def add_video_framebuffer(self, *args, **kwargs):
+            if self.video_framebuffer_fifo_depth is not None and len(args) < 6 and "fifo_depth" not in kwargs:
+                kwargs["fifo_depth"] = self.video_framebuffer_fifo_depth
+            return soc_cls.add_video_framebuffer(self, *args, **kwargs)
 
         # DTS generation ---------------------------------------------------------------------------
 
-        def generate_dts(self, board_name, rootfs="ram0"):
+        def generate_dts(
+            self,
+            board_name,
+            rootfs      = "ram0",
+            nfs_server  = None,
+            nfs_root    = None,
+            nfs_options = None,
+        ):
             json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-            initrd = "enabled" if rootfs == "ram0" else "disabled"
+            if rootfs == "ram0":
+                initrd = os.path.join("images", "rootfs.cpio")
+                if not os.path.exists(initrd):
+                    initrd = "enabled"
+            else:
+                initrd = "disabled"
 
             with open(json_src) as json_file, open(dts, "w") as dts_file:
                 dts_content = generate_dts(json.load(json_file),
@@ -84,6 +92,16 @@ def SoCLinux(soc_cls, **kwargs):
                     polling     = False,
                     root_device = rootfs
                 )
+                if rootfs == "nfs":
+                    if nfs_server is None or nfs_root is None:
+                        raise ValueError("nfs_server and nfs_root are required for NFS rootfs")
+                    nfsroot = f"{nfs_server}:{nfs_root}"
+                    if nfs_options:
+                        nfsroot += f",{nfs_options}"
+                    dts_content = dts_content.replace(
+                        "rootwait root=/dev/nfs",
+                        f"root=/dev/nfs nfsroot={nfsroot}",
+                    )
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------

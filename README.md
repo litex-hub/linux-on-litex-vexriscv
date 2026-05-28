@@ -12,17 +12,17 @@
                    Copyright (c) 2019-2024, Linux-on-LiteX-VexRiscv Developers
 ```
 [![](https://github.com/litex-hub/linux-on-litex-vexriscv/workflows/ci/badge.svg)](https://github.com/litex-hub/linux-on-litex-vexriscv/actions) ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
-> **Note:** Tested on Ubuntu 18.04/20.04 LTS.
+> **Note:** Tested on Ubuntu 22.04 LTS.
 
 
 [> Intro
 --------
 
-This project is an experiment to run Linux with [VexRiscv-SMP](https://github.com/SpinalHDL/VexRiscv) CPU, a 32-bits Linux Capable RISC-V CPU written in [Spinal HDL](https://github.com/SpinalHDL/SpinalHDL).  [LiteX](https://github.com/enjoy-digital/litex) is used to create the SoC around the VexRiscv-SMP CPU and provides the infrastructure and peripherals (LiteDRAM, LiteEth, LiteSDCard, etc...). All the components used to create the SoC are open-source and the flexibility of Spinal HDL/LiteX allow targeting easily very various FPGA devices/boards: Xilinx, Intel, Lattice, Microsemi, Efinix FPGAs are tested with very various configuration: SDRAM/DDR/DDR2/DDR3/DDR4 or HyperRAM RAMs, RMII/MII/RGMII/1000BASE-X Ethernet PHYs,  SDCard (in SPI or SD mode), SATA, PCIe, etc...
+This project is an experiment to run Linux with [VexRiscv-SMP](https://github.com/SpinalHDL/VexRiscv) CPU, a 32-bit Linux-capable RISC-V CPU written in [Spinal HDL](https://github.com/SpinalHDL/SpinalHDL).  [LiteX](https://github.com/enjoy-digital/litex) is used to create the SoC around the VexRiscv-SMP CPU and provides the infrastructure and peripherals (LiteDRAM, LiteEth, LiteSDCard, etc.). All the components used to create the SoC are open-source and the flexibility of Spinal HDL/LiteX allows easily targeting a very wide range of FPGA devices/boards: Xilinx, Intel, Lattice, Microsemi, Efinix FPGAs are tested with very diverse configurations: SDRAM/DDR/DDR2/DDR3/DDR4 or HyperRAM RAMs, RMII/MII/RGMII/1000BASE-X Ethernet PHYs, SDCard (in SPI or SD mode), SATA, PCIe, etc.
 
-On Lattice ECP5 FPGAs, the [open source toolchain](https://github.com/SymbiFlow/prjtrellis) even allows creating full open-source SoC with open-source cores **and** toolchain!
+On Lattice ECP5 FPGAs, the [open source toolchain](https://github.com/SymbiFlow/prjtrellis) even allows creating a fully open-source SoC with open-source cores **and** toolchain!
 
-This project demonstrates **how high level HDLs framework like Spinal HDL, LiteX can enable new possibilities and complement each other**. Results shown here are the results of a productive collaboration between various open-source communities.
+This project demonstrates **how high-level HDL frameworks like Spinal HDL and LiteX can enable new possibilities and complement each other**. Results shown here are the outcome of a productive collaboration between various open-source communities.
 
 [> Demo
 ----------
@@ -36,7 +36,7 @@ https://user-images.githubusercontent.com/1450143/156186677-87c40a39-2cf5-4ae0-9
 All boards supported in [LiteX-Boards](https://github.com/litex-hub/litex-boards) with...:
 
  - Enough FPGA logic to fit VexRiscv-SMP + LiteX SoC.
- - 32MB of RAM (Reduced to 8MB when rootfs can be put on a SDCard).
+ - 32MB of RAM (reduced to 8MB when rootfs can be put on an SDCard or NFS).
  - A UART.
 
 ... could run this project.
@@ -46,6 +46,7 @@ The board support is directly imported from LiteX-Boards and the configuration i
 The current list of boards that have been tested and are supported can be obtained by running `./make.py --help`:
 
     ├── acorn
+    ├── acorn_baseboard_mini
     ├── acorn_pcie
     ├── aesku40
     ├── alveo_u250
@@ -53,10 +54,11 @@ The current list of boards that have been tested and are supported can be obtain
     ├── arty
     ├── arty_a7
     ├── arty_s7
-    |── ax7020
+    ├── ax7020
     ├── butter_stick
     ├── cam_link4k
     ├── colorlight_5a_75x
+    ├── colognechip_gatemate_evb
     ├── colorlight_i5
     ├── colorlight_i9plus
     ├── de0nano
@@ -64,12 +66,14 @@ The current list of boards that have been tested and are supported can be obtain
     ├── de1so_c
     ├── decklink_quad_hdmirecorder
     ├── ecpix5
+    ├── embedfire_rise_pro
     ├── genesys2
     ├── hadbadge
     ├── hseda_xc7a35t
     ├── icesugar_pro
     ├── kc705
     ├── kcu105
+    ├── kolsch
     ├── konfekt
     ├── mini_spartan6
     ├── mnt_rkx7
@@ -117,7 +121,9 @@ $ cd linux-on-litex-vexriscv
 [> Pre-built Bitstreams and Linux/OpenSBI images
 ------------------------------------------------
 
-Pre-built bistreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
+Pre-built bitstreams for the common boards and pre-built Linux images can be found [here](https://github.com/litex-hub/linux-on-litex-vexriscv/issues/164) and will get you started quickly and easily without the need to compile anything.
+
+When using a pre-built board bitstream archive, also use the matching `.dtb` from this board archive: copy/rename it to `images/rv32.dtb` and to the SDCard as `rv32.dtb`. The DTB must match the bitstream's CSR map and memory size; a stale or board-generic `rv32.dtb` can make Linux see the wrong RAM size or miss peripherals. The DTB can also be regenerated with `./make.py --board=XXYY`.
 
 [> Installing LiteX
 -------------------
@@ -130,16 +136,35 @@ For more information, please visit: https://github.com/enjoy-digital/litex/wiki/
 
 [> Installing a RISC-V toolchain
 --------------------------------
+Install a recent bare-metal RISC-V GCC toolchain and make sure its `bin`
+directory is in your `PATH`.
+
+The LiteX setup script can install one directly through the host package
+manager:
 ```sh
-$ wget https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
-$ tar -xvf riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14.tar.gz
-$ export PATH=$PATH:$PWD/riscv64-unknown-elf-gcc-8.1.0-2019.01.0-x86_64-linux-ubuntu14/bin/
+$ ./litex_setup.py --gcc=riscv
 ```
+Depending on the system package manager, this command may need to be run with
+sudo/root privileges.
+
+LiteX auto-detects common RISC-V GCC triples such as `riscv64-unknown-elf`,
+`riscv64-none-elf`, `riscv32-unknown-elf`, `riscv32-none-elf` and
+`riscv-none-elf`. If multiple RISC-V toolchains are installed, select the
+one to use with `LITEX_ENV_CC_TRIPLE`, for example:
+```sh
+$ export PATH=$PATH:/path/to/riscv-toolchain/bin
+$ riscv64-unknown-elf-gcc --version
+$ export LITEX_ENV_CC_TRIPLE=riscv64-unknown-elf
+```
+
+Pre-built toolchains are available from projects such as:
+- xPack GNU RISC-V Embedded GCC: https://xpack-dev-tools.github.io/riscv-none-elf-gcc-xpack/docs/install/
+- RISC-V GNU Toolchain releases: https://github.com/riscv-collab/riscv-gnu-toolchain/releases
 
 [> Installing SBT (Only required for custom CPU configs)
 --------------------------------
-Some regular VexRiscv-smp configuration are already pregenerated, 
-but for others, it need to run som SpinalHDL hardware generation, which require sbt.
+Some regular VexRiscv-SMP configurations are already pregenerated,
+but for others, it needs to run some SpinalHDL hardware generation, which requires sbt.
 
 Please visit: https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Linux.html#Installing+sbt+on+Linux
 
@@ -288,14 +313,14 @@ $ ./make.py --board=XXYY --cpu-count=X --build
 > ```
 
 ### Load the FPGA bitstream
-To load the bitstream to you board, run:
+To load the bitstream to your board, run:
 ```sh
 $ ./make.py --board=XXYY --cpu-count=X --load
 ```
 > **Note**: If you are using a Versa board, you will need to change J50 to bypass the iSPclock. Re-arrange the jumpers to connect pins 1-2 and 3-5 (leaving one jumper spare). See p19 of the Versa Board user guide.
 
 ### Load the Linux images over Serial
-All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have others communications interfaces or storage capability.
+All the boards support Serial loading of the Linux images and this is the only way to load them when the board does not have other communication interfaces or storage capability.
 
 To load the Linux images over Serial, use the [litex_term](https://github.com/enjoy-digital/litex/blob/master/litex/tools/litex_term.py) terminal/tool provided by LiteX and run:
 ```sh
@@ -307,16 +332,33 @@ The images should load and you should see Linux booting :)
 
 > **Note**: By default baudrate is set to 115200 bauds. You can use `--uart-baudrate` argument of `make.py` to increase it on the board and use `--speed` argument of `litex_term` to reflect the change. This is useful to increase upload speed when binaries can only be uploaded over Serial.
 
-> **Note:** Since on some boards JTAG/Serial is shared, when you will run litex_term after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
+> **Note:** Since on some boards JTAG/Serial is shared, when you run litex_term after loading the board, the BIOS serialboot will already have timed out. You will need to press Enter, see if you have the BIOS prompt and type *reboot*.
 
-Since loading over Serial is working for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
+Since loading over Serial works for all boards, **this is the recommended way to do initial tests** even if your board has more capabilities.
 
 ### Load the Linux images over Ethernet
 For boards with Ethernet support, the Linux images can be loaded over TFTP. You need to copy the files from *images* directory to your TFTP root directory. The default Local IP/Remote IP are 192.168.1.50/192.168.1.100 but you can change it with the *--local-ip* and *--remote-ip* arguments.
 
-Once the bistream is loaded, the board you try to retrieve the files on the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
+Once the bitstream is loaded, the board will try to retrieve the files from the TFTP server. If not successful or if the boot already timed out when you see the BIOS prompt, you can retry with the *netboot* command.
 
 The images will be loaded to RAM and you should see Linux booting :)
+
+### Boot with an NFS RootFS
+For boards with Ethernet support, Linux can mount the RootFS over NFS. Generate
+the SoC files with `--rootfs=nfs`, setting `--remote-ip` to the NFS server IP
+and `--nfs-root` to the exported directory:
+
+```sh
+$ ./make.py --board=XXYY --rootfs=nfs \
+            --local-ip=192.168.1.50 \
+            --remote-ip=192.168.1.100 \
+            --nfs-root=/srv/nfs/litex-vexriscv
+```
+
+This generates a matching `boot.json` without `rootfs.cpio` and adds the
+`root=/dev/nfs`/`nfsroot=` kernel boot arguments to the DTB. The default NFS
+mount options are `vers=3,tcp,nolock` and can be changed with
+`--nfs-options`.
 
 ### Load the Linux images to SDCard
 For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files from *images* directory to your SDCard root directory (with a FAT partition).
@@ -338,12 +380,40 @@ $ make
 ```
 The binaries are located in *output/images/* and *images/*.
 
+For bitstreams built with board-specific Buildroot options, such as USB-host
+support, optional VexRiscv-SMP AES/FPU CPU features or NFS RootFS support,
+use the matching Buildroot configuration so the generated toolchain, kernel
+and software agree with the hardware. Run `make.py` from the
+`linux-on-litex-vexriscv` checkout, then run the Buildroot command from the
+Buildroot checkout:
+
+```sh
+$ ./make.py --board=XXYY --aes-instruction=True --with-fpu --cpu-per-fpu=1 --rootfs=nfs
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ \
+       BR2_DEFCONFIG=../linux-on-litex-vexriscv/build/XXYY/buildroot_defconfig \
+       defconfig
+$ make
+```
+
+The generated `build/XXYY/buildroot_defconfig` starts from
+`litex_vexriscv_defconfig` and applies the USB-host, AES, FPU and NFS RootFS
+options selected by the board and on the `make.py` command line. With
+`--rootfs=nfs`, Buildroot also generates `rootfs.tar`, which can be extracted
+into the exported NFS directory.
+
 [> Generating the Linux binaries with USB host support (optional)
 -----------------------------------------------------------------
+Run `make.py` for a USB-host capable board so it generates the matching
+Buildroot defconfig, then use this defconfig from the Buildroot checkout:
+
 ```sh
 $ git clone http://github.com/buildroot/buildroot
-$ cd buildroot
-$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ litex_vexriscv_usbhost_defconfig
+$ cd linux-on-litex-vexriscv
+$ ./make.py --board=XXYY
+$ cd ../buildroot
+$ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ \
+       BR2_DEFCONFIG=../linux-on-litex-vexriscv/build/XXYY/buildroot_defconfig \
+       defconfig
 $ make
 ```
 The binaries are located in *output/images/* and *images/*.
@@ -361,9 +431,9 @@ The binary will be located at *build/platform/litex/vexriscv/firmware/fw_jump.bi
 [> Generating the VexRiscv Linux variant (optional)
 ---------------------------------------------------
 
-If the VexRiscv configuration you ask isn't already generated, you will need to install java and SBT on your machine to enable their local on demande generation.
+If the VexRiscv configuration you request isn't already generated, you will need to install Java and SBT on your machine to enable local on-demand generation.
 
-To install java and SBT see Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
+To install Java and SBT, see Install VexRiscv requirements: https://github.com/enjoy-digital/VexRiscv-verilog#requirements
 
 [> Udev rules (optional)
 ----------------------------

@@ -3,12 +3,56 @@ name: ci
 on: [push, pull_request]
 
 jobs:
-  build:
+  # Discover Boards (parse boards.py into a JSON matrix of board names)
+  discover:
+    runs-on: ubuntu-22.04
+    outputs:
+      boards: ${{ steps.set-boards.outputs.boards }}
+    steps:
+      # Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # List Boards
+      - id: set-boards
+        name: List supported boards
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PY'
+          import ast, json, re
+          # Keep in sync with excluded_boards in test/test_build.py.
+          EXCLUDED = {
+              "schoko",                   # USB OHCI netlist generation issue.
+              "trion_t120bga576dev_kit",  # Requires Efinity toolchain.
+              "titanium_ti60f225dev_kit", # Requires Efinity toolchain.
+          }
+          # Collect every class whose MRO transitively reaches `Board`. ast-based
+          # so this works without needing LiteX installed in the discover job.
+          bases = {}
+          for node in ast.walk(ast.parse(open('boards.py').read())):
+              if isinstance(node, ast.ClassDef):
+                  bases[node.name] = [b.id for b in node.bases if isinstance(b, ast.Name)]
+          board_cls, changed = {"Board"}, True
+          while changed:
+              changed = False
+              for cls, parents in bases.items():
+                  if cls not in board_cls and any(p in board_cls for p in parents):
+                      board_cls.add(cls); changed = True
+          board_cls.discard("Board")
+          snake  = lambda n: re.sub(r'(?<=[a-z])(?=[A-Z])', '_', n).lower()
+          boards = sorted(b for b in (snake(c) for c in board_cls) if b not in EXCLUDED)
+          print("boards=" + json.dumps(boards))
+          PY
+
+  # Setup Environment (install LiteX + RISC-V toolchain once, upload as an
+  # artifact so every per-board shard can restore it in ~15s instead of
+  # re-running a 6-8 min install from scratch). LiteX is always freshly
+  # cloned here — no cross-run caching.
+  setup:
     runs-on: ubuntu-22.04
     steps:
       # Checkout Repository
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Install Tools
       - name: Install Tools
@@ -30,22 +74,175 @@ jobs:
           sudo apt -y install sbt
           pip3 install meson
 
+      # Cache pip downloads (small win for our pinned pip deps — key on the
+      # workflow file hash so a version bump busts the cache automatically).
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: pip-${{ runner.os }}-
+
       # Install (n)Migen / LiteX / Cores
       - name: Install LiteX
         run: |
           wget https://raw.githubusercontent.com/enjoy-digital/litex/master/litex_setup.py
           python3 litex_setup.py init install --user
+          # LUNA/Amaranth deps are required by boards using usb_acm UART (ex: orange_crab).
+          # litex_setup installs them optionally and swallows failures, so install explicitly.
+          # amaranth-yosys ships a Yosys binary (>= 0.40) that Amaranth's
+          # Verilog backend needs to emit the LUNA ACM core; Ubuntu 22.04's
+          # apt yosys (0.9) is too old to satisfy amaranth's version check.
+          pip3 install --user luna-usb==0.2.3 amaranth==0.5.8 amaranth-yosys
 
-      # Install RISC-V GCC
+      # Cache RISC-V toolchain (pinned SiFive v2020.12 tarball — immutable,
+      # so a static cache key is safe. On cache hit we skip the ~1-2 min
+      # download + extract below).
+      - name: Cache RISC-V toolchain
+        id: cache-riscv
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/riscv
+          key: riscv-sifive-v2020.12.8-ubuntu14
+
+      # Install RISC-V GCC (skipped on cache hit)
       - name: Install RISC-V GCC
+        if: steps.cache-riscv.outputs.cache-hit != 'true'
         run: |
           wget https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
           tar -xf $PWD/riscv64-*.tar.gz
           sudo mkdir /usr/local/riscv
           sudo cp -r $PWD/riscv64-*/* /usr/local/riscv
 
-      # Test
-      - name: Run Tests
+      # Warm SBT / VexRiscv Caches (run one real build so Scala dependency
+      # download + SpinalHDL compile happens once here instead of in every
+      # matrix shard). Shards using the default CPU config then hit the
+      # pregenerated Verilog directly; shards with other variants still
+      # benefit from the populated ~/.sbt / ~/.ivy2 / ~/.cache/coursier.
+      - name: Warm SBT / VexRiscv caches
         run: |
           export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
-          python3 -m unittest test.test_build
+          ./make.py --board=arty --cpu-count=1
+
+      # Pack Environment (the paths each consumer must restore)
+      - name: Pack environment
+        run: |
+          # Archive user-home bits: pip --user, SBT / Ivy / Coursier caches.
+          # Some of these may not exist if the warmup didn't trigger SBT — use
+          # a tolerant pattern via --ignore-failed-read.
+          tar czf /tmp/home.tgz \
+              --ignore-failed-read \
+              -C "$HOME" \
+              .local .sbt .ivy2 .cache/coursier
+          sudo tar czf /tmp/riscv.tgz   -C /usr/local riscv
+          # Keep .git dirs in the clones tarball: SpinalHDL/VexRiscv build.sbt
+          # shells out to `git rev-parse HEAD` during Scala compile and fails
+          # with exit 128 if the submodule checkouts aren't real git repos.
+          tar czf /tmp/litex-clones.tgz \
+              --exclude=linux-on-litex-vexriscv \
+              -C "$RUNNER_WORKSPACE" .
+          ls -lh /tmp/home.tgz /tmp/riscv.tgz /tmp/litex-clones.tgz
+
+      # Upload Environment Artifact
+      - name: Upload environment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: env
+          path: |
+            /tmp/home.tgz
+            /tmp/riscv.tgz
+            /tmp/litex-clones.tgz
+          retention-days: 1
+
+  # Build Boards (one matrix shard per board; fail-fast disabled so a single
+  # broken board doesn't cancel the rest). Each shard restores the setup
+  # artifact and only runs a slim apt install for host build tooling.
+  build:
+    needs: [discover, setup]
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        board: ${{ fromJson(needs.discover.outputs.boards) }}
+    steps:
+      # Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Tools (slim — just what's needed at build time; the rest
+      # rides along in the setup artifact)
+      - name: Install Tools
+        run: |
+          sudo apt update
+          sudo apt install -y --no-install-recommends \
+            build-essential python3 python3-pip python3-setuptools \
+            device-tree-compiler ninja-build
+
+      # Download / Restore Environment
+      - name: Download environment
+        uses: actions/download-artifact@v4
+        with:
+          name: env
+          path: /tmp
+      - name: Restore environment
+        run: |
+          tar xzf /tmp/home.tgz          -C "$HOME"
+          sudo tar xzf /tmp/riscv.tgz    -C /usr/local
+          tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
+
+      # Test (build this shard's board via LLV_BOARD)
+      - name: Build ${{ matrix.board }}
+        env:
+          LLV_BOARD: ${{ matrix.board }}
+        run: |
+          export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
+          python3 -m unittest -v test.test_build.TestBuild.test_boards
+
+  # CPU Variant Coverage (keep exercising arty at 1/2/4 cores and one AES/FPU
+  # variant in a separate job so it doesn't multiply the cost of the per-board
+  # matrix). Reuses the setup artifact. SBT is installed here because
+  # VexRiscv variants are not all pregenerated and may need SpinalHDL
+  # regeneration.
+  test-cpu-count:
+    needs: setup
+    runs-on: ubuntu-22.04
+    steps:
+      # Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Tools (slim + sbt/jdk for on-demand VexRiscv generation)
+      - name: Install Tools
+        run: |
+          sudo add-apt-repository -y ppa:openjdk-r/ppa
+          sudo apt update
+          sudo apt install -y --no-install-recommends \
+            build-essential python3 python3-pip python3-setuptools \
+            device-tree-compiler ninja-build curl apt-transport-https \
+            gnupg openjdk-8-jdk
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo -H gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import
+          sudo chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
+          sudo apt update
+          sudo apt -y install sbt
+
+      # Download / Restore Environment
+      - name: Download environment
+        uses: actions/download-artifact@v4
+        with:
+          name: env
+          path: /tmp
+      - name: Restore environment
+        run: |
+          tar xzf /tmp/home.tgz          -C "$HOME"
+          sudo tar xzf /tmp/riscv.tgz    -C /usr/local
+          tar xzf /tmp/litex-clones.tgz  -C "$RUNNER_WORKSPACE"
+
+      # Test
+      - name: Run CPU variant tests
+        run: |
+          export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
+          python3 -m unittest -v \
+            test.test_build.TestBuild.test_cpu_count \
+            test.test_build.TestBuild.test_cpu_variants

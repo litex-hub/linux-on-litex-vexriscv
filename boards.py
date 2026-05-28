@@ -353,6 +353,11 @@ class Qmtech_WuKong(Board):
 # MNT RKX7 support ---------------------------------------------------------------------------------
 
 class MNT_RKX7(Board):
+    # The mnt_rkx7 target enables ethernet with dynamic IP by default, which pulls
+    # in atoi/strtol from boot.c — symbols that are absent from LiteX's minimal
+    # libc (the default since 2026-03). Ethernet isn't wired up in this board's
+    # soc_capabilities anyway, so disable it at the target level to match intent.
+    soc_kwargs = {"with_ethernet": False}
     def __init__(self):
         from litex_boards.targets import mnt_rkx7
         Board.__init__(self, mnt_rkx7.BaseSoC, soc_capabilities={
@@ -437,7 +442,10 @@ class VersaECP5(Board):
 # ULX3S support ------------------------------------------------------------------------------------
 
 class ULX3S(Board):
-    soc_kwargs = {"l2_size" : 2048} # Use Wishbone and L2 for memory accesses.
+    soc_kwargs = {
+        "l2_size"                      : 2048, # Use Wishbone and L2 for memory accesses.
+        "video_framebuffer_fifo_depth" : 8192,
+    }
     def __init__(self):
         from litex_boards.targets import radiona_ulx3s
         Board.__init__(self, radiona_ulx3s.BaseSoC, soc_capabilities={
@@ -559,9 +567,10 @@ class Colorlight_i5(Board):
 
 class Colorlight_5A_75X(Board):
     soc_kwargs = {
-        "board"    : "5a-75b",
-        "revision" : "8.2",
-        "l2_size"  : 2048, # Use Wishbone and L2 for memory accesses.
+        "board"         : "5a-75b",
+        "revision"      : "8.2",
+        "with_uartbone" : False,
+        "l2_size"       : 2048, # Use Wishbone and L2 for memory accesses.
     }
     def __init__(self):
         from litex_boards.targets import colorlight_5a_75x
