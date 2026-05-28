@@ -162,10 +162,6 @@ def main():
             from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
-        if board_name in ["colorlight_i5"]:
-            from litex_boards.platforms.colorlight_i5 import _sdcard_pmod_io
-            board.platform.add_extension(_sdcard_pmod_io)
-
         if board_name in ["aesku40"]:
             from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)

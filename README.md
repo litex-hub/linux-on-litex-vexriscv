@@ -282,16 +282,6 @@ Once installed, build the bitstream with:
 $ ./make.py --board=XXYY --cpu-count=X --build
 ```
 
-Example for the popular Colorlight 5A-75X:
-```sh
-$ ./make.py --board=colorlight_5a_75x --build
-```
-
-Example for the Colorlight i9Plus:
-```sh
-$ ./make.py --board=colorlight_i9plus --build
-```
-
 > **Note:** \*=to select a different toolchain use the `--toolchain` option, i.e.:
 > ```
 > ./make.py --board=arty --toolchain=symbiflow --build
