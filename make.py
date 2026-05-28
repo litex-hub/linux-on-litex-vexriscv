@@ -54,11 +54,13 @@ def get_buildroot_base_defconfig():
 
 def get_buildroot_config_overrides(
     *,
-    with_usb_host = False,
-    with_aes      = False,
-    with_fpu      = False,
+    with_usb_host  = False,
+    with_aes       = False,
+    with_fpu       = False,
+    with_nfs_root  = False,
 ):
-    overrides = []
+    overrides              = []
+    linux_config_fragments = []
 
     if with_usb_host:
         overrides += [
@@ -69,9 +71,8 @@ def get_buildroot_config_overrides(
         ]
 
     if with_fpu:
-        linux_fpu_config = (
-            'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="'
-            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-fpu.config"'
+        linux_config_fragments.append(
+            "$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-fpu.config"
         )
         overrides += [
             "BR2_RISCV_ISA_CUSTOM_RVF=y",
@@ -80,13 +81,27 @@ def get_buildroot_config_overrides(
             "BR2_RISCV_ISA_RVD=y",
             "# BR2_RISCV_ABI_ILP32 is not set",
             "BR2_RISCV_ABI_ILP32D=y",
-            linux_fpu_config,
         ]
 
     if with_aes:
         overrides += [
             "BR2_PACKAGE_OPENSSL=y",
             "BR2_PACKAGE_VEXRISCV_AES=y",
+        ]
+
+    if with_nfs_root:
+        linux_config_fragments.append(
+            "$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux-nfsroot.config"
+        )
+        overrides += [
+            "BR2_TARGET_ROOTFS_TAR=y",
+        ]
+
+    if linux_config_fragments:
+        overrides += [
+            'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="{}"'.format(
+                " ".join(linux_config_fragments)
+            ),
         ]
 
     return overrides
@@ -128,6 +143,7 @@ def generate_buildroot_defconfig(
     with_usb_host = False,
     with_aes      = False,
     with_fpu      = False,
+    with_nfs_root = False,
 ):
     base_defconfig = get_buildroot_base_defconfig()
     base_path      = os.path.join(
@@ -143,11 +159,13 @@ def generate_buildroot_defconfig(
     insert_after = {
         "BR2_RISCV_ABI_ILP32D"                  : "BR2_RISCV_ABI_ILP32",
         "BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES": "BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE",
+        "BR2_TARGET_ROOTFS_TAR"                 : "BR2_TARGET_ROOTFS_EXT2_4",
     }
     for option in get_buildroot_config_overrides(
         with_usb_host = with_usb_host,
         with_aes      = with_aes,
         with_fpu      = with_fpu,
+        with_nfs_root = with_nfs_root,
     ):
         if option.startswith("# ") and option.endswith(" is not set"):
             unset_buildroot_config(config, option[2:-11])
@@ -189,8 +207,12 @@ def main():
     parser.add_argument("--spi-clk-freq",   default=1e6, type=int,       help="SPI clock frequency.")
     parser.add_argument("--fdtoverlays",    default="",                  help="Device Tree Overlays to apply.")
     parser.add_argument("--rootfs",         default="ram0",              help="Location of the RootFS.",
-        choices=["ram0", "mmcblk0p2"]
+        choices=["ram0", "mmcblk0p2", "nfs"]
     )
+    parser.add_argument("--nfs-root",       default="/srv/nfs/litex-vexriscv",
+        help="NFS exported root directory when using --rootfs=nfs.")
+    parser.add_argument("--nfs-options",    default="vers=3,tcp,nolock",
+        help="NFS mount options when using --rootfs=nfs.")
     parser.add_argument("soc_kwargs", nargs=argparse.REMAINDER)
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
@@ -207,6 +229,9 @@ def main():
         soc_kwargs = Board.soc_kwargs
         soc_kwargs.update(board.soc_kwargs)
         soc_kwargs.update(parse_kwargs(args.soc_kwargs))
+
+        if args.rootfs == "nfs" and "ethernet" not in board.soc_capabilities:
+            raise ValueError(f"Board {board_name} does not support Ethernet required by --rootfs=nfs")
 
         # CPU parameters ---------------------------------------------------------------------------
 
@@ -327,12 +352,19 @@ def main():
             with_usb_host = "usb_host" in board.soc_capabilities,
             with_aes      = VexRiscvSMP.aes_instruction,
             with_fpu      = VexRiscvSMP.with_fpu,
+            with_nfs_root = args.rootfs == "nfs",
         )
         print(f"Buildroot defconfig: {buildroot_defconfig_file}")
         print(f"Buildroot base defconfig: {buildroot_base_defconfig}")
 
         # DTS --------------------------------------------------------------------------------------
-        soc.generate_dts(board_name, args.rootfs)
+        soc.generate_dts(
+            board_name,
+            args.rootfs,
+            nfs_server  = args.remote_ip,
+            nfs_root    = args.nfs_root,
+            nfs_options = args.nfs_options,
+        )
         if hasattr(soc, "get_fdtoverlays"):
             fdtoverlays = soc.get_fdtoverlays(board_name, args.fdtoverlays)
         else:

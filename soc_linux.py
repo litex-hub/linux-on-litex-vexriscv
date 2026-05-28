@@ -69,7 +69,14 @@ def SoCLinux(soc_cls, **kwargs):
 
         # DTS generation ---------------------------------------------------------------------------
 
-        def generate_dts(self, board_name, rootfs="ram0"):
+        def generate_dts(
+            self,
+            board_name,
+            rootfs      = "ram0",
+            nfs_server  = None,
+            nfs_root    = None,
+            nfs_options = None,
+        ):
             json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             if rootfs == "ram0":
@@ -85,6 +92,16 @@ def SoCLinux(soc_cls, **kwargs):
                     polling     = False,
                     root_device = rootfs
                 )
+                if rootfs == "nfs":
+                    if nfs_server is None or nfs_root is None:
+                        raise ValueError("nfs_server and nfs_root are required for NFS rootfs")
+                    nfsroot = f"{nfs_server}:{nfs_root}"
+                    if nfs_options:
+                        nfsroot += f",{nfs_options}"
+                    dts_content = dts_content.replace(
+                        "rootwait root=/dev/nfs",
+                        f"root=/dev/nfs nfsroot={nfsroot}",
+                    )
                 dts_file.write(dts_content)
 
         # DTS compilation --------------------------------------------------------------------------

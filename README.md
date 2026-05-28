@@ -36,7 +36,7 @@ https://user-images.githubusercontent.com/1450143/156186677-87c40a39-2cf5-4ae0-9
 All boards supported in [LiteX-Boards](https://github.com/litex-hub/litex-boards) with...:
 
  - Enough FPGA logic to fit VexRiscv-SMP + LiteX SoC.
- - 32MB of RAM (reduced to 8MB when rootfs can be put on an SDCard).
+ - 32MB of RAM (reduced to 8MB when rootfs can be put on an SDCard or NFS).
  - A UART.
 
 ... could run this project.
@@ -341,6 +341,23 @@ Once the bitstream is loaded, the board will try to retrieve the files from the 
 
 The images will be loaded to RAM and you should see Linux booting :)
 
+### Boot with an NFS RootFS
+For boards with Ethernet support, Linux can mount the RootFS over NFS. Generate
+the SoC files with `--rootfs=nfs`, setting `--remote-ip` to the NFS server IP
+and `--nfs-root` to the exported directory:
+
+```sh
+$ ./make.py --board=XXYY --rootfs=nfs \
+            --local-ip=192.168.1.50 \
+            --remote-ip=192.168.1.100 \
+            --nfs-root=/srv/nfs/litex-vexriscv
+```
+
+This generates a matching `boot.json` without `rootfs.cpio` and adds the
+`root=/dev/nfs`/`nfsroot=` kernel boot arguments to the DTB. The default NFS
+mount options are `vers=3,tcp,nolock` and can be changed with
+`--nfs-options`.
+
 ### Load the Linux images to SDCard
 For boards with SDCard support, the Linux images can be loaded from it. You need to copy the files from *images* directory to your SDCard root directory (with a FAT partition).
 
@@ -362,14 +379,14 @@ $ make
 The binaries are located in *output/images/* and *images/*.
 
 For bitstreams built with board-specific Buildroot options, such as USB-host
-support or optional VexRiscv-SMP AES/FPU CPU features, use the matching
-Buildroot configuration so the generated toolchain, kernel and software agree
-with the hardware. Run `make.py` from the
+support, optional VexRiscv-SMP AES/FPU CPU features or NFS RootFS support,
+use the matching Buildroot configuration so the generated toolchain, kernel
+and software agree with the hardware. Run `make.py` from the
 `linux-on-litex-vexriscv` checkout, then run the Buildroot command from the
 Buildroot checkout:
 
 ```sh
-$ ./make.py --board=XXYY --aes-instruction=True --with-fpu --cpu-per-fpu=1
+$ ./make.py --board=XXYY --aes-instruction=True --with-fpu --cpu-per-fpu=1 --rootfs=nfs
 $ make BR2_EXTERNAL=../linux-on-litex-vexriscv/buildroot/ \
        BR2_DEFCONFIG=../linux-on-litex-vexriscv/build/XXYY/buildroot_defconfig \
        defconfig
@@ -377,8 +394,10 @@ $ make
 ```
 
 The generated `build/XXYY/buildroot_defconfig` starts from
-`litex_vexriscv_defconfig` and applies the USB-host, AES and FPU options
-selected by the board and on the `make.py` command line.
+`litex_vexriscv_defconfig` and applies the USB-host, AES, FPU and NFS RootFS
+options selected by the board and on the `make.py` command line. With
+`--rootfs=nfs`, Buildroot also generates `rootfs.tar`, which can be extracted
+into the exported NFS directory.
 
 [> Generating the Linux binaries with USB host support (optional)
 -----------------------------------------------------------------

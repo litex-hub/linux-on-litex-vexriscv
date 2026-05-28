@@ -62,21 +62,30 @@ class TestBuild(unittest.TestCase):
 
     def test_buildroot_defconfigs(self):
         configs = [
-            (False, False, False, "litex_vexriscv_defconfig"),
-            (False, True,  False, "litex_vexriscv_defconfig"),
-            (False, False, True,  "litex_vexriscv_defconfig"),
-            (False, True,  True,  "litex_vexriscv_defconfig"),
-            (True,  False, False, "litex_vexriscv_defconfig"),
-            (True,  True,  False, "litex_vexriscv_defconfig"),
-            (True,  False, True,  "litex_vexriscv_defconfig"),
-            (True,  True,  True,  "litex_vexriscv_defconfig"),
+            (False, False, False, False, "litex_vexriscv_defconfig"),
+            (False, True,  False, False, "litex_vexriscv_defconfig"),
+            (False, False, True,  False, "litex_vexriscv_defconfig"),
+            (False, True,  True,  False, "litex_vexriscv_defconfig"),
+            (True,  False, False, False, "litex_vexriscv_defconfig"),
+            (True,  True,  False, False, "litex_vexriscv_defconfig"),
+            (True,  False, True,  False, "litex_vexriscv_defconfig"),
+            (True,  True,  True,  False, "litex_vexriscv_defconfig"),
+            (False, False, False, True,  "litex_vexriscv_defconfig"),
+            (False, True,  False, True,  "litex_vexriscv_defconfig"),
+            (False, False, True,  True,  "litex_vexriscv_defconfig"),
+            (False, True,  True,  True,  "litex_vexriscv_defconfig"),
+            (True,  False, False, True,  "litex_vexriscv_defconfig"),
+            (True,  True,  False, True,  "litex_vexriscv_defconfig"),
+            (True,  False, True,  True,  "litex_vexriscv_defconfig"),
+            (True,  True,  True,  True,  "litex_vexriscv_defconfig"),
         ]
-        for with_usb_host, with_aes, with_fpu, expected_base in configs:
+        for with_usb_host, with_aes, with_fpu, with_nfs_root, expected_base in configs:
             with self.subTest(
                 base          = expected_base,
                 with_usb_host = with_usb_host,
                 with_aes      = with_aes,
                 with_fpu      = with_fpu,
+                with_nfs_root = with_nfs_root,
             ):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     generated = os.path.join(tmpdir, "buildroot_defconfig")
@@ -85,6 +94,7 @@ class TestBuild(unittest.TestCase):
                         with_usb_host = with_usb_host,
                         with_aes      = with_aes,
                         with_fpu      = with_fpu,
+                        with_nfs_root = with_nfs_root,
                     )
                     self.assertEqual(base, expected_base)
                     self.assertEqual(get_buildroot_base_defconfig(), expected_base)
@@ -93,18 +103,24 @@ class TestBuild(unittest.TestCase):
                         base_defconfig = f.read().rstrip()
                     with open(generated, encoding="utf-8") as f:
                         generated_defconfig = f.read()
-                    if not with_usb_host and not with_aes and not with_fpu:
+                    if not with_usb_host and not with_aes and not with_fpu and not with_nfs_root:
                         self.assertEqual(generated_defconfig, base_defconfig + "\n")
                     for override in get_buildroot_config_overrides(
                         with_usb_host = with_usb_host,
                         with_aes      = with_aes,
                         with_fpu      = with_fpu,
+                        with_nfs_root = with_nfs_root,
                     ):
                         self.assertIn(override, generated_defconfig)
                     if with_fpu:
                         self.assertNotIn("\nBR2_RISCV_ABI_ILP32=y\n", "\n" + generated_defconfig)
                     if not with_aes:
                         self.assertNotIn("\nBR2_PACKAGE_VEXRISCV_AES=y\n", "\n" + generated_defconfig)
+                    if with_nfs_root:
+                        self.assertIn("linux-nfsroot.config", generated_defconfig)
+                        self.assertIn("\nBR2_TARGET_ROOTFS_TAR=y\n", "\n" + generated_defconfig)
+                    if not with_fpu and not with_nfs_root:
+                        self.assertNotIn("BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES", generated_defconfig)
 
     def test_boards(self):
         excluded_boards = [
@@ -156,3 +172,42 @@ class TestBuild(unittest.TestCase):
                     with_fpu = True,
                 ),
             )
+
+    def test_nfs_rootfs(self):
+        self.board_build_test(
+            board="arty",
+            cpu_count=1,
+            extra_args=[
+                "--rootfs=nfs",
+                "--nfs-root=/srv/nfs/litex",
+            ],
+            expected_base      = "litex_vexriscv_defconfig",
+            expected_overrides = get_buildroot_config_overrides(with_nfs_root=True),
+        )
+
+        with open("build/arty/arty.dts", encoding="utf-8") as f:
+            dts = f.read()
+        self.assertIn("root=/dev/nfs", dts)
+        self.assertIn(
+            "nfsroot=192.168.1.100:/srv/nfs/litex,vers=3,tcp,nolock",
+            dts,
+        )
+        self.assertNotIn("linux,initrd-start", dts)
+
+        with open("images/boot.json", encoding="utf-8") as f:
+            boot = f.read()
+        self.assertNotIn("rootfs.cpio", boot)
+
+    def test_nfs_rootfs_requires_ethernet(self):
+        result = subprocess.run(
+            [
+                "./make.py",
+                "--board=arty_s7",
+                "--rootfs=nfs",
+            ],
+            check=False,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not support Ethernet", result.stderr)
