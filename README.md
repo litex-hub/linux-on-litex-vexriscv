@@ -312,6 +312,15 @@ Built-in commands:
 #
 ```
 
+[> Running with Renode
+----------------------
+Renode also provides a ready-to-run Linux-on-LiteX-VexRiscv script:
+https://github.com/renode/renode/blob/master/scripts/single-node/litex_vexriscv_linux.resc
+
+Use Renode's documentation for installation and launch instructions. The
+Renode script is useful for quick functional emulation, while `./sim.py`
+remains the LiteX/Verilator simulation flow used by this repository.
+
 [> Running on hardware
 ----------------------
 ### Build the FPGA bitstream (optional)
