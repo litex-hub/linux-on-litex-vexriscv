@@ -25,8 +25,7 @@ from litex.soc.interconnect           import wishbone
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from litedram import modules as litedram_modules
-from litedram.phy.model       import SDRAMPHYModel
-from litex.tools.litex_sim    import sdram_module_nphases, get_sdram_phy_settings
+from litedram.phy.model       import SDRAMPHYModel, sdram_module_nphases, get_sdram_phy_settings
 from litedram.core.controller import ControllerSettings
 
 from liteeth.phy.model import LiteEthPHYModel
