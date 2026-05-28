@@ -199,7 +199,7 @@ def main():
         }
 
         # Agilex uses quartus_syn/quartus_pfg instead of quartus_map/quartus_cpf
-        if board_name in ["atum_a3nano"]:
+        if board_name in ["atum_a3_nano"]:
             build_kwargs.update({
                 "synth_tool" : "quartus_syn",
                 "conv_tool"  : "quartus_pfg",
