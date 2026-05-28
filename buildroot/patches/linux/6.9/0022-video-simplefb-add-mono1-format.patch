@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: machdyne <97407671+machdyne@users.noreply.github.com>
+Date: Thu, 28 May 2026 12:00:00 +0200
+Subject: [PATCH] video: simplefb: add mono1 framebuffer format
+
+Add a 1bpp monochrome simple-framebuffer format for LiteX mono
+framebuffers.
+
+Use FB_VISUAL_MONO10 for the fbdev simplefb path since LiteX treats a set
+bit as a white pixel. Map the new simple-framebuffer format to DRM_FORMAT_R1
+so simpledrm can validate the same format through the shared format table.
+
+diff --git a/Documentation/devicetree/bindings/display/simple-framebuffer.yaml b/Documentation/devicetree/bindings/display/simple-framebuffer.yaml
+index f6e67d172b52..874cf8326ff7 100644
+--- a/Documentation/devicetree/bindings/display/simple-framebuffer.yaml
++++ b/Documentation/devicetree/bindings/display/simple-framebuffer.yaml
+@@ -99,6 +99,7 @@ properties:
+         * `a8b8g8r8` - 32-bit pixels, d[31:24]=a, d[23:16]=b, d[15:8]=g, d[7:0]=r
+         * `a8r8g8b8` - 32-bit pixels, d[31:24]=a, d[23:16]=r, d[15:8]=g, d[7:0]=b
++        * `mono1` - 1-bit monochrome pixels, d[0]=white/black
+         * `r5g6b5` - 16-bit pixels, d[15:11]=r, d[10:5]=g, d[4:0]=b
+         * `r5g5b5a1` - 16-bit pixels, d[15:11]=r, d[10:6]=g, d[5:1]=b d[1:0]=a
+         * `r8g8b8` - 24-bit pixels, d[23:16]=r, d[15:8]=g, d[7:0]=b
+         * `x1r5g5b5` - 16-bit pixels, d[14:10]=r, d[9:5]=g, d[4:0]=b
+@@ -110,6 +111,7 @@ properties:
+       - a2r10g10b10
+       - a8b8g8r8
+       - a8r8g8b8
++      - mono1
+       - r5g6b5
+       - r5g5b5a1
+       - r8g8b8
+diff --git a/drivers/video/fbdev/simplefb.c b/drivers/video/fbdev/simplefb.c
+index ebabfc2c326b..33ca99c9ea01 100644
+--- a/drivers/video/fbdev/simplefb.c
++++ b/drivers/video/fbdev/simplefb.c
+@@ -27,6 +27,13 @@ static const struct fb_fix_screeninfo simplefb_fix = {
+ 	.accel		= FB_ACCEL_NONE,
+ };
+ 
++static const struct fb_fix_screeninfo simplefb_fix_mono = {
++	.id		= "simple",
++	.type		= FB_TYPE_PACKED_PIXELS,
++	.visual		= FB_VISUAL_MONO10,
++	.accel		= FB_ACCEL_NONE,
++};
++
+ static const struct fb_var_screeninfo simplefb_var = {
+ 	.height		= -1,
+ 	.width		= -1,
+@@ -422,7 +429,11 @@ static int simplefb_probe(struct platform_device *pdev)
+ 
+ 	par = info->par;
+ 
+-	info->fix = simplefb_fix;
++	if (params.format->bits_per_pixel == 1)
++		info->fix = simplefb_fix_mono;
++	else
++		info->fix = simplefb_fix;
++
+ 	info->fix.smem_start = mem->start;
+ 	info->fix.smem_len = resource_size(mem);
+ 	info->fix.line_length = params.stride;
+diff --git a/include/linux/platform_data/simplefb.h b/include/linux/platform_data/simplefb.h
+index 6f28f30db2ac..54f93153ac43 100644
+--- a/include/linux/platform_data/simplefb.h
++++ b/include/linux/platform_data/simplefb.h
+@@ -25,6 +25,7 @@
+ 	{ "a8b8g8r8", 32, {0, 8}, {8, 8}, {16, 8}, {24, 8}, DRM_FORMAT_ABGR8888 }, \
+ 	{ "x2r10g10b10", 32, {20, 10}, {10, 10}, {0, 10}, {0, 0}, DRM_FORMAT_XRGB2101010 }, \
+ 	{ "a2r10g10b10", 32, {20, 10}, {10, 10}, {0, 10}, {30, 2}, DRM_FORMAT_ARGB2101010 }, \
++	{ "mono1", 1, {0, 1}, {0, 0}, {0, 0}, {0, 0}, DRM_FORMAT_R1 }, \
+ }
+ 
+ /*
