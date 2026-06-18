@@ -439,6 +439,26 @@ class VersaECP5(Board):
             "ethernet",
         })
 
+# Trenz TE0025 support -----------------------------------------------------------------------------
+
+class TrenzTel0025(Board):
+    soc_kwargs = {"sys_clk_freq": int(75e6)}
+    def __init__(self):
+        from litex_boards.targets import trenz_tel0025
+        Board.__init__(self, trenz_tel0025.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            # GPIOs
+            "leds",
+        }, soc_constants={
+            # Skip boot-time memtest/memspeed; HyperRAM is tested manually.
+            "CONFIG_MAIN_RAM_INIT": None,
+        })
+
+    def load(self, filename):
+        prog = self.platform.create_programmer(cable="ft2232_b")
+        prog.load_bitstream(filename)
+
 # ULX3S support ------------------------------------------------------------------------------------
 
 class ULX3S(Board):
