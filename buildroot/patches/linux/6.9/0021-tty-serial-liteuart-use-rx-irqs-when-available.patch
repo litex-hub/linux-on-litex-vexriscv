@@ -1,139 +1,27 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Florent Kermarrec <florent@enjoy-digital.fr>
-Date: Wed, 27 May 2026 21:45:00 +0200
-Subject: [PATCH] tty: serial: liteuart: use RX interrupts when available
+Date: Thu, 18 Jun 2026 17:42:00 +0200
+Subject: [PATCH] tty: serial: liteuart: fix IRQ cleanup and polling fallback
 
-The LiteUART RX path currently relies on periodic timer polling.
-With a small 16-byte RX FIFO this can lose pasted input under Linux
-before the timer gets scheduled, even though the generated LiteX device
-tree exposes a UART interrupt.
+Linux 6.9 already has LiteUART IRQ support, but a few details are unsafe:
 
-Use the RX interrupt when one is provided by the platform, while keeping
-the existing timer-polling path as a fallback for systems without an IRQ.
-Leave TX on the existing blocking path to keep the backport focused on RX
-loss.
+- stop_rx() always deletes the polling timer even when the port is IRQ driven.
+- the polling fallback passes struct uart_port to an IRQ helper that expects
+  struct liteuart_port.
+- free_irq() uses a different dev_id than request_irq().
 
-Also set platform driver data and remove the UART port on driver removal so
-the IRQ-backed startup/shutdown path is cleaned up correctly.
+Fix these so IRQ-backed and polling LiteUART ports use matching setup and
+teardown paths.
 
 Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
+---
+ drivers/tty/serial/liteuart.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/tty/serial/liteuart.c b/drivers/tty/serial/liteuart.c
 --- a/drivers/tty/serial/liteuart.c
 +++ b/drivers/tty/serial/liteuart.c
-@@ -5,12 +5,15 @@
-  * Copyright (C) 2019-2020 Antmicro <www.antmicro.com>
-  */
- 
-+#include <linux/bits.h>
- #include <linux/console.h>
-+#include <linux/interrupt.h>
- #include <linux/litex.h>
- #include <linux/module.h>
- #include <linux/of.h>
- #include <linux/of_address.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_device.h>
- #include <linux/serial.h>
- #include <linux/serial_core.h>
- #include <linux/slab.h>
-@@ -38,13 +41,14 @@
- #define OFF_EV_ENABLE	0x14
- 
- /* events */
--#define EV_TX		0x1
--#define EV_RX		0x2
-+#define EV_TX		BIT(0)
-+#define EV_RX		BIT(1)
- 
- struct liteuart_port {
- 	struct uart_port port;
- 	struct timer_list timer;
- 	u32 id;
-+	u8 irq_reg;
- };
- 
- #define to_liteuart_port(port)	container_of(port, struct liteuart_port, port)
-@@ -67,28 +71,69 @@ static struct uart_driver liteuart_driver = {
- #endif
- };
- 
--static void liteuart_timer(struct timer_list *t)
-+static void liteuart_update_irq_reg(struct uart_port *port, bool set, u8 mask)
-+{
-+	struct liteuart_port *uart = to_liteuart_port(port);
-+
-+	if (set)
-+		uart->irq_reg |= mask;
-+	else
-+		uart->irq_reg &= ~mask;
-+
-+	if (port->irq)
-+		litex_write8(port->membase + OFF_EV_ENABLE, uart->irq_reg);
-+}
-+
-+static void liteuart_rx_chars(struct uart_port *port)
- {
--	struct liteuart_port *uart = from_timer(uart, t, timer);
--	struct uart_port *port = &uart->port;
- 	unsigned char __iomem *membase = port->membase;
--	unsigned int flg = TTY_NORMAL;
-+	bool received = false;
- 	int ch;
--	unsigned long status;
- 
--	while ((status = !litex_read8(membase + OFF_RXEMPTY)) == 1) {
-+	while (!litex_read8(membase + OFF_RXEMPTY)) {
- 		ch = litex_read8(membase + OFF_RXTX);
- 		port->icount.rx++;
-+		received = true;
- 
- 		/* necessary for RXEMPTY to refresh its value */
--		litex_write8(membase + OFF_EV_PENDING, EV_TX | EV_RX);
-+		litex_write8(membase + OFF_EV_PENDING, EV_RX);
- 
- 		/* no overflow bits in status */
- 		if (!(uart_handle_sysrq_char(port, ch)))
--			uart_insert_char(port, status, 0, ch, flg);
-+			uart_insert_char(port, 1, 0, ch, TTY_NORMAL);
-+	}
- 
-+	if (received)
- 		tty_flip_buffer_push(&port->state->port);
--	}
-+}
-+
-+static irqreturn_t liteuart_interrupt(int irq, void *data)
-+{
-+	struct liteuart_port *uart = data;
-+	struct uart_port *port = &uart->port;
-+	unsigned long flags;
-+	u8 isr;
-+
-+	spin_lock_irqsave(&port->lock, flags);
-+
-+	isr = litex_read8(port->membase + OFF_EV_PENDING) & uart->irq_reg;
-+	if (isr & EV_RX)
-+		liteuart_rx_chars(port);
-+
-+	spin_unlock_irqrestore(&port->lock, flags);
-+
-+	return IRQ_RETVAL(isr);
-+}
-+
-+static void liteuart_timer(struct timer_list *t)
-+{
-+	struct liteuart_port *uart = from_timer(uart, t, timer);
-+	struct uart_port *port = &uart->port;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&port->lock, flags);
-+	liteuart_rx_chars(port);
-+	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	mod_timer(&uart->timer, jiffies + uart_poll_timeout(port));
- }
-@@ -150,8 +195,10 @@ static void liteuart_stop_rx(struct uart_port *port)
+@@ -84,8 +84,10 @@ static void liteuart_stop_rx(struct uart_port *port)
  {
  	struct liteuart_port *uart = to_liteuart_port(port);
  
@@ -145,101 +33,22 @@ diff --git a/drivers/tty/serial/liteuart.c b/drivers/tty/serial/liteuart.c
 +		del_timer(&uart->timer);
  }
  
- static void liteuart_break_ctl(struct uart_port *port, int break_state)
-@@ -162,9 +209,30 @@ static void liteuart_break_ctl(struct uart_port *port, int break_state)
- static int liteuart_startup(struct uart_port *port)
- {
- 	struct liteuart_port *uart = to_liteuart_port(port);
-+	unsigned long flags;
-+	int ret;
+ static void liteuart_rx_chars(struct uart_port *port)
+@@ -157,7 +160,7 @@ static void liteuart_timer(struct timer_list *t)
+ 	struct liteuart_port *uart = from_timer(uart, t, timer);
+ 	struct uart_port *port = &uart->port;
  
- 	/* disable events */
- 	litex_write8(port->membase + OFF_EV_ENABLE, 0);
-+	uart->irq_reg = 0;
-+
-+	if (port->irq) {
-+		ret = request_irq(port->irq, liteuart_interrupt, 0,
-+				  "liteuart", uart);
-+		if (ret) {
-+			dev_warn(port->dev,
-+				 "line %d irq %d failed: switch to polling\n",
-+				 port->line, port->irq);
-+			port->irq = 0;
-+		}
-+	}
-+
-+	if (port->irq) {
-+		spin_lock_irqsave(&port->lock, flags);
-+		liteuart_update_irq_reg(port, true, EV_RX);
-+		spin_unlock_irqrestore(&port->lock, flags);
-+		return 0;
-+	}
+-	liteuart_interrupt(0, port);
++	liteuart_interrupt(0, uart);
+ 	mod_timer(&uart->timer, jiffies + uart_poll_timeout(port));
+ }
  
- 	/* prepare timer for polling */
- 	timer_setup(&uart->timer, liteuart_timer, 0);
-@@ -175,6 +243,18 @@ static int liteuart_startup(struct uart_port *port)
+@@ -217,7 +220,7 @@ static void liteuart_shutdown(struct uart_port *port)
+ 	uart_port_unlock_irqrestore(port, flags);
  
- static void liteuart_shutdown(struct uart_port *port)
- {
-+	struct liteuart_port *uart = to_liteuart_port(port);
-+	unsigned long flags;
-+
-+	if (port->irq) {
-+		spin_lock_irqsave(&port->lock, flags);
-+		liteuart_update_irq_reg(port, false, EV_RX | EV_TX);
-+		spin_unlock_irqrestore(&port->lock, flags);
-+
+ 	if (port->irq)
+-		free_irq(port->irq, port);
 +		free_irq(port->irq, uart);
-+	} else {
-+		del_timer_sync(&uart->timer);
-+	}
+ 	else
+ 		del_timer_sync(&uart->timer);
  }
- 
- static void liteuart_set_termios(struct uart_port *port, struct ktermios *new,
-@@ -270,8 +350,16 @@ static int liteuart_probe(struct platform_device *pdev)
- 
- 	/* get membase */
- 	port->membase = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
--	if (IS_ERR(port->membase))
--		return PTR_ERR(port->membase);
-+	if (IS_ERR(port->membase)) {
-+		ret = PTR_ERR(port->membase);
-+		goto err_erase_id;
-+	}
-+
-+	ret = platform_get_irq_optional(pdev, 0);
-+	if (ret < 0 && ret != -ENXIO)
-+		goto err_erase_id;
-+	if (ret > 0)
-+		port->irq = ret;
- 
- 	/* values not from device tree */
- 	port->dev = &pdev->dev;
-@@ -285,7 +373,18 @@ static int liteuart_probe(struct platform_device *pdev)
- 	port->line = dev_id;
- 	spin_lock_init(&port->lock);
- 
--	return uart_add_one_port(&liteuart_driver, &uart->port);
-+	platform_set_drvdata(pdev, port);
-+
-+	ret = uart_add_one_port(&liteuart_driver, &uart->port);
-+	if (ret)
-+		goto err_erase_id;
-+
-+	return 0;
-+
-+err_erase_id:
-+	xa_erase(&liteuart_array, uart->id);
-+
-+	return ret;
- }
- 
- static int liteuart_remove(struct platform_device *pdev)
-@@ -293,6 +392,7 @@ static int liteuart_remove(struct platform_device *pdev)
- 	struct uart_port *port = platform_get_drvdata(pdev);
- 	struct liteuart_port *uart = to_liteuart_port(port);
- 
-+	uart_remove_one_port(&liteuart_driver, port);
- 	xa_erase(&liteuart_array, uart->id);
- 
- 	return 0;

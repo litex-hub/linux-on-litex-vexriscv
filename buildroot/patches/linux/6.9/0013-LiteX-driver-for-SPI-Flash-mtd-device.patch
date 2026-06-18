@@ -242,7 +242,7 @@ index 000000000000..82744962d938
 +
 +static int litex_spiflash_addr_width(struct spi_nor *nor)
 +{
-+	return nor->addr_width ? nor->addr_width : LITESPI_DEFAULT_ADDR_WIDTH;
++	return nor->addr_nbytes ? nor->addr_nbytes : LITESPI_DEFAULT_ADDR_WIDTH;
 +}
 +
 +static int litex_spiflash_exec_op(struct spi_nor *nor, u8 opcode,
