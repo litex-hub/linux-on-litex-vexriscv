@@ -80,7 +80,7 @@ def SoCLinux(soc_cls, **kwargs):
             json_src = os.path.join("build", board_name, "csr.json")
             dts = os.path.join("build", board_name, "{}.dts".format(board_name))
             if rootfs == "ram0":
-                initrd = os.path.join("images", "rootfs.cpio")
+                initrd = os.path.join("images", "rootfs.cpio.gz")
                 if not os.path.exists(initrd):
                     initrd = "enabled"
             else:

@@ -129,7 +129,7 @@ class SoCLinux(SoCCore):
     def generate_dts(self, board_name):
         json_src = os.path.join("build", board_name, "csr.json")
         dts = os.path.join("build", board_name, "{}.dts".format(board_name))
-        initrd = os.path.join("images", "rootfs.cpio")
+        initrd = os.path.join("images", "rootfs.cpio.gz")
         if not os.path.exists(initrd):
             initrd = "enabled"
         with open(json_src) as json_file, open(dts, "w") as dts_file:
