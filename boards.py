@@ -450,9 +450,6 @@ class TrenzTel0025(Board):
             "serial",
             # GPIOs
             "leds",
-        }, soc_constants={
-            # Skip boot-time memtest/memspeed; HyperRAM is tested manually.
-            "CONFIG_MAIN_RAM_INIT": None,
         })
 
     def load(self, filename):
