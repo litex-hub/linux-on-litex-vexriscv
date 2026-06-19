@@ -448,6 +448,7 @@ class TrenzTel0025(Board):
         Board.__init__(self, trenz_tel0025.BaseSoC, soc_capabilities={
             # Communication
             "serial",
+            "sdcard",
             # GPIOs
             "leds",
         })
