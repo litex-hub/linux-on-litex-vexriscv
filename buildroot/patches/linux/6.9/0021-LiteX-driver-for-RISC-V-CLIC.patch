@@ -1,0 +1,498 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Saket Sinha <saket.sinha89@gmail.com>
+Date: Mon, 5 Jan 2026 12:00:00 +0000
+Subject: [PATCH 21/21] LiteX: driver for RISC-V CLIC
+
+This patch adds support for the RISC-V Core-Local Interrupt Controller
+(CLIC) implementation in LiteX SoCs with VexRiscv cores.
+
+The CLIC provides vectored interrupt support with per-interrupt priority
+and enable controls. This driver supports both memory-mapped and CSR-based
+access to CLIC registers.
+
+Signed-off-by: Saket Sinha <saket.sinha89@gmail.com>
+---
+ drivers/irqchip/Kconfig          |  13 ++
+ drivers/irqchip/Makefile         |   1 +
+ drivers/irqchip/irq-litex-clic.c | 434 ++++++++++++++++++++++++++++++
+ 3 files changed, 448 insertions(+)
+ create mode 100644 drivers/irqchip/irq-litex-clic.c
+
+diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+index 5ceafd7fc2a6..8b3c4f2e1234 100644
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -618,6 +618,19 @@ config LITEX_VEXRISCV_CSR_PENDING
+ 	hex "VexRiscv's pending CSR index."
+ 	default 0xdc0
+ 
++config LITEX_CLIC
++	bool "LiteX RISC-V CLIC support"
++	depends on RISCV
++	depends on LITEX || COMPILE_TEST
++	select IRQ_DOMAIN
++	select IRQ_DOMAIN_HIERARCHY
++	help
++	  Support for the RISC-V Core-Local Interrupt Controller (CLIC)
++	  implementation in LiteX SoCs. CLIC provides vectored interrupts
++	  with per-interrupt priority and enable controls.
++
++	  If you don't know what to do here, say Y.
++
+ config LOONGSON_HTVEC
+ 	bool "Loongson HyperTransport Interrupt Vector Controller"
+ 	depends on MACH_LOONGSON64
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index b0a4fd7e167c..3c2f4e8b9123 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -101,6 +101,7 @@ obj-$(CONFIG_IMX_INTMUX)		+= irq-imx-intmux.o
+ obj-$(CONFIG_IMX_MU_MSI)		+= irq-imx-mu-msi.o
+ obj-$(CONFIG_MADERA_IRQ)		+= irq-madera.o
+ obj-$(CONFIG_LITEX_VEXRISCV_INTC)	+= irq-litex-vexriscv.o
++obj-$(CONFIG_LITEX_CLIC)		+= irq-litex-clic.o
+ obj-$(CONFIG_LS1X_IRQ)			+= irq-ls1x.o
+ obj-$(CONFIG_TI_SCI_INTR_IRQCHIP)	+= irq-ti-sci-intr.o
+ obj-$(CONFIG_TI_SCI_INTA_IRQCHIP)	+= irq-ti-sci-inta.o
+diff --git a/drivers/irqchip/irq-litex-clic.c b/drivers/irqchip/irq-litex-clic.c
+new file mode 100644
+index 000000000000..1234567890ab
+--- /dev/null
++++ b/drivers/irqchip/irq-litex-clic.c
+@@ -0,0 +1,434 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * RISC-V Core-Local Interrupt Controller (CLIC) driver for LiteX
++ *
++ * Copyright (C) 2026 LiteX Contributors
++ *
++ * This driver supports the CLIC implementation in LiteX SoCs with
++ * VexRiscv cores. The CLIC provides vectored interrupts with
++ * per-interrupt priority and enable controls.
++ */
++
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqchip/chained_irq.h>
++#include <linux/irqdomain.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/smp.h>
++#include <asm/csr.h>
++
++#define LITEX_CLIC_MAX_INTERRUPTS	64
++#define LITEX_CLIC_CSR_INTERRUPTS	16  /* First 16 interrupts accessible via CSR */
++
++/* CLIC Memory-mapped register offsets */
++#define CLIC_CFG			0x0000
++#define CLIC_INFO			0x0004
++#define CLIC_MTH			0x0040  /* M-mode threshold */
++#define CLIC_STH			0x0044  /* S-mode threshold */
++#define CLIC_UTH			0x0048  /* U-mode threshold */
++
++/* Per-interrupt register offsets (starting at 0x1000) */
++#define CLIC_INT_BASE			0x1000
++#define CLIC_INT_IP			0x0000  /* Interrupt pending */
++#define CLIC_INT_IE			0x0001  /* Interrupt enable */
++#define CLIC_INT_ATTR			0x0002  /* Interrupt attributes */
++#define CLIC_INT_CTL			0x0003  /* Interrupt control/priority */
++#define CLIC_INT_SIZE			0x0004  /* Size per interrupt */
++
++/* CLIC CSR base addresses for first 16 interrupts */
++#define CLIC_CSR_BASE			0xF0000000
++#define CLIC_CSR_IE(n)			(CLIC_CSR_BASE + (n) * 0x10 + 0x00)
++#define CLIC_CSR_IP(n)			(CLIC_CSR_BASE + (n) * 0x10 + 0x04)
++#define CLIC_CSR_PRIO(n)		(CLIC_CSR_BASE + (n) * 0x10 + 0x08)
++#define CLIC_CSR_ATTR(n)		(CLIC_CSR_BASE + (n) * 0x10 + 0x0C)
++
++/* CLIC Claim CSR - reading claims highest priority interrupt */
++#define CLIC_CSR_CLAIM			0xFC0
++
++/* Interrupt attribute bits */
++#define CLIC_ATTR_TRIG_MASK		0x03  /* Trigger type */
++#define CLIC_ATTR_TRIG_LEVEL_POS	0x00  /* Positive level */
++#define CLIC_ATTR_TRIG_LEVEL_NEG	0x02  /* Negative level */
++#define CLIC_ATTR_TRIG_EDGE_POS	0x01  /* Positive edge */
++#define CLIC_ATTR_TRIG_EDGE_NEG	0x03  /* Negative edge */
++#define CLIC_ATTR_SHV			0x01  /* Selective hardware vectoring */
++#define CLIC_ATTR_MODE_MASK		0xC0  /* Privilege mode */
++#define CLIC_ATTR_MODE_M		0xC0  /* Machine mode */
++#define CLIC_ATTR_MODE_S		0x40  /* Supervisor mode */
++#define CLIC_ATTR_MODE_U		0x00  /* User mode */
++
++struct litex_clic {
++	void __iomem *regs;
++	void __iomem *csr_regs;
++	struct irq_domain *domain;
++	u32 num_interrupts;
++	u32 num_harts;
++	raw_spinlock_t lock;
++	u32 hart_base;  /* Per-hart register offset */
++};
++
++static DEFINE_PER_CPU(struct litex_clic *, clic_per_cpu);
++
++/*
++ * CSR access helpers for CLIC registers
++ * These use absolute addresses in CSR space
++ */
++static inline u32 clic_csr_read(u32 addr)
++{
++	u32 val;
++	val = readl_relaxed((void __iomem *)addr);
++	return val;
++}
++
++static inline void clic_csr_write(u32 addr, u32 val)
++{
++	writel_relaxed(val, (void __iomem *)addr);
++}
++
++/* Read CLIC claim register to get highest priority pending interrupt */
++static inline u32 clic_claim_interrupt(void)
++{
++	u32 claim;
++	__asm__ __volatile__ ("csrr %0, %1" : "=r"(claim) : "i"(CLIC_CSR_CLAIM));
++	return claim;
++}
++
++/* Write CLIC claim register to complete interrupt */
++static inline void clic_complete_interrupt(u32 irq)
++{
++	__asm__ __volatile__ ("csrw %0, %1" :: "i"(CLIC_CSR_CLAIM), "r"(irq));
++}
++
++static void litex_clic_irq_mask(struct irq_data *d)
++{
++	struct litex_clic *clic = irq_data_get_irq_chip_data(d);
++	u32 hwirq = d->hwirq;
++	unsigned long flags;
++	void __iomem *ie_addr;
++	
++	raw_spin_lock_irqsave(&clic->lock, flags);
++	
++	if (hwirq < LITEX_CLIC_CSR_INTERRUPTS && clic->csr_regs) {
++		/* Use CSR interface for first 16 interrupts */
++		clic_csr_write(CLIC_CSR_IE(hwirq), 0);
++	} else {
++		/* Use memory-mapped interface */
++		ie_addr = clic->regs + CLIC_INT_BASE + 
++			  clic->hart_base + (hwirq * CLIC_INT_SIZE) + CLIC_INT_IE;
++		writeb(0, ie_addr);
++	}
++	
++	raw_spin_unlock_irqrestore(&clic->lock, flags);
++}
++
++static void litex_clic_irq_unmask(struct irq_data *d)
++{
++	struct litex_clic *clic = irq_data_get_irq_chip_data(d);
++	u32 hwirq = d->hwirq;
++	unsigned long flags;
++	void __iomem *ie_addr;
++	
++	raw_spin_lock_irqsave(&clic->lock, flags);
++	
++	if (hwirq < LITEX_CLIC_CSR_INTERRUPTS && clic->csr_regs) {
++		/* Use CSR interface for first 16 interrupts */
++		clic_csr_write(CLIC_CSR_IE(hwirq), 1);
++	} else {
++		/* Use memory-mapped interface */
++		ie_addr = clic->regs + CLIC_INT_BASE + 
++			  clic->hart_base + (hwirq * CLIC_INT_SIZE) + CLIC_INT_IE;
++		writeb(1, ie_addr);
++	}
++	
++	raw_spin_unlock_irqrestore(&clic->lock, flags);
++}
++
++static void litex_clic_irq_eoi(struct irq_data *d)
++{
++	struct litex_clic *clic = irq_data_get_irq_chip_data(d);
++	u32 hwirq = d->hwirq;
++	unsigned long flags;
++	void __iomem *ip_addr;
++	
++	raw_spin_lock_irqsave(&clic->lock, flags);
++	
++	if (hwirq < LITEX_CLIC_CSR_INTERRUPTS && clic->csr_regs) {
++		/* Clear pending bit via CSR for edge-triggered interrupts */
++		u32 attr = clic_csr_read(CLIC_CSR_ATTR(hwirq));
++		if (attr & 0x01) { /* Edge triggered */
++			clic_csr_write(CLIC_CSR_IP(hwirq), 0);
++		}
++	} else {
++		/* Use memory-mapped interface */
++		void __iomem *attr_addr = clic->regs + CLIC_INT_BASE + 
++					  clic->hart_base + (hwirq * CLIC_INT_SIZE) + CLIC_INT_ATTR;
++		u8 attr = readb(attr_addr);
++		
++		if (attr & 0x01) { /* Edge triggered */
++			ip_addr = clic->regs + CLIC_INT_BASE + 
++				  clic->hart_base + (hwirq * CLIC_INT_SIZE) + CLIC_INT_IP;
++			writeb(0, ip_addr);
++		}
++	}
++	
++	raw_spin_unlock_irqrestore(&clic->lock, flags);
++}
++
++static int litex_clic_set_type(struct irq_data *d, unsigned int flow_type)
++{
++	struct litex_clic *clic = irq_data_get_irq_chip_data(d);
++	u32 hwirq = d->hwirq;
++	unsigned long flags;
++	u8 attr = 0;
++	void __iomem *attr_addr;
++	
++	/* Map Linux IRQ types to CLIC trigger types */
++	switch (flow_type & IRQ_TYPE_SENSE_MASK) {
++	case IRQ_TYPE_LEVEL_HIGH:
++		attr = CLIC_ATTR_TRIG_LEVEL_POS;
++		break;
++	case IRQ_TYPE_LEVEL_LOW:
++		attr = CLIC_ATTR_TRIG_LEVEL_NEG;
++		break;
++	case IRQ_TYPE_EDGE_RISING:
++		attr = CLIC_ATTR_TRIG_EDGE_POS;
++		break;
++	case IRQ_TYPE_EDGE_FALLING:
++		attr = CLIC_ATTR_TRIG_EDGE_NEG;
++		break;
++	default:
++		return -EINVAL;
++	}
++	
++	/* Set to machine mode by default */
++	attr |= CLIC_ATTR_MODE_M;
++	
++	raw_spin_lock_irqsave(&clic->lock, flags);
++	
++	if (hwirq < LITEX_CLIC_CSR_INTERRUPTS && clic->csr_regs) {
++		clic_csr_write(CLIC_CSR_ATTR(hwirq), attr);
++	} else {
++		attr_addr = clic->regs + CLIC_INT_BASE + 
++			    clic->hart_base + (hwirq * CLIC_INT_SIZE) + CLIC_INT_ATTR;
++		writeb(attr, attr_addr);
++	}
++	
++	raw_spin_unlock_irqrestore(&clic->lock, flags);
++	
++	return 0;
++}
++
++static int litex_clic_set_affinity(struct irq_data *d,
++				   const struct cpumask *mask_val,
++				   bool force)
++{
++	/* CLIC is per-hart, so we don't support affinity changes */
++	return -EINVAL;
++}
++
++static struct irq_chip litex_clic_chip = {
++	.name		= "LITEX-CLIC",
++	.irq_mask	= litex_clic_irq_mask,
++	.irq_unmask	= litex_clic_irq_unmask,
++	.irq_eoi	= litex_clic_irq_eoi,
++	.irq_set_type	= litex_clic_set_type,
++	.irq_set_affinity = litex_clic_set_affinity,
++};
++
++static int litex_clic_domain_map(struct irq_domain *d, unsigned int irq,
++				 irq_hw_number_t hwirq)
++{
++	struct litex_clic *clic = d->host_data;
++	
++	irq_domain_set_info(d, irq, hwirq, &litex_clic_chip, clic,
++			    handle_fasteoi_irq, NULL, NULL);
++	
++	return 0;
++}
++
++static int litex_clic_domain_alloc(struct irq_domain *domain,
++				   unsigned int virq,
++				   unsigned int nr_irqs, void *data)
++{
++	struct litex_clic *clic = domain->host_data;
++	struct irq_fwspec *fwspec = data;
++	irq_hw_number_t hwirq;
++	
++	if (fwspec->param_count != 2)
++		return -EINVAL;
++	
++	hwirq = fwspec->param[0];
++	
++	if (hwirq >= clic->num_interrupts)
++		return -EINVAL;
++	
++	irq_domain_set_info(domain, virq, hwirq, &litex_clic_chip, clic,
++			    handle_fasteoi_irq, NULL, NULL);
++	
++	return 0;
++}
++
++static void litex_clic_domain_free(struct irq_domain *domain,
++				   unsigned int virq,
++				   unsigned int nr_irqs)
++{
++	struct irq_data *data = irq_domain_get_irq_data(domain, virq);
++	
++	irq_domain_reset_irq_data(data);
++}
++
++static const struct irq_domain_ops litex_clic_domain_ops = {
++	.map	= litex_clic_domain_map,
++	.alloc	= litex_clic_domain_alloc,
++	.free	= litex_clic_domain_free,
++};
++
++static void litex_clic_handle_irq(struct pt_regs *regs)
++{
++	struct litex_clic *clic = this_cpu_read(clic_per_cpu);
++	u32 claim;
++	
++	if (!clic)
++		return;
++	
++	/* Claim the highest priority interrupt */
++	claim = clic_claim_interrupt();
++	
++	/* Check if we got a valid interrupt ID */
++	if (claim == 0 || claim >= clic->num_interrupts) {
++		pr_warn("CLIC: Invalid claim value: 0x%x\n", claim);
++		return;
++	}
++	
++	/* Handle the interrupt through Linux IRQ subsystem */
++	generic_handle_domain_irq(clic->domain, claim);
++	
++	/* Complete the interrupt (hardware will clear pending bit) */
++	clic_complete_interrupt(claim);
++}
++
++static int __init litex_clic_init_hart(struct litex_clic *clic, int hart)
++{
++	void __iomem *thresh_addr;
++	int i;
++	
++	/* Calculate per-hart register offset if multi-hart */
++	if (clic->num_harts > 1)
++		clic->hart_base = hart * 0x1000;
++	else
++		clic->hart_base = 0;
++	
++	/* Set threshold to 0 (allow all interrupts) */
++	thresh_addr = clic->regs + CLIC_MTH + (hart * 4);
++	writel(0, thresh_addr);
++	
++	/* Initialize all interrupts to disabled state */
++	for (i = 0; i < clic->num_interrupts; i++) {
++		void __iomem *base = clic->regs + CLIC_INT_BASE + 
++				    clic->hart_base + (i * CLIC_INT_SIZE);
++		
++		writeb(0, base + CLIC_INT_IP);   /* Clear pending */
++		writeb(0, base + CLIC_INT_IE);   /* Disable */
++		writeb(CLIC_ATTR_MODE_M | CLIC_ATTR_TRIG_LEVEL_POS, 
++		       base + CLIC_INT_ATTR);    /* M-mode, positive level */
++		writeb(0, base + CLIC_INT_CTL);  /* Priority 0 */
++		
++		/* Also initialize CSR interface for first 16 interrupts */
++		if (i < LITEX_CLIC_CSR_INTERRUPTS && clic->csr_regs) {
++			clic_csr_write(CLIC_CSR_IP(i), 0);
++			clic_csr_write(CLIC_CSR_IE(i), 0);
++			clic_csr_write(CLIC_CSR_ATTR(i), 
++				      CLIC_ATTR_MODE_M | CLIC_ATTR_TRIG_LEVEL_POS);
++			clic_csr_write(CLIC_CSR_PRIO(i), 0);
++		}
++	}
++	
++	/* Set per-CPU CLIC pointer */
++	per_cpu(clic_per_cpu, hart) = clic;
++	
++	return 0;
++}
++
++static int __init litex_clic_probe(struct device_node *node,
++				   struct device_node *parent)
++{
++	struct litex_clic *clic;
++	struct resource res;
++	u32 num_interrupts = LITEX_CLIC_MAX_INTERRUPTS;
++	u32 num_harts = 1;
++	int ret;
++	
++	clic = kzalloc(sizeof(*clic), GFP_KERNEL);
++	if (!clic)
++		return -ENOMEM;
++	
++	/* Map main CLIC registers */
++	ret = of_address_to_resource(node, 0, &res);
++	if (ret) {
++		pr_err("CLIC: Failed to get memory resource\n");
++		goto err_free;
++	}
++	
++	clic->regs = ioremap(res.start, resource_size(&res));
++	if (!clic->regs) {
++		pr_err("CLIC: Failed to map registers\n");
++		ret = -ENOMEM;
++		goto err_free;
++	}
++	
++	/* Optionally map CSR interface region */
++	ret = of_address_to_resource(node, 1, &res);
++	if (ret == 0) {
++		clic->csr_regs = ioremap(res.start, resource_size(&res));
++		if (!clic->csr_regs)
++			pr_warn("CLIC: Failed to map CSR registers, using memory-mapped only\n");
++	}
++	
++	/* Get number of interrupts and harts from DT */
++	of_property_read_u32(node, "litex,num-interrupts", &num_interrupts);
++	of_property_read_u32(node, "litex,num-harts", &num_harts);
++	
++	clic->num_interrupts = num_interrupts;
++	clic->num_harts = num_harts;
++	raw_spin_lock_init(&clic->lock);
++	
++	/* Create IRQ domain */
++	clic->domain = irq_domain_add_linear(node, num_interrupts,
++					     &litex_clic_domain_ops, clic);
++	if (!clic->domain) {
++		pr_err("CLIC: Failed to create IRQ domain\n");
++		ret = -ENOMEM;
++		goto err_unmap;
++	}
++	
++	/* Initialize current hart (hart 0 for now) */
++	ret = litex_clic_init_hart(clic, 0);
++	if (ret) {
++		pr_err("CLIC: Failed to initialize hart 0\n");
++		goto err_domain;
++	}
++	
++	/* Register interrupt handler */
++	set_handle_irq(litex_clic_handle_irq);
++	
++	pr_info("CLIC: Initialized with %u interrupts for %u hart(s)\n",
++		num_interrupts, num_harts);
++	
++	return 0;
++
++err_domain:
++	irq_domain_remove(clic->domain);
++err_unmap:
++	if (clic->csr_regs)
++		iounmap(clic->csr_regs);
++	iounmap(clic->regs);
++err_free:
++	kfree(clic);
++	return ret;
++}
++
++IRQCHIP_DECLARE(litex_clic, "litex,clic", litex_clic_probe);
+-- 
+2.43.0
