@@ -35,6 +35,7 @@ if [ ! -e $DST_DTB ]; then
 fi
 
 if [ -e $DST_DTB ]; then
+	mkdir -p "${GENIMAGE_TMP}"
 	DTB_DTS=${GENIMAGE_TMP}/rv32.dts
 	dtc -I dtb -O dts -o $DTB_DTS $DST_DTB
 	INITRD_START=$(sed -n -E 's/.*linux,initrd-start[[:space:]]*=[[:space:]]*<([^>]+)>.*/\1/p' $DTB_DTS | head -n 1)
