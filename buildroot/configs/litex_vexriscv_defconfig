@@ -40,12 +40,17 @@ BR2_TARGET_ROOTFS_EXT2_4=y
 BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/post-image.sh"
 
 # Kernel header version
-BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_9=y
+# Kernel header version. MUST track BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE below.
+# BR2_KERNEL_HEADERS_AS_KERNEL=y (the kconfig default) builds the headers package
+# at the kernel's version, while this symbol declares the series the toolchain is
+# built against. support/scripts/check-kernel-headers.sh compares the two and
+# aborts the build if they disagree.
+BR2_PACKAGE_HOST_LINUX_HEADERS_CUSTOM_6_12=y
 
 # Kernel (mainline + patches set)
 BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_VERSION=y
-BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="6.9"
+BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="6.12"
 BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
 BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/litex_vexriscv/linux.config"
 BR2_LINUX_KERNEL_IMAGE=y
