@@ -1,0 +1,26 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] mtd: litex-spiflash: platform remove callback returns void
+
+platform_driver::remove became "void (*remove)(struct platform_device *)"
+in 6.11. Change the return type and drop the trailing "return 0;".
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/mtd/spi-nor/litex-spiflash.c
++++ b/drivers/mtd/spi-nor/litex-spiflash.c
+@@ -330,14 +330,12 @@
+ 	return 0;
+ }
+ 
+-static int litex_spi_flash_remove(struct platform_device *pdev)
++static void litex_spi_flash_remove(struct platform_device *pdev)
+ {
+ 	struct litex_spiflash *flash = platform_get_drvdata(pdev);
+ 
+ 	litex_spiflash_set_cs(flash, false);
+ 	mtd_device_unregister(&flash->nor.mtd);
+-
+-	return 0;
+ }
+ 
+ static const struct of_device_id litex_of_match[] = {

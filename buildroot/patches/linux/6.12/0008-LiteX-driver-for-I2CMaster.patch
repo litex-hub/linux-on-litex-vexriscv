@@ -11,17 +11,6 @@ Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
 FIXME: not updated or tested for 32-bit CSR data width, 64-bit CPU (gls)
 ---
- .../devicetree/bindings/i2c/litex,i2c.yaml    |  37 +++++
- drivers/i2c/busses/Kconfig                    |   7 +
- drivers/i2c/busses/Makefile                   |   1 +
- drivers/i2c/busses/i2c-litex.c                | 156 ++++++++++++++++++
- 4 files changed, 201 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/i2c/litex,i2c.yaml
- create mode 100644 drivers/i2c/busses/i2c-litex.c
-
-diff --git a/Documentation/devicetree/bindings/i2c/litex,i2c.yaml b/Documentation/devicetree/bindings/i2c/litex,i2c.yaml
-new file mode 100644
-index 000000000000..50780c121a3a
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/i2c/litex,i2c.yaml
 @@ -0,0 +1,37 @@
@@ -62,11 +51,9 @@ index 000000000000..50780c121a3a
 +            #address-cells = <1>;
 +            #size-cells = <0>;
 +    };
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 28eb48dd5b32..819fd76545d9 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -762,6 +762,13 @@ config I2C_KEMPLD
+@@ -801,6 +801,13 @@
  	  This driver can also be built as a module. If so, the module
  	  will be called i2c-kempld.
  
@@ -80,21 +67,16 @@ index 28eb48dd5b32..819fd76545d9 100644
  config I2C_LPC2K
  	tristate "I2C bus support for NXP LPC2K/LPC178x/18xx/43xx"
  	depends on OF && (ARCH_LPC18XX || COMPILE_TEST)
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index aa0ee8ecd6f2..ec7560aef59b 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -76,6 +76,7 @@ obj-$(CONFIG_I2C_IMX_LPI2C)	+= i2c-imx-lpi2c.o
- obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
+@@ -78,6 +78,7 @@
  obj-$(CONFIG_I2C_JZ4780)	+= i2c-jz4780.o
+ obj-$(CONFIG_I2C_KEBA)		+= i2c-keba.o
  obj-$(CONFIG_I2C_KEMPLD)	+= i2c-kempld.o
 +obj-$(CONFIG_I2C_LITEX)		+= i2c-litex.o
  obj-$(CONFIG_I2C_LPC2K)		+= i2c-lpc2k.o
  obj-$(CONFIG_I2C_LS2X)		+= i2c-ls2x.o
  obj-$(CONFIG_I2C_MESON)		+= i2c-meson.o
-diff --git a/drivers/i2c/busses/i2c-litex.c b/drivers/i2c/busses/i2c-litex.c
-new file mode 100644
-index 000000000000..7723a59a5ba3
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-litex.c
 @@ -0,0 +1,156 @@
@@ -254,6 +236,3 @@ index 000000000000..7723a59a5ba3
 +
 +MODULE_DESCRIPTION("LiteX bitbang I2C Bus driver");
 +MODULE_AUTHOR("Antmicro <www.antmicro.com>");
--- 
-2.43.0
-

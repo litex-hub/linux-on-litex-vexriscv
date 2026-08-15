@@ -1,0 +1,26 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] fpga: litex: platform remove callback returns void
+
+platform_driver::remove became "void (*remove)(struct platform_device *)"
+in 6.11. Change the return type and drop the trailing "return 0;".
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/fpga/litex-fpga.c
++++ b/drivers/fpga/litex-fpga.c
+@@ -133,14 +133,12 @@
+ 
+ /* Driver functions */
+ 
+-static int litex_fpga_remove(struct platform_device *pdev)
++static void litex_fpga_remove(struct platform_device *pdev)
+ {
+ 	struct fpga_manager *mgr;
+ 
+ 	mgr = platform_get_drvdata(pdev);
+ 	fpga_mgr_unregister(mgr);
+-
+-	return 0;
+ }
+ 
+ static int litex_fpga_probe(struct platform_device *pdev)

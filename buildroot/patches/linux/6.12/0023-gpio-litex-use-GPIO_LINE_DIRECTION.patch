@@ -1,0 +1,50 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] gpio: litex: use GPIO_LINE_DIRECTION_* constants
+
+GPIOF_DIR_IN and GPIOF_DIR_OUT were removed from the GPIO headers. Use the
+GPIO_LINE_DIRECTION_IN / GPIO_LINE_DIRECTION_OUT replacements, whose values
+(1 and 0) match the legacy constants exactly, so line polarity is preserved.
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/gpio/gpio-litex.c
++++ b/drivers/gpio/gpio-litex.c
+@@ -126,7 +126,7 @@
+ {
+ 	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
+ 
+-	if (gpio_s->port_direction != GPIOF_DIR_IN)
++	if (gpio_s->port_direction != GPIO_LINE_DIRECTION_IN)
+ 		return -ENOTSUPP;
+ 	else
+ 		return 0;
+@@ -137,7 +137,7 @@
+ {
+ 	struct litex_gpio *gpio_s = gpiochip_get_data(chip);
+ 
+-	if (gpio_s->port_direction != GPIOF_DIR_OUT)
++	if (gpio_s->port_direction != GPIO_LINE_DIRECTION_OUT)
+ 		return -ENOTSUPP;
+ 	else
+ 		return 0;
+@@ -394,9 +394,9 @@
+ 	}
+ 
+ 	if (!strcmp(dt_direction, "in"))
+-		gpio_s->port_direction = GPIOF_DIR_IN;
++		gpio_s->port_direction = GPIO_LINE_DIRECTION_IN;
+ 	else if (!strcmp(dt_direction, "out"))
+-		gpio_s->port_direction = GPIOF_DIR_OUT;
++		gpio_s->port_direction = GPIO_LINE_DIRECTION_OUT;
+ 	else
+ 		return -ENODEV;
+ 
+@@ -419,7 +419,7 @@
+ 	gpio_s->reg_span = (dt_ngpio + LITEX_SUBREG_SIZE_BIT - 1) /
+ 			   LITEX_SUBREG_SIZE_BIT;
+ 
+-	if (gpio_s->port_direction == GPIOF_DIR_IN) {
++	if (gpio_s->port_direction == GPIO_LINE_DIRECTION_IN) {
+ 		ret_i = litex_gpio_init_irq(pdev, gpio_s);
+ 		if (ret_i < 0)
+ 			return ret_i;

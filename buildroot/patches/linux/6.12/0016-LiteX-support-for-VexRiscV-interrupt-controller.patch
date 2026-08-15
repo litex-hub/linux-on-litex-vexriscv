@@ -9,17 +9,13 @@ Misc. fixes & maintenance: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Filip Kokosinski <fkokosinski@antmicro.com>
 Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- drivers/irqchip/Kconfig              |  21 ++++
- drivers/irqchip/Makefile             |   1 +
- drivers/irqchip/irq-litex-vexriscv.c | 169 +++++++++++++++++++++++++++
- 3 files changed, 191 insertions(+)
- create mode 100644 drivers/irqchip/irq-litex-vexriscv.c
+ drivers/irqchip/Kconfig               |  9 +++++++++
+ drivers/irqchip/Makefile              |  1 +
+ drivers/irqchip/irq-litex-vexriscv.c  | new
 
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index f7149d0f3d45..5ceafd7fc2a6 100644
 --- a/drivers/irqchip/Kconfig
 +++ b/drivers/irqchip/Kconfig
-@@ -597,6 +597,27 @@ config LOONGSON_HTPIC
+@@ -655,6 +655,27 @@
  	help
  	  Support for the Loongson-3 HyperTransport PIC Controller.
  
@@ -47,21 +43,16 @@ index f7149d0f3d45..5ceafd7fc2a6 100644
  config LOONGSON_HTVEC
  	bool "Loongson HyperTransport Interrupt Vector Controller"
  	depends on MACH_LOONGSON64
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index ffd945fe71aa..b0a4fd7e167c 100644
 --- a/drivers/irqchip/Makefile
 +++ b/drivers/irqchip/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_IMX_IRQSTEER)		+= irq-imx-irqsteer.o
+@@ -105,6 +105,7 @@
  obj-$(CONFIG_IMX_INTMUX)		+= irq-imx-intmux.o
  obj-$(CONFIG_IMX_MU_MSI)		+= irq-imx-mu-msi.o
  obj-$(CONFIG_MADERA_IRQ)		+= irq-madera.o
 +obj-$(CONFIG_LITEX_VEXRISCV_INTC)	+= irq-litex-vexriscv.o
+ obj-$(CONFIG_LAN966X_OIC)		+= irq-lan966x-oic.o
  obj-$(CONFIG_LS1X_IRQ)			+= irq-ls1x.o
  obj-$(CONFIG_TI_SCI_INTR_IRQCHIP)	+= irq-ti-sci-intr.o
- obj-$(CONFIG_TI_SCI_INTA_IRQCHIP)	+= irq-ti-sci-inta.o
-diff --git a/drivers/irqchip/irq-litex-vexriscv.c b/drivers/irqchip/irq-litex-vexriscv.c
-new file mode 100644
-index 000000000000..72d4a8be2d49
 --- /dev/null
 +++ b/drivers/irqchip/irq-litex-vexriscv.c
 @@ -0,0 +1,169 @@
@@ -234,6 +225,3 @@ index 000000000000..72d4a8be2d49
 +}
 +
 +IRQCHIP_DECLARE(litex_vexriscv_intc0, "vexriscv,intc0", litex_vexriscv_intc_init);
--- 
-2.43.0
-

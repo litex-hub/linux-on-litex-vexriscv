@@ -1,0 +1,101 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] pwm: litex: convert to devm_pwmchip_alloc()
+
+Since 6.11 a pwm_chip may no longer be embedded in the driver's private
+struct; it is allocated by devm_pwmchip_alloc() with the private data
+trailing it, and retrieved with pwmchip_get_drvdata(). Convert accordingly
+and use devm_pwmchip_add(), which makes the explicit remove callback
+redundant.
+
+This supersedes 0011, 0012 and 0020, all of which patch the old embedded
+pwm_chip pattern; they should be folded away once this is settled.
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/pwm/pwm-litex.c
++++ b/drivers/pwm/pwm-litex.c
+@@ -38,7 +38,6 @@
+ #define PERIOD_REG_OFFSET       0x14
+ 
+ struct litex_pwm_chip {
+-	struct pwm_chip chip;
+ 	unsigned int clock;
+ 	void __iomem *base;
+ 	void __iomem *width;
+@@ -46,7 +45,10 @@
+ 	void __iomem *enable;
+ };
+ 
+-#define to_litex_pwm_chip(_chip) container_of(_chip, struct litex_pwm_chip, chip)
++static inline struct litex_pwm_chip *to_litex_pwm_chip(struct pwm_chip *chip)
++{
++	return pwmchip_get_drvdata(chip);
++}
+ 
+ static int litex_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
+ 			   const struct pwm_state *state)
+@@ -85,6 +87,7 @@
+ {
+ 	struct device_node *node = pdev->dev.of_node;
+ 	struct litex_pwm_chip *litex;
++	struct pwm_chip *chip;
+ 	struct resource *res;
+ 	int ret;
+ 
+@@ -93,13 +96,14 @@
+ 		return -ENOMEM;
+ 	}
+ 
+-	litex = devm_kzalloc(&pdev->dev, sizeof(*litex), GFP_KERNEL);
+-
+-	if (!litex) {
++	chip = devm_pwmchip_alloc(&pdev->dev, 1, sizeof(*litex));
++	if (IS_ERR(chip)) {
+ 		dev_err(&pdev->dev, "Fail on memory allocation\n");
+-		return -ENOMEM;
++		return PTR_ERR(chip);
+ 	}
+ 
++	litex = to_litex_pwm_chip(chip);
++
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		dev_err(&pdev->dev, "Device is busy\n");
+@@ -122,26 +126,16 @@
+ 	litex->period = litex->base + PERIOD_REG_OFFSET;
+ 	litex->enable = litex->base + ENABLE_REG_OFFSET;
+ 
+-	litex->chip.dev = &pdev->dev;
+-	litex->chip.ops = &litex_pwm_ops;
+-	litex->chip.npwm = 1;
++	chip->ops = &litex_pwm_ops;
+ 
+-	ret = pwmchip_add(&litex->chip);
++	ret = devm_pwmchip_add(&pdev->dev, chip);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "Failed to add pwm chip %d\n", ret);
+ 		return ret;
+ 	}
+ 
+-	platform_set_drvdata(pdev, litex);
+-
+-	return 0;
+-}
+-
+-static int litex_pwm_remove(struct platform_device *pdev)
+-{
+-	struct litex_pwm_chip *litex = platform_get_drvdata(pdev);
++	platform_set_drvdata(pdev, chip);
+ 
+-	pwmchip_remove(&litex->chip);
+ 	return 0;
+ }
+ 
+@@ -157,7 +151,6 @@
+ 		.of_match_table   = of_match_ptr(litex_of_match)
+ 	},
+ 	.probe = litex_pwm_probe,
+-	.remove = litex_pwm_remove,
+ };
+ module_platform_driver(litex_pwm_driver);
+ 
