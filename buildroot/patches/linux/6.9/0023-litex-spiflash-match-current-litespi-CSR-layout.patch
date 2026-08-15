@@ -1,0 +1,89 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] mtd: spi-nor: litex-spiflash: match the current LiteSPI CSR layout
+
+The register offsets in this driver describe a LiteSPI core that LiteX no
+longer generates. Everything from master_cs onwards is shifted by 8, and two
+of the registers no longer exist. Current LiteX emits:
+
+    0x00  phy_clk_divisor
+    0x04  mmap_dummy_bits
+    0x08  master_cs
+    0x0c  master_phyconfig
+    0x10  master_rxtx
+    0x14  master_status
+
+whereas the driver used 0x00/0x04 then 0x10/0x14/0x18/0x1c/0x20.
+
+The practical effect is that litex_spiflash_tx() polls 0x1c for TX_READY.
+Nothing is mapped there, the bit never sets, and readx_poll_timeout() returns
+-ETIMEDOUT. That propagates out of spi_nor_scan(), so the flash is never
+identified and no MTD device is registered:
+
+    litex-spiflash f0004800.spiflash: SPI_NOR_SCAN FAILED
+    litex-spiflash f0004800.spiflash: probe with driver litex-spiflash failed
+                                      with error -110
+
+Two writes also landed on the wrong registers. Writing 0 to what the driver
+called PHY_MODE (0x04) actually clears mmap_dummy_bits, corrupting the
+memory-mapped read configuration; and the write to MASTER_CLK_DIVISOR (0x20)
+is past the end of the register block. Current LiteSPI has a single
+phy_clk_divisor and no separate master divisor, so that write is dropped
+rather than relocated, along with the now-unused local.
+
+Verified against the CSR map LiteX emits for an ALINX AX7035B: csr.csv gives
+spiflash_phy_clk_divisor 0xf0004800 through spiflash_master_status 0xf0004814.
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/mtd/spi-nor/litex-spiflash.c	2026-08-13 20:40:44.354140242 +0000
++++ b/drivers/mtd/spi-nor/litex-spiflash.c	2026-08-13 20:40:44.464601046 +0000
+@@ -30,13 +30,17 @@
+ #include <linux/jiffies.h>
+ #include <linux/litex.h>
+ 
++/*
++ * LiteSPI CSR layout. Keep in sync with the csr.csv LiteX emits for the
++ * "spiflash" block: the offsets below changed when the core dropped its
++ * separate PHY mode and master clock divisor registers.
++ */
+ #define LITESPI_PHY_CLK_DIVISOR_OFFSET		0x00
+-#define LITESPI_PHY_MODE_OFFSET			0x04
+-#define LITESPI_MASTER_CS_OFFSET		0x10
+-#define LITESPI_MASTER_PHYCONFIG_OFFSET		0x14
+-#define LITESPI_MASTER_RXTX_OFFSET		0x18
+-#define LITESPI_MASTER_STATUS_OFFSET		0x1c
+-#define LITESPI_MASTER_CLK_DIVISOR_OFFSET	0x20
++#define LITESPI_MMAP_DUMMY_BITS_OFFSET		0x04
++#define LITESPI_MASTER_CS_OFFSET		0x08
++#define LITESPI_MASTER_PHYCONFIG_OFFSET		0x0c
++#define LITESPI_MASTER_RXTX_OFFSET		0x10
++#define LITESPI_MASTER_STATUS_OFFSET		0x14
+ 
+ #define LITESPI_PHYCONFIG_LEN_SHIFT		0
+ #define LITESPI_PHYCONFIG_WIDTH_SHIFT		8
+@@ -78,19 +82,20 @@
+ 
+ static void litex_spiflash_init(struct litex_spiflash *flash)
+ {
+-	u8 clk_divisor;
+ 	u32 phyconfig;
+ 
+-	clk_divisor = litex_read8(flash->base + LITESPI_PHY_CLK_DIVISOR_OFFSET);
+ 	phyconfig = LITESPI_PHYCONFIG_LEN(LITESPI_XFER_BITS) |
+ 		    LITESPI_PHYCONFIG_WIDTH(LITESPI_SINGLE_WIDTH) |
+ 		    LITESPI_PHYCONFIG_MASK(LITESPI_SINGLE_MOSI_MASK);
+ 
+-	litex_write8(flash->base + LITESPI_PHY_MODE_OFFSET, 0);
++	/*
++	 * Do not write 0x04 here: it used to be a PHY mode register but is now
++	 * mmap_dummy_bits, and clearing it corrupts the memory-mapped read
++	 * configuration. The core also has a single phy_clk_divisor and no
++	 * separate master divisor, so the divisor is left as configured.
++	 */
+ 	litex_write32(flash->base + LITESPI_MASTER_PHYCONFIG_OFFSET,
+ 		      phyconfig);
+-	litex_write8(flash->base + LITESPI_MASTER_CLK_DIVISOR_OFFSET,
+-		     clk_divisor);
+ 	litex_spiflash_set_cs(flash, false);
+ }
+ 
