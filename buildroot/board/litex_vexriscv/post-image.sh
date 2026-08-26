@@ -40,7 +40,7 @@ if [ -e $DST_DTB ]; then
 	dtc -I dtb -O dts -o $DTB_DTS $DST_DTB
 	INITRD_START=$(sed -n -E 's/.*linux,initrd-start[[:space:]]*=[[:space:]]*<([^>]+)>.*/\1/p' $DTB_DTS | head -n 1)
 	if [ -n "$INITRD_START" ]; then
-		INITRD_SIZE=$(stat -c%s $DST_ROOTFS_CPIO_GZ)
+		INITRD_SIZE=$(stat -Lc%s "$DST_ROOTFS_CPIO_GZ")
 		INITRD_END=$(printf "0x%x" $((INITRD_START + INITRD_SIZE)))
 		sed -i -E "s/(linux,initrd-end[[:space:]]*=[[:space:]]*<)0x[0-9a-fA-F]+(>)/\1${INITRD_END}\2/" $DTB_DTS
 		dtc -I dts -O dtb -o $DST_DTB $DTB_DTS
