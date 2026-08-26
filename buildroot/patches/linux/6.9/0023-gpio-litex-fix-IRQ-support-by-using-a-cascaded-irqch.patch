@@ -1,0 +1,114 @@
+From: Richard Vodden <richard@vodden.com>
+Subject: [PATCH] gpio: litex: fix IRQ support by using a cascaded irqchip
+
+litex_gpio_init_irq() configures the gpio_irq_chip as BOTH a cascaded chip
+(parent_handler, which demuxes pending&enabled and calls generic_handle_irq)
+AND a hierarchical one (child_to_parent_hwirq, parent_domain). These are
+alternatives, and the hierarchical half is wrong for this hardware: a LiteX
+GPIO block raises a single interrupt for the whole block, not one per line.
+
+The consequences are severe because the driver also never sets
+child_offset_to_irq, so gpiolib substitutes gpiochip_child_offset_to_irq_noop(),
+which returns the offset unchanged. litex_gpio_child_to_parent_hwirq() therefore
+maps GPIO line N to *parent hwirq N* -- an arbitrary interrupt on the parent
+controller that has nothing to do with this device.
+
+On an AX7035B (LiteX/VexRiscv, PLIC) with four buttons on lines 0-3, requesting
+interrupt-driven gpio-keys allocates PLIC hwirqs 0,1,2,3 and so silently
+clobbers liteuart (hwirq 1) and liteeth (hwirq 3). The block's own interrupt,
+hwirq 4, is never used at all. The board boots as far as "Run /init as init
+process" and then produces no further output: the kernel is fine, but the
+console's interrupt has been taken away, and only printk -- which uses the
+polled console write path -- still works.
+
+Make the chip purely cascaded, which is what the hardware is:
+
+  - drop child_to_parent_hwirq/parent_domain/fwnode
+  - use handle_fasteoi_irq for the children, so the existing irq_eoi actually
+    runs and clears the pending bit
+  - drop irq_chip_eoi_parent() from the eoi: a cascaded child has no parent
+    irq_data
+  - drop irq_set_affinity: affinity belongs to the single parent interrupt,
+    not to individual GPIO lines
+
+Tested on an ALINX AX7035B: before, interrupt-driven gpio-keys made the board
+unbootable; after, all four keys deliver events and liteuart/liteeth keep their
+interrupts.
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+---
+--- a/drivers/gpio/gpio-litex.c
++++ b/drivers/gpio/gpio-litex.c
+@@ -242,18 +242,6 @@
+ 	litex_gpio_set_reg(gpio_s, LITEX_GPIO_PENDING_OFFSET, bit);
+ 
+ 	spin_unlock_irqrestore(&gpio_s->gpio_lock, flags);
+-
+-	irq_chip_eoi_parent(idata);
+-}
+-
+-static int litex_gpio_irq_set_affinity(struct irq_data *idata,
+-					const struct cpumask *dest,
+-					bool force)
+-{
+-	if (idata->parent_data)
+-		return irq_chip_set_affinity_parent(idata, dest, force);
+-
+-	return -EINVAL;
+ }
+ 
+ static const struct irq_chip litex_irq_chip = {
+@@ -262,23 +250,10 @@
+ 	.irq_mask		= litex_gpio_irq_mask,
+ 	.irq_set_type		= litex_gpio_irq_set_type,
+ 	.irq_eoi		= litex_gpio_irq_eoi,
+-	.irq_set_affinity	= litex_gpio_irq_set_affinity,
+ 	.flags			= IRQCHIP_IMMUTABLE,
+ 	GPIOCHIP_IRQ_RESOURCE_HELPERS,
+ };
+ 
+-static int litex_gpio_child_to_parent_hwirq(struct gpio_chip *chip,
+-					     unsigned int child,
+-					     unsigned int child_type,
+-					     unsigned int *parent,
+-					     unsigned int *parent_type)
+-{
+-	*parent = chip->irq.child_offset_to_irq(chip, child);
+-	*parent_type = child_type;
+-
+-	return 0;
+-}
+-
+ static void litex_gpio_irq(struct irq_desc *desc)
+ {
+ 	struct litex_gpio *gpio_s = irq_desc_get_handler_data(desc);
+@@ -313,7 +288,6 @@
+ {
+ 	struct device_node *node = pdev->dev.of_node;
+ 	struct device_node *irq_parent = of_irq_find_parent(node);
+-	struct irq_domain *parent_domain;
+ 	struct gpio_irq_chip *gichip;
+ 
+ 	if (!irq_parent) {
+@@ -321,8 +295,7 @@
+ 		return 0;
+ 	}
+ 
+-	parent_domain = irq_find_host(irq_parent);
+-	if (!parent_domain) {
++	if (!irq_find_host(irq_parent)) {
+ 		dev_err(&pdev->dev, "no IRQ parent domain\n");
+ 		return -ENODEV;
+ 	}
+@@ -334,10 +307,7 @@
+ 
+ 	gichip = &gpio_s->chip.irq;
+ 	gpio_irq_chip_set_chip(gichip, &litex_irq_chip);
+-	gichip->fwnode = of_node_to_fwnode(node);
+-	gichip->parent_domain = parent_domain;
+-	gichip->child_to_parent_hwirq = litex_gpio_child_to_parent_hwirq;
+-	gichip->handler = handle_bad_irq;
++	gichip->handler = handle_fasteoi_irq;
+ 	gichip->default_type = IRQ_TYPE_NONE;
+ 	gichip->parent_handler = litex_gpio_irq;
+ 	gichip->parent_handler_data = gpio_s;
