@@ -1,0 +1,53 @@
+litex-hwmon: fix XADC register offsets
+
+The XADC voltage rails all read wrong values: VCCINT reported VCCAUX's
+reading, VCCAUX reported the unrelated `eoc' status register (so ~0 V),
+and VCCBRAM read past the end of the CSR block entirely.
+
+The driver hardcoded the CSRs as 8 bytes apart:
+
+    TEMP 0x0   VCCINT 0x8   VCCAUX 0x10   VCCBRAM 0x18
+
+but each is a 16-bit CSR, and LiteX packs a 16-bit CSR into a single
+subregister -- _litex_num_subregs(2) == 1 -- so consecutive CSRs are
+LITEX_SUBREG_SIZE (4 bytes) apart. Confirmed against a generated csr.csv:
+
+    xadc_temperature 0xf0008800
+    xadc_vccint      0xf0008804
+    xadc_vccaux      0xf0008808
+    xadc_vccbram     0xf000880c
+    xadc_eoc         0xf0008810
+
+Temperature is at offset 0 under either assumption, which is why it kept
+working and hid the problem.
+
+Derive the offsets from LITEX_SUBREG_SIZE rather than restating a stride
+that has to be kept in sync by hand.
+
+Signed-off-by: Richard Vodden <richard@vodden.com>
+--- a/drivers/hwmon/litex-hwmon.c
++++ b/drivers/hwmon/litex-hwmon.c
+@@ -22,13 +22,19 @@
+ #include <linux/hwmon.h>
+ #include <linux/litex.h>
+ 
+-#define TEMP_REG_OFFSET               0x0
++/*
++ * Each of these CSRs is 16 bits wide, so LiteX packs it into a single subregister --
++ * _litex_num_subregs(2) == 1 -- and consecutive CSRs are therefore LITEX_SUBREG_SIZE (4 bytes)
++ * apart, not 8. Deriving the offsets from the header constant keeps them correct rather than
++ * restating a stride that has to be kept in sync by hand.
++ */
++#define TEMP_REG_OFFSET               (0 * LITEX_SUBREG_SIZE)
+ #define TEMP_REG_SIZE                 2
+-#define VCCINT_REG_OFFSET             0x8
++#define VCCINT_REG_OFFSET             (1 * LITEX_SUBREG_SIZE)
+ #define VCCINT_REG_SIZE               2
+-#define VCCAUX_REG_OFFSET             0x10
++#define VCCAUX_REG_OFFSET             (2 * LITEX_SUBREG_SIZE)
+ #define VCCAUX_REG_SIZE               2
+-#define VCCBRAM_REG_OFFSET            0x18
++#define VCCBRAM_REG_OFFSET            (3 * LITEX_SUBREG_SIZE)
+ #define VCCBRAM_REG_SIZE              2
+ 
+ #define CHANNEL_TEMP                  0
