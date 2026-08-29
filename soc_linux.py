@@ -18,6 +18,7 @@ from litex.soc.cores.gpio    import GPIOOut, GPIOIn
 from litex.soc.cores.spi     import SPIMaster
 from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.pwm     import PWM
+from litex.soc.cores.jtag import XilinxJTAG
 
 from litex.tools.litex_json2dts_linux import generate_dts
 
@@ -35,6 +36,62 @@ def SoCLinux(soc_cls, **kwargs):
             # SoC ----------------------------------------------------------------------------------
 
             soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
+
+            self.add_cpu_bscan_debug()
+
+        # CPU Debug (tunneled DTM over vendor BSCAN) --------------------------------------------
+
+        def add_cpu_bscan_debug(self):
+            """Bind the VexRiscv-SMP tunneled debug port to the FPGA's own JTAG chain.
+
+            With --with-privileged-debug and without --jtag-tap the RISC-V DTM is *tunneled*:
+            its debugPort_* signals carry a JTAG instruction/data path and expect a vendor
+            boundary-scan primitive to drive them.
+
+            On Xilinx that primitive is BSCANE2. JTAG_CHAIN=4 selects USER4, whose IR is 0x23.
+            The stock tunnel TCL works unmodified. USER1 is deliberately left free for jtagbone.
+            """
+            if not hasattr(self.cpu, "jtag_enable"):
+                return
+
+            primitive = XilinxJTAG.get_primitive(self.platform.device)
+            if primitive is None:
+                return
+
+            tck     = Signal()
+            tdi     = Signal()
+            sel     = Signal()
+            capture = Signal()
+            shift   = Signal()
+            update  = Signal()
+            reset   = Signal()
+
+            self.specials += Instance(primitive,
+                p_JTAG_CHAIN = 4,           # USER4 -> IR 0x23
+
+                o_TCK        = tck,
+                o_TDI        = tdi,
+                o_SEL        = sel,
+                o_CAPTURE    = capture,
+                o_SHIFT      = shift,
+                o_UPDATE     = update,
+                o_RESET      = reset,
+                i_TDO        = self.cpu.jtag_tdo,
+            )
+
+            self.comb += [
+                self.cpu.jtag_clk.eq(tck),
+                self.cpu.jtag_tdi.eq(tdi),
+                self.cpu.jtag_enable.eq(sel),
+                self.cpu.jtag_capture.eq(capture),
+                self.cpu.jtag_shift.eq(shift),
+                self.cpu.jtag_update.eq(update),
+                self.cpu.jtag_reset.eq(reset),
+            ]
+
+            # TCK arrives on a dedicated BSCAN route.
+            self.platform.add_period_constraint(tck, 1e9/10e6)
+            self.platform.add_false_path_constraints(self.crg.cd_sys.clk, tck)
 
         # RGB Led ----------------------------------------------------------------------------------
 
