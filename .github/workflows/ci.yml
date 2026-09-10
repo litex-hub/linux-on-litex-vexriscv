@@ -245,4 +245,6 @@ jobs:
           export PATH=/usr/local/riscv/bin:$HOME/.local/bin:$PATH
           python3 -m unittest -v \
             test.test_build.TestBuild.test_cpu_count \
-            test.test_build.TestBuild.test_cpu_variants
+            test.test_build.TestBuild.test_cpu_variants \
+            test.test_build.TestBuild.test_cpu_jtag_debug \
+            test.test_jtag_debug

@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 import os
+import json
 import shutil
 import tempfile
 import unittest
@@ -172,6 +173,36 @@ class TestBuild(unittest.TestCase):
                     with_fpu = True,
                 ),
             )
+
+    def test_cpu_jtag_debug(self):
+        for cpu_count in [1, 2]:
+            with self.subTest(cpu_count=cpu_count):
+                extra_args = [
+                    "--with-privileged-debug",
+                    "--hardware-breakpoints=2",
+                    "--with-cpu-jtag-debug",
+                ]
+                if cpu_count == 2:
+                    extra_args += ["--", "--with-jtagbone"]
+                self.board_build_test(
+                    board         = "arty",
+                    cpu_count     = cpu_count,
+                    extra_args    = extra_args,
+                    expected_base = "litex_vexriscv_defconfig",
+                )
+                with open("build/arty/gateware/arty.v", encoding="utf-8") as f:
+                    verilog = f.read()
+                self.assertRegex(verilog, r"BSCANE2\s*#\(")
+                self.assertRegex(verilog, r"\.JTAG_CHAIN\s*\(3'd4\)")
+                if cpu_count == 2:
+                    self.assertRegex(verilog, r"\.JTAG_CHAIN\s*\(1'd1\)")
+                for port in ["TCK", "TDI", "TDO", "SEL", "CAPTURE", "SHIFT", "UPDATE", "RESET"]:
+                    self.assertRegex(verilog, r"\." + port + r"\s*\(")
+                with open("build/arty/csr.json", encoding="utf-8") as f:
+                    constants = json.load(f)["constants"]
+                self.assertEqual(constants["config_cpu_count"], cpu_count)
+                self.assertEqual(constants["config_cpu_jtag_debug_chain"], 4)
+                self.assertEqual(constants["config_cpu_jtag_debug_clk_freq"], 10000000)
 
     def test_nfs_rootfs(self):
         self.board_build_test(

@@ -13,7 +13,7 @@ import argparse
 import shutil
 
 from litex.soc.integration.builder import Builder
-from litex.soc.integration.soc import SoCBusHandler
+from litex.soc.integration.soc import LiteXSoC, SoCBusHandler
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from boards import *
@@ -202,6 +202,12 @@ def main():
     parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
     parser.add_argument("--flash",          action="store_true",         help="Flash bitstream/images (to Flash).")
     parser.add_argument("--doc",            action="store_true",         help="Build documentation.")
+    parser.add_argument("--with-cpu-jtag-debug", action="store_true",
+        help="Connect CPU debug to a Xilinx USER chain (requires --with-privileged-debug).")
+    parser.add_argument("--cpu-jtag-debug-chain", default=4, type=int, choices=range(1, 5),
+        help="CPU debug USER chain index (default: 4).")
+    parser.add_argument("--cpu-jtag-debug-clk-freq", default=10e6, type=float,
+        help="Maximum CPU debug TCK frequency for timing analysis (Hz).")
     parser.add_argument("--local-ip",       default="192.168.1.50",      help="Local IP address.")
     parser.add_argument("--remote-ip",      default="192.168.1.100",     help="Remote IP address of TFTP server.")
     parser.add_argument("--spi-data-width", default=8,   type=int,       help="SPI data width (max bits per xfer).")
@@ -217,6 +223,14 @@ def main():
     parser.add_argument("soc_kwargs", nargs=argparse.REMAINDER)
     VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
+
+    if args.with_cpu_jtag_debug:
+        if not args.with_privileged_debug:
+            parser.error("--with-cpu-jtag-debug requires --with-privileged-debug")
+        if args.jtag_tap:
+            parser.error("--with-cpu-jtag-debug cannot be combined with --jtag-tap")
+        if not hasattr(LiteXSoC, "add_cpu_jtag_debug"):
+            parser.error("--with-cpu-jtag-debug requires a newer LiteX; update LiteX first")
 
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
@@ -249,6 +263,12 @@ def main():
         VexRiscvSMP.args_read(args)
 
         # SoC parameters ---------------------------------------------------------------------------
+        if args.with_cpu_jtag_debug:
+            soc_kwargs.update(
+                with_cpu_jtag_debug     = True,
+                cpu_jtag_debug_chain    = args.cpu_jtag_debug_chain,
+                cpu_jtag_debug_clk_freq = args.cpu_jtag_debug_clk_freq,
+            )
         if args.device is not None:
             soc_kwargs.update(device=args.device)
         if args.variant is not None:

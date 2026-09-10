@@ -198,10 +198,44 @@ https://github.com/enjoy-digital/litex/wiki/JTAG-GDB-Debugging-with-VexRiscv-SMP
 
 In this project, `--with-privileged-debug` enables the VexRiscv-SMP official
 RISC-V debug logic and `--hardware-breakpoints=N` selects the number of
-hardware breakpoints. The JTAG connection itself remains target/board
-specific: for Xilinx BSCANE/internal JTAG, keep the default tunneled JTAG
-interface and connect it as shown in the LiteX wiki; use `--jtag-tap` only
-when exposing a full JTAG TAP through simulation or external pins.
+hardware breakpoints. On supported Xilinx FPGAs, `--with-cpu-jtag-debug`
+connects this debug interface to the FPGA's own JTAG USER chain through
+LiteX. For Arty and its onboard USB-JTAG cable:
+
+```sh
+./make.py --board=arty --cpu-count=1 --with-privileged-debug \
+    --hardware-breakpoints=2 --with-cpu-jtag-debug --build --load
+```
+
+This requires a LiteX version providing `LiteXSoC.add_cpu_jtag_debug`.
+The transport is explicit: `--with-privileged-debug` alone does
+not add a USER-chain connection. Use `--jtag-tap` only when exposing a full
+JTAG TAP through simulation or external pins; it cannot be combined with
+`--with-cpu-jtag-debug`.
+
+The default is USER4, leaving USER1 available for JTAGBone or JTAG UART.
+`--cpu-jtag-debug-chain=N` selects another chain, and LiteX rejects chain
+collisions. `--cpu-jtag-debug-clk-freq=10e6` sets the maximum TCK frequency
+for timing analysis; configure the OpenOCD cable speed at or below that
+limit. For Arty, USER4 is IR `0x23`. Use the FPGA TAP and tunnel setup from
+the wiki guide:
+
+```sh
+openocd -f digilent_arty.cfg -c 'set TAP_NAME xc7.tap' \
+    -f riscv_jtag_tunneled.tcl
+riscv64-unknown-elf-gdb build/arty/software/bios/bios.elf \
+    -ex 'target extended-remote localhost:3333'
+```
+
+Both configuration files are described in the guide. Set `RISCV_COUNT`
+to match `--cpu-count` for multiple harts. A different USER chain requires
+a matching OpenOCD tunnel IR; the encoding depends on the FPGA TAP.
+JTAGBone and OpenOCD can share a cable by taking turns using it.
+
+The LiteX helper currently supports Xilinx BSCAN primitives; Zynq/ZynqMP
+devices with delayed BSCAN TDI and other FPGA vendors are rejected. See
+the [LiteX CPU JTAG documentation](https://github.com/enjoy-digital/litex/blob/master/doc/cpu_jtag_debug.md)
+for device and timing details.
 
 The older custom VexRiscv debug plugin requires the SpinalHDL OpenOCD fork:
 https://github.com/SpinalHDL/openocd_riscv
