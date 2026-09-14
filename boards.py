@@ -825,6 +825,19 @@ class TitaniumTi60F225DevKit(Board):
 # Gowin Boards
 #---------------------------------------------------------------------------------------------------
 
+# Sipeed Tang Mega 138K Pro support ----------------------------------------------------------------
+
+class Sipeed_tang_mega_138k_pro(Board):
+    def __init__(self):
+        from litex_boards.targets import sipeed_tang_mega_138k_pro
+        Board.__init__(self, sipeed_tang_mega_138k_pro.BaseSoC, soc_capabilities={
+            # Communication
+            "serial",
+            "ethernet",
+            # GPIOs
+            "leds",
+        })
+
 # Sipeed Tang Nano 20K support ---------------------------------------------------------------------
 
 class Sipeed_tang_nano_20k(Board):
