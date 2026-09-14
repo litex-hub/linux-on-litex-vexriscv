@@ -310,6 +310,7 @@ class AlveoU280(Board):
 # AlveoU250 support -------------------------------------------------------------------------------
 
 class AlveoU250(Board):
+    soc_kwargs = {"l2_size" : 8192} # Use full-word DDR4 writes; the board has no data-mask pads.
     def __init__(self):
         from litex_boards.targets import xilinx_alveo_u250
         Board.__init__(self, xilinx_alveo_u250.BaseSoC, soc_capabilities={
