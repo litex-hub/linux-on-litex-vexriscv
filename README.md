@@ -410,22 +410,6 @@ Once the bitstream is loaded, the board will try to retrieve the files from the 
 
 The images will be loaded to RAM and you should see Linux booting :)
 
-#### Sipeed Tang Mega 138K Pro
-
-The board uses VexRiscv-SMP, the onboard 1 GiB DDR3, serial, Ethernet, and LEDs.
-The default Ethernet interface is the RJ45 RGMII port. To use a 1000BASE-X
-module in SFP-0 instead:
-
-```sh
-./make.py --board=sipeed_tang_mega_138k_pro \
-    --remote-ip=192.168.1.100 --build --load -- --eth-phy=1000basex
-```
-
-Replace `192.168.1.100` with the TFTP server's address. SFP-0 is the target's
-default SFP port. Copy the Linux images, `boot.json`, and the generated
-`images/rv32.dtb` to the TFTP root, then run `netboot` at the BIOS prompt.
-The board address defaults to `192.168.1.50`.
-
 ### Boot with an NFS RootFS
 For boards with Ethernet support, Linux can mount the RootFS over NFS. Generate
 the SoC files with `--rootfs=nfs`, setting `--remote-ip` to the NFS server IP
