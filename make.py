@@ -55,7 +55,7 @@ def get_buildroot_base_defconfig():
 
 def get_buildroot_config_overrides(
     *,
-    cpu_type      = "vexriscv_smp",
+    cpu_type       = "vexriscv_smp",
     with_usb_host  = False,
     with_aes       = False,
     with_fpu       = False,

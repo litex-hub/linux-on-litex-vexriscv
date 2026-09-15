@@ -1,10 +1,14 @@
 From: Florent Kermarrec <florent@enjoy-digital.fr>
-Subject: [PATCH] generic: Support the Gowin AE350 cache and atomic requirements
+Subject: [PATCH] generic: Support the Gowin AE350 CPU requirements
 
 Initialize the Gowin AE350 caches before the firmware relocation lottery,
 preserving dirty data if the loader enabled the data cache. Preload the
 target cache line before atomic operations. LR/SC retries must repeat the
 preload. Avoid the GCC atomic builtin where it would bypass this sequence.
+
+Disable branch prediction on this CPU: top-down virtual-memory workloads
+can stop making progress with MMISC_CTL.BRPE enabled. Clearing this bit
+restores progress without changing the page tables or cache settings.
 
 Provide an opt-in generic-platform configuration for the single-hart
 32-bit CPU, using its PLIC and PLMT and the LiteX UART. The bootloader
@@ -14,11 +18,13 @@ Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
 
 --- a/firmware/fw_base.S
 +++ b/firmware/fw_base.S
-@@ -47,6 +47,21 @@
+@@ -47,6 +47,23 @@
  	.globl _start
  	.globl _start_warm
  _start:
 +#ifdef CONFIG_PLATFORM_GOWIN_AE350
++	/* Avoid branch-prediction stalls with virtual-memory workloads. */
++	csrci	0x7d0, 8	/* MMISC_CTL: disable BRPE. */
 +	/* Initialize the AE350 caches before the atomic lottery. */
 +	li	t0, 6		/* L1D write back and invalidate all. */
 +	csrw	0x7cc, t0	/* MCCTL command. */
@@ -36,7 +42,7 @@ Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
  	/* Find preferred boot HART id */
  	MOV_3R	s0, a0, s1, a1, s2, a2
  	call	fw_boot_hart
-@@ -60,6 +75,10 @@
+@@ -60,6 +77,10 @@
  	/* Jump to relocation wait loop if we don't get relocation lottery */
  	lla	a6, _relocate_lottery
  	li	a7, 1

@@ -52,9 +52,11 @@ separate review; the profile does not make arbitrary native AMOs safe.
 
 The [Andes 2X MMU workaround](https://github.com/andestech/linux/blob/7908d1aed3dbeea4173b92f90d67cf300d29f633/arch/riscv/errata/andes/errata.c)
 synchronizes page-table writes with a walker that does not snoop L1D. The kernel
-retains normal ASIDs and the standard RISC-V timer driver. Bottom-up mmap is
-selected through `vm.legacy_va_layout=1`; ASLR remains enabled. The cause of the
-observed stalls with the default top-down layout is still unresolved.
+retains normal ASIDs, the standard RISC-V timer driver, and the default
+top-down mmap layout with ASLR enabled. OpenSBI disables branch prediction
+(`MMISC_CTL.BRPE`): enabling it on the tested CPU causes virtual-memory
+workloads to stop making progress. Clearing only this bit restores execution
+on the same running system, without changing cache or MMU settings.
 
 LiteX UART and Ethernet use polling because their interrupt signals are not
 connected to this hard CPU. Its internal PLMT supplies timer interrupts. All
