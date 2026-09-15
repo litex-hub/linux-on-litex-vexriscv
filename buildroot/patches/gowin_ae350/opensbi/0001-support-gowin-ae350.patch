@@ -1,0 +1,181 @@
+From: Florent Kermarrec <florent@enjoy-digital.fr>
+Subject: [PATCH] generic: Support the Gowin AE350 CPU requirements
+
+Initialize the Gowin AE350 caches before the firmware relocation lottery,
+preserving dirty data if the loader enabled the data cache. Preload the
+target cache line before atomic operations. LR/SC retries must repeat the
+preload. Avoid the GCC atomic builtin where it would bypass this sequence.
+
+Disable branch prediction on this CPU: top-down virtual-memory workloads
+can stop making progress with MMISC_CTL.BRPE enabled. Clearing this bit
+restores progress without changing the page tables or cache settings.
+
+Provide an opt-in generic-platform configuration for the single-hart
+32-bit CPU, using its PLIC and PLMT and the LiteX UART. The bootloader
+passes the hart ID and DTB through the normal OpenSBI entry arguments.
+
+Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
+
+--- a/firmware/fw_base.S
++++ b/firmware/fw_base.S
+@@ -47,6 +47,23 @@
+ 	.globl _start
+ 	.globl _start_warm
+ _start:
++#ifdef CONFIG_PLATFORM_GOWIN_AE350
++	/* Avoid branch-prediction stalls with virtual-memory workloads. */
++	csrci	0x7d0, 8	/* MMISC_CTL: disable BRPE. */
++	/* Initialize the AE350 caches before the atomic lottery. */
++	li	t0, 6		/* L1D write back and invalidate all. */
++	csrw	0x7cc, t0	/* MCCTL command. */
++	li	t0, 0
++	li	t1, 32768	/* 32 KiB L1I, 32-byte lines. */
++	li	t2, 24		/* L1I invalidate by index. */
++1:	csrw	0x7cb, t0	/* MCCTL address. */
++	csrw	0x7cc, t2
++	addi	t0, t0, 32
++	bltu	t0, t1, 1b
++	fence.i
++	csrsi	0x7ca, 3	/* MCACHE_CTL: enable L1I and L1D. */
++	csrsi	0x7d0, 4	/* MMISC_CTL: standard RISC-V compliance. */
++#endif
+ 	/* Find preferred boot HART id */
+ 	MOV_3R	s0, a0, s1, a1, s2, a2
+ 	call	fw_boot_hart
+@@ -60,6 +77,10 @@
+ 	/* Jump to relocation wait loop if we don't get relocation lottery */
+ 	lla	a6, _relocate_lottery
+ 	li	a7, 1
++#ifdef CONFIG_PLATFORM_GOWIN_AE350
++	lw	zero, (a6)
++	fence	r, rw
++#endif
+ 	amoadd.w a6, a7, (a6)
+ 	bnez	a6, _wait_relocate_copy_done
+ 
+--- a/include/sbi/riscv_atomic.h
++++ b/include/sbi/riscv_atomic.h
+@@ -9,6 +9,13 @@
+ 
+ #ifndef __RISCV_ATOMIC_H__
+ #define __RISCV_ATOMIC_H__
++
++/* AE350 atomics need the target cache line present before the operation. */
++#ifdef CONFIG_PLATFORM_GOWIN_AE350
++#define RISCV_ATOMIC_PRELOAD(addr) "lw zero, " addr "\n\tfence r, rw\n\t"
++#else
++#define RISCV_ATOMIC_PRELOAD(addr) ""
++#endif
+ 
+ typedef struct {
+ 	volatile long counter;
+--- a/lib/sbi/riscv_atomic.c
++++ b/lib/sbi/riscv_atomic.c
+@@ -29,7 +29,7 @@
+ {
+ 	long ret;
+ #if __SIZEOF_LONG__ == 4
+-	__asm__ __volatile__("	amoadd.w.aqrl  %1, %2, %0"
++	__asm__ __volatile__(RISCV_ATOMIC_PRELOAD("%0") "	amoadd.w.aqrl  %1, %2, %0"
+ 			     : "+A"(atom->counter), "=r"(ret)
+ 			     : "r"(value)
+ 			     : "memory");
+@@ -55,7 +55,7 @@
+ 		switch (size) {							\
+ 		case 4:								\
+ 			__asm__ __volatile__ (					\
+-				"	amoswap.w.aqrl %0, %2, %1\n"		\
++				RISCV_ATOMIC_PRELOAD("%1") "	amoswap.w.aqrl %0, %2, %1\n"		\
+ 				: "=r" (__ret), "+A" (*__ptr)			\
+ 				: "r" (__new)					\
+ 				: "memory");					\
+@@ -88,7 +88,7 @@
+ 		register unsigned int __rc;                               \
+ 		switch (size) {                                           \
+ 		case 4:                                                   \
+-			__asm__ __volatile__("0:	lr.w %0, %2\n"    \
++			__asm__ __volatile__("0:" RISCV_ATOMIC_PRELOAD("%2") "	lr.w %0, %2\n"    \
+ 					     "	sc.w.rl %1, %z3, %2\n"    \
+ 					     "	bnez %1, 0b\n"            \
+ 					     "	fence rw, rw\n"           \
+@@ -128,7 +128,7 @@
+ 		register unsigned int __rc;                               \
+ 		switch (size) {                                           \
+ 		case 4:                                                   \
+-			__asm__ __volatile__("0:	lr.w %0, %2\n"    \
++			__asm__ __volatile__("0:" RISCV_ATOMIC_PRELOAD("%2") "	lr.w %0, %2\n"    \
+ 					     "	bne  %0, %z3, 1f\n"       \
+ 					     "	sc.w.rl %1, %z4, %2\n"    \
+ 					     "	bnez %1, 0b\n"            \
+@@ -167,7 +167,7 @@
+ 
+ long atomic_cmpxchg(atomic_t *atom, long oldval, long newval)
+ {
+-#ifdef __riscv_atomic
++#if defined(__riscv_atomic) && !defined(CONFIG_PLATFORM_GOWIN_AE350)
+ 	return __sync_val_compare_and_swap(&atom->counter, oldval, newval);
+ #else
+ 	return cmpxchg(&atom->counter, oldval, newval);
+@@ -218,7 +218,7 @@
+ 	({                                                                   \
+ 		unsigned long __res, __mask;                                 \
+ 		__mask = BIT_MASK(nr);                                       \
+-		__asm__ __volatile__(__AMO(op) #ord " %0, %2, %1"            \
++		__asm__ __volatile__(RISCV_ATOMIC_PRELOAD("%1") __AMO(op) #ord " %0, %2, %1"            \
+ 				     : "=r"(__res), "+A"(addr[BIT_WORD(nr)]) \
+ 				     : "r"(mod(__mask))                      \
+ 				     : "memory");                            \
+--- a/lib/sbi/riscv_locks.c
++++ b/lib/sbi/riscv_locks.c
+@@ -5,6 +5,7 @@
+  * Copyright (c) 2021 Christoph Müllner <cmuellner@linux.com>
+  */
+ 
++#include <sbi/riscv_atomic.h>
+ #include <sbi/riscv_barrier.h>
+ #include <sbi/riscv_locks.h>
+ 
+@@ -27,7 +28,7 @@
+ 
+ 	__asm__ __volatile__(
+ 		/* Get the current lock counters. */
+-		"1:	lr.w.aq	%0, %3\n"
++		"1:" RISCV_ATOMIC_PRELOAD("%3") "	lr.w.aq	%0, %3\n"
+ 		"	slli	%2, %0, %6\n"
+ 		"	and	%2, %2, %5\n"
+ 		"	and	%1, %0, %5\n"
+@@ -53,7 +54,7 @@
+ 
+ 	__asm__ __volatile__(
+ 		/* Atomically increment the next ticket. */
+-		"	amoadd.w.aqrl	%0, %4, %3\n"
++		RISCV_ATOMIC_PRELOAD("%3") "	amoadd.w.aqrl	%0, %4, %3\n"
+ 
+ 		/* Did we get the lock? */
+ 		"	srli	%1, %0, %6\n"
+--- a/platform/generic/Kconfig
++++ b/platform/generic/Kconfig
+@@ -33,6 +33,13 @@
+ 	select SYS_ATCSMU
+ 	default n
+ 
++config PLATFORM_GOWIN_AE350
++	bool "Gowin AE350 support"
++	default n
++	help
++	  Initialize the caches and prime atomic accesses for the 32-bit
++	  Andes core integrated in Gowin FPGAs. Use only on this CPU.
++
+ config PLATFORM_RENESAS_RZFIVE
+ 	bool "Renesas RZ/Five support"
+ 	select ANDES45_PMA
+--- /dev/null
++++ b/platform/generic/configs/gowin_ae350_defconfig
+@@ -0,0 +1,7 @@
++CONFIG_PLATFORM_GOWIN_AE350=y
++CONFIG_FDT_IRQCHIP=y
++CONFIG_FDT_IRQCHIP_PLIC=y
++CONFIG_FDT_SERIAL=y
++CONFIG_FDT_SERIAL_LITEX=y
++CONFIG_FDT_TIMER=y
++CONFIG_FDT_TIMER_PLMT=y

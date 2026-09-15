@@ -10,6 +10,8 @@ Install Java and SBT, then run :
 ## HOWTO:
 This document describes how to configure and use the peripherals of your board from Linux.
 
+For the hard Gowin AE350 CPU, see the [AE350 build profile and runtime checks](doc/gowin_ae350.md).
+
 **SMP performance notes**:
 
 For multi-core VexRiscv-SMP systems on slower FPGA/memory configurations, keep Linux's tick rate low (`CONFIG_HZ_100=y`, enabled in the default config). A higher tick rate can create a significant interrupt load since each core receives periodic timer interrupts.

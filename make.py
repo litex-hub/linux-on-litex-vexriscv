@@ -9,6 +9,7 @@
 import os
 import re
 import sys
+import json
 import argparse
 import shutil
 
@@ -54,6 +55,7 @@ def get_buildroot_base_defconfig():
 
 def get_buildroot_config_overrides(
     *,
+    cpu_type       = "vexriscv_smp",
     with_usb_host  = False,
     with_aes       = False,
     with_fpu       = False,
@@ -61,6 +63,24 @@ def get_buildroot_config_overrides(
 ):
     overrides              = []
     linux_config_fragments = []
+
+    if cpu_type == "gowin_ae350":
+        linux_config_fragments.append(
+            "$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/board/gowin_ae350/linux.config"
+        )
+        overrides += [
+            "# BR2_RISCV_ISA_CUSTOM_RVA is not set",
+            "# BR2_RISCV_ISA_RVA is not set",
+            "# BR2_TOOLCHAIN_BUILDROOT_GLIBC is not set",
+            "BR2_TOOLCHAIN_BUILDROOT_MUSL=y",
+            'BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/patches '
+            '$(BR2_EXTERNAL_LITEX_VEXRISCV_PATH)/patches/gowin_ae350"',
+            'BR2_TARGET_OPENSBI_PLAT="generic"',
+            'BR2_TARGET_OPENSBI_ADDITIONAL_VARIABLES="PLATFORM_RISCV_XLEN=32 '
+            'PLATFORM_RISCV_ISA=rv32ima_zicsr_zifencei '
+            'PLATFORM_DEFCONFIG=gowin_ae350_defconfig '
+            'FW_TEXT_START=0x40f00000 FW_JUMP_ADDR=0x40000000 FW_JUMP_FDT_ADDR=0x40ef0000"',
+        ]
 
     if with_usb_host:
         overrides += [
@@ -144,6 +164,7 @@ def generate_buildroot_defconfig(
     with_aes      = False,
     with_fpu      = False,
     with_nfs_root = False,
+    cpu_type      = "vexriscv_smp",
 ):
     base_defconfig = get_buildroot_base_defconfig()
     base_path      = os.path.join(
@@ -162,6 +183,7 @@ def generate_buildroot_defconfig(
         "BR2_TARGET_ROOTFS_TAR"                 : "BR2_TARGET_ROOTFS_EXT2_4",
     }
     for option in get_buildroot_config_overrides(
+        cpu_type      = cpu_type,
         with_usb_host = with_usb_host,
         with_aes      = with_aes,
         with_fpu      = with_fpu,
@@ -192,6 +214,8 @@ def main():
         description += "- " + name + "\n"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--board",          required=True,               help="FPGA board.")
+    parser.add_argument("--cpu-type",       default="vexriscv_smp",      help="CPU type.",
+        choices=["vexriscv_smp", "gowin_ae350"])
     parser.add_argument("--device",         default=None,                help="FPGA device.")
     parser.add_argument("--variant",        default=None,                help="FPGA board variant.")
     parser.add_argument("--revision",       default=None,                help="FPGA board revision.")
@@ -203,7 +227,7 @@ def main():
     parser.add_argument("--flash",          action="store_true",         help="Flash bitstream/images (to Flash).")
     parser.add_argument("--doc",            action="store_true",         help="Build documentation.")
     parser.add_argument("--with-cpu-jtag-debug", action="store_true",
-        help="Connect CPU debug to a Xilinx USER chain (requires --with-privileged-debug).")
+        help="Expose CPU JTAG debug (VexRiscv requires --with-privileged-debug).")
     parser.add_argument("--cpu-jtag-debug-chain", default=4, type=int, choices=range(1, 5),
         help="CPU debug USER chain index (default: 4).")
     parser.add_argument("--cpu-jtag-debug-clk-freq", default=10e6, type=float,
@@ -225,7 +249,7 @@ def main():
     args = parser.parse_args()
 
     if args.with_cpu_jtag_debug:
-        if not args.with_privileged_debug:
+        if args.cpu_type == "vexriscv_smp" and not args.with_privileged_debug:
             parser.error("--with-cpu-jtag-debug requires --with-privileged-debug")
         if args.jtag_tap:
             parser.error("--with-cpu-jtag-debug cannot be combined with --jtag-tap")
@@ -241,9 +265,12 @@ def main():
     # Board(s) iteration ---------------------------------------------------------------------------
     for board_name in board_names:
         board = supported_boards[board_name]()
-        soc_kwargs = Board.soc_kwargs
+        if args.cpu_type not in board.cpu_types:
+            parser.error(f"Board {board_name} does not support CPU {args.cpu_type}")
+        soc_kwargs = dict(Board.soc_kwargs)
         soc_kwargs.update(board.soc_kwargs)
         soc_kwargs.update(parse_kwargs(args.soc_kwargs))
+        soc_kwargs["cpu_type"] = args.cpu_type
 
         if args.rootfs == "nfs" and "ethernet" not in board.soc_capabilities:
             raise ValueError(f"Board {board_name} does not support Ethernet required by --rootfs=nfs")
@@ -251,16 +278,17 @@ def main():
         # CPU parameters ---------------------------------------------------------------------------
 
         # If Wishbone Memory is forced, enabled L2 Cache (if not already):
-        if args.with_wishbone_memory:
+        if args.cpu_type == "vexriscv_smp" and args.with_wishbone_memory:
             soc_kwargs["l2_size"] = max(soc_kwargs["l2_size"], 2048) # Defaults to 2048.
         # Else if board is configured to use L2 Cache, force use of Wishbone Memory on VexRiscv-SMP.
-        else:
+        elif args.cpu_type == "vexriscv_smp":
             args.with_wishbone_memory = soc_kwargs["l2_size"] != 0
 
         if "usb_host" in board.soc_capabilities:
             args.with_coherent_dma = True
 
-        VexRiscvSMP.args_read(args)
+        if args.cpu_type == "vexriscv_smp":
+            VexRiscvSMP.args_read(args)
 
         # SoC parameters ---------------------------------------------------------------------------
         if args.with_cpu_jtag_debug:
@@ -388,9 +416,10 @@ def main():
         buildroot_defconfig_file = os.path.join(build_dir, "buildroot_defconfig")
         buildroot_base_defconfig = generate_buildroot_defconfig(
             buildroot_defconfig_file,
+            cpu_type      = args.cpu_type,
             with_usb_host = "usb_host" in board.soc_capabilities,
-            with_aes      = VexRiscvSMP.aes_instruction,
-            with_fpu      = VexRiscvSMP.with_fpu,
+            with_aes      = args.cpu_type == "vexriscv_smp" and VexRiscvSMP.aes_instruction,
+            with_fpu      = args.cpu_type == "vexriscv_smp" and VexRiscvSMP.with_fpu,
             with_nfs_root = args.rootfs == "nfs",
         )
         print(f"Buildroot defconfig: {buildroot_defconfig_file}")
@@ -415,6 +444,14 @@ def main():
 
         # boot.json --------------------------------------------------------------------------------
         shutil.copyfile(f"images/boot_{args.rootfs}.json", "images/boot.json")
+        if args.cpu_type == "gowin_ae350":
+            with open("images/boot.json", encoding="utf-8") as f:
+                boot = json.load(f)
+            boot["r2"]   = boot["rv32.dtb"]
+            boot["addr"] = boot["opensbi.bin"]
+            with open("images/boot.json", "w", encoding="utf-8") as f:
+                json.dump(boot, f, indent=4)
+                f.write("\n")
 
         # PCIe Driver ------------------------------------------------------------------------------
         if "pcie" in board.soc_capabilities:
