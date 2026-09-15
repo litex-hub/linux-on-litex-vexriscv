@@ -16,6 +16,7 @@ import shutil
 from litex.soc.integration.builder import Builder
 from litex.soc.integration.soc import LiteXSoC, SoCBusHandler, auto_int
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
+from litex.soc.cores.cpu.gowin_ae350 import GowinAE350
 
 from boards import *
 from soc_linux import SoCLinux
@@ -229,6 +230,8 @@ def main():
     parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
     parser.add_argument("--flash",          action="store_true",         help="Flash bitstream/images (to Flash).")
     parser.add_argument("--doc",            action="store_true",         help="Build documentation.")
+    parser.add_argument("--with-native-memory", action="store_true",
+        help="Use the AE350 direct LiteDRAM connection.")
     parser.add_argument("--with-cpu-jtag-debug", action="store_true",
         help="Expose CPU JTAG debug (VexRiscv requires --with-privileged-debug).")
     parser.add_argument("--cpu-jtag-debug-chain", default=4, type=int, choices=range(1, 5),
@@ -273,7 +276,7 @@ def main():
         soc_kwargs = dict(Board.soc_kwargs)
         soc_kwargs.update(board.soc_kwargs)
         if args.cpu_type == "gowin_ae350":
-            soc_kwargs["l2_size"] = 8192 # Cache the hard CPU's Wishbone accesses to DDR.
+            soc_kwargs["l2_size"] = 0 if args.with_native_memory else 8192
         soc_kwargs.update(parse_kwargs(args.soc_kwargs))
         soc_kwargs["cpu_type"] = args.cpu_type
         if args.bus_data_width is not None:
@@ -297,7 +300,13 @@ def main():
             args.with_coherent_dma = True
 
         if args.cpu_type == "vexriscv_smp":
+            if args.with_native_memory:
+                parser.error("--with-native-memory requires --cpu-type=gowin_ae350")
             VexRiscvSMP.args_read(args)
+        elif hasattr(GowinAE350, "args_read"):
+            GowinAE350.args_read(args)
+        elif args.with_native_memory:
+            parser.error("--with-native-memory requires LiteX AE350 native-memory support")
 
         # SoC parameters ---------------------------------------------------------------------------
         if args.with_cpu_jtag_debug:

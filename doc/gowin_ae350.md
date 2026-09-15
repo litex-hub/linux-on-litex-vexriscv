@@ -161,10 +161,50 @@ Preserve each bitstream and generated DTB, then use the same kernel, rootfs,
 OpenSBI and benchmark binaries for every netboot. Follow the load/netboot steps
 above and the runtime and performance checks below.
 
-The remaining path still serializes AHB beats through classic Wishbone
-transactions on the 50 MHz fabric. Preserving bursts into the memory controller
-is a candidate for further improvement; the current measurements do not isolate
-all remaining latency inside the hard CPU and its clock-domain crossing.
+### Optional direct LiteDRAM connection
+
+With [LiteX's AE350 native-memory support](https://github.com/enjoy-digital/litex/pull/2602),
+add `--with-native-memory` before the final `--`. The profile then defaults to `--l2-size=0`; a positive fabric L2 size
+is rejected because the CPU would bypass that cache while other masters use it.
+Normal L1 cache maintenance is still required for DMA. The Wishbone/L2
+configuration remains the default.
+
+```sh
+./make.py --board=sipeed_tang_mega_138k_pro --cpu-type=gowin_ae350 \
+    --with-native-memory --bus-data-width=64 --remote-ip=192.168.1.125 \
+    --build -- --eth-phy=1000basex
+```
+
+Load the generated bitstream and netboot with its generated DTB using the steps
+above. The kernel, rootfs and OpenSBI binaries can remain identical. The regular
+LiteX-Boards target also exposes `--with-native-memory`; specify `--l2-size=0`
+there. The CPU's direct DDR connection remains 64 bits regardless of the system
+bus width. Fabric SRAM and peripheral access still use the ordinary SoC bus.
+
+The direct path preserves the hard CPU's four-beat wrapping AHB cache-line
+bursts. A private burst-capable bridge feeds LiteDRAM's existing native-word
+packing frontend, bypassing the shared interconnect and fabric L2. Simulation
+checks that a complete 32-byte line write uses one native write and no native
+read. On the previous 8 KiB L2 configuration, hardware counters showed roughly
+two native reads per line written by a streaming store: the CPU's read allocation
+and another allocation when a dirty CPU cache line missed in the smaller L2.
+
+The same hardware and software used for the table above gave these medians
+(three repetitions) with the 64-bit system bus:
+
+| CPU memory path | Copy throughput | 4 MiB dependent load | Fork/exec |
+|---|---:|---:|---:|
+| Wishbone, 8 KiB L2 | 8.49 MiB/s | 1.33 µs | 23.05 ms |
+| Direct LiteDRAM | 13.69 MiB/s | 1.62 µs | 16.14 ms |
+
+Copying and process launches improve, while the large random pointer workload
+regresses. Both CoreMark validations, the BIOS memory test and the runtime
+checks below passed. The 32-bit system bus and regular-target SRAM fallback
+were also verified by generating gateware and BIOS.
+
+Bypassing L2 can hurt some access patterns. Compare the included memory and process benchmarks with the same
+software before choosing a configuration. The AE350 software workarounds and
+timing limitations described above still apply.
 
 ## Runtime check
 
