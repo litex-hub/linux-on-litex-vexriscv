@@ -14,7 +14,7 @@ import argparse
 import shutil
 
 from litex.soc.integration.builder import Builder
-from litex.soc.integration.soc import LiteXSoC, SoCBusHandler
+from litex.soc.integration.soc import LiteXSoC, SoCBusHandler, auto_int
 from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from boards import *
@@ -221,6 +221,9 @@ def main():
     parser.add_argument("--revision",       default=None,                help="FPGA board revision.")
     parser.add_argument("--toolchain",      default=None,                help="Toolchain use to build.")
     parser.add_argument("--bus-standard",   default=None,                help="SoC bus standard.", choices=SoCBusHandler.supported_standard)
+    parser.add_argument("--bus-data-width", default=None, type=auto_int, help="SoC bus data width.",
+        choices=SoCBusHandler.supported_data_width)
+    parser.add_argument("--l2-size",        default=None, type=auto_int, help="L2 cache size in bytes.")
     parser.add_argument("--uart-baudrate",  default=115.2e3, type=float, help="UART baudrate.")
     parser.add_argument("--build",          action="store_true",         help="Build bitstream.")
     parser.add_argument("--load",           action="store_true",         help="Load bitstream (to SRAM).")
@@ -269,8 +272,14 @@ def main():
             parser.error(f"Board {board_name} does not support CPU {args.cpu_type}")
         soc_kwargs = dict(Board.soc_kwargs)
         soc_kwargs.update(board.soc_kwargs)
+        if args.cpu_type == "gowin_ae350":
+            soc_kwargs["l2_size"] = 8192 # Cache the hard CPU's Wishbone accesses to DDR.
         soc_kwargs.update(parse_kwargs(args.soc_kwargs))
         soc_kwargs["cpu_type"] = args.cpu_type
+        if args.bus_data_width is not None:
+            soc_kwargs["bus_data_width"] = args.bus_data_width
+        if args.l2_size is not None:
+            soc_kwargs["l2_size"] = args.l2_size
 
         if args.rootfs == "nfs" and "ethernet" not in board.soc_capabilities:
             raise ValueError(f"Board {board_name} does not support Ethernet required by --rootfs=nfs")

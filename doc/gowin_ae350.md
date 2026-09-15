@@ -112,10 +112,59 @@ idle ping passed 20/20, while simultaneous TCP traffic yielded 14/20 replies
 with the two-slot receive buffer. A 1 MiB TCP download completed with the
 expected checksum.
 
-The 800 MHz CPU clock does not imply equivalent DDR3 bandwidth. The measured
-large-memory copy and dependent-load workloads remain slower than the default
-50 MHz VexRiscv system, despite much faster CoreMark and system calls. This is
-an observed integration limitation; its precise bottleneck has not been isolated.
+## DDR3 access performance
+
+The AE350 RAM port is 64-bit AHB, while the default SoC Wishbone bus is 32 bits.
+Without a fabric L2 cache, each AHB beat is split into two Wishbone transactions.
+Each transaction reads a complete 256-bit LiteDRAM word, so a 32-byte CPU cache
+line can cause eight reads of the same DDR word. Simulation using the actual
+bridges and LiteDRAM frontend confirms eight native commands with the default
+32-bit bus, four with a 64-bit bus, and one with an L2 cache.
+
+This profile requests an 8 KiB fabric L2 cache for AE350. It requires
+[LiteX-Boards #798](https://github.com/litex-hub/litex-boards/pull/798), which
+makes the DDR3 target honor the cache-size setting. VexRiscv retains its direct
+memory connection and existing defaults. An optional 64-bit system bus reduces
+the remaining width-conversion overhead. It requires
+[LiteX #2600](https://github.com/enjoy-digital/litex/pull/2600) and
+[LiteX #2601](https://github.com/enjoy-digital/litex/pull/2601), so an 8 KiB cache
+really contains 8 KiB on that wider bus.
+
+On the Tang Mega 138K Pro, with the same Linux images and benchmark binaries,
+800 MHz CPU, 50 MHz system clock and 100 MHz DDR3 clock:
+
+| System bus | Fabric L2 | Copy throughput | 4 MiB dependent load | Fork/exec |
+|---|---:|---:|---:|---:|
+| 32 bits | disabled | 2.74 MiB/s | 5.70 µs | 93.02 ms |
+| 64 bits | disabled | 5.28 MiB/s | 2.86 µs | 43.68 ms |
+| 32 bits | 8 KiB | 7.30 MiB/s | 1.69 µs | 27.73 ms |
+| 64 bits | 8 KiB | 8.49 MiB/s | 1.33 µs | 23.05 ms |
+
+Values are medians of the benchmark's three repetitions. Copy throughput counts
+copied bytes, not total DDR read/write traffic. Both CoreMark seed/CRC checks
+passed on each image; performance-mode throughput changed from 1531 to 1622
+iterations/s between the first and last rows. These results use the same AE350
+software workarounds described above. Gowin still reports clock-routing/DDR
+timing warnings; passing these workloads is not a timing-closure claim.
+
+To build the combined configuration:
+
+```sh
+./make.py --board=sipeed_tang_mega_138k_pro --cpu-type=gowin_ae350 \
+    --remote-ip=192.168.1.125 --bus-data-width=64 --l2-size=8192 \
+    --build -- --eth-phy=1000basex
+```
+
+The typed `--bus-data-width` and `--l2-size` options go before the final `--`.
+Use `(32, 0)`, `(64, 0)`, `(32, 8192)` and `(64, 8192)` for the four rows above.
+Preserve each bitstream and generated DTB, then use the same kernel, rootfs,
+OpenSBI and benchmark binaries for every netboot. Follow the load/netboot steps
+above and the runtime and performance checks below.
+
+The remaining path still serializes AHB beats through classic Wishbone
+transactions on the 50 MHz fabric. Preserving bursts into the memory controller
+is a candidate for further improvement; the current measurements do not isolate
+all remaining latency inside the hard CPU and its clock-domain crossing.
 
 ## Runtime check
 
