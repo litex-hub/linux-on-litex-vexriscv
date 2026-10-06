@@ -328,20 +328,20 @@ def main():
 
         # SoC peripherals --------------------------------------------------------------------------
         if board_name in ["arty", "arty_a7"]:
-            from litex_boards.platforms.digilent_arty import _sdcard_pmod_io
-            board.platform.add_extension(_sdcard_pmod_io)
+            from litex.build.pmod import PmodSDCard
+            board.platform.add_extension(PmodSDCard("pmodd"))
 
         if board_name in ["colorlight_i5"]:
             from litex_boards.platforms.colorlight_i5 import _sdcard_pmod_io
             board.platform.add_extension(_sdcard_pmod_io)
 
         if board_name in ["aesku40"]:
-            from litex_boards.platforms.avnet_aesku40 import _sdcard_pmod_io
-            board.platform.add_extension(_sdcard_pmod_io)
+            from litex.build.pmod import PmodSDCard
+            board.platform.add_extension(PmodSDCard("pmod0", iostandard="LVCMOS18"))
 
         if board_name in ["colognechip_gatemate_evb"]:
-            from litex_boards.platforms.colognechip_gatemate_evb import pmods_sdcard_io
-            board.platform.add_extension(pmods_sdcard_io("PMODA"))
+            from litex.build.pmod import PmodSDCard
+            board.platform.add_extension(PmodSDCard("PMODA"))
 
         if board_name in ["orange_crab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
