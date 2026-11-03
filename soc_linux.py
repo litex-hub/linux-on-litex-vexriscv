@@ -10,9 +10,6 @@ import shutil
 import subprocess
 
 from migen import *
-from migen.fhdl.specials import Tristate   # not exported by `from migen import *`
-
-from litex.build.generic_platform import Subsignal, Pins, IOStandard, Misc
 
 from litex.soc.interconnect.csr import *
 
@@ -23,19 +20,6 @@ from litex.soc.cores.bitbang import I2CMaster
 from litex.soc.cores.pwm     import PWM
 
 from litex.tools.litex_json2dts_linux import generate_dts
-
-# SWD debug pinout (Arty A7 / Pmod JB) --------------------------------------------------------------
-#
-# JB is a *high-speed* Pmod: unlike JA/JD it has no 200 Ohm series resistors, which matters
-# for a bidirectional line with turnaround phases.
-
-_swd_pmod_io = [
-    ("swd", 0,
-        Subsignal("swclk", Pins("pmodb:2")),                          # JB3 / D15
-        Subsignal("swdio", Pins("pmodb:4"), Misc("PULLUP TRUE")),     # JB7 / J17, ADI pull-up
-        IOStandard("LVCMOS33"),
-    ),
-]
 
 # SoCLinux -----------------------------------------------------------------------------------------
 
@@ -51,46 +35,6 @@ def SoCLinux(soc_cls, **kwargs):
             # SoC ----------------------------------------------------------------------------------
 
             soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
-
-            # No-op unless --with-swd-debug selected the SWD transport.
-            self.add_cpu_swd_debug()
-
-        # CPU Debug (SWD transport on real pins) ------------------------------------------------
-
-        def add_cpu_swd_debug(self):
-            """Bring the VexRiscv-SMP SWD debug transport out to Pmod JB.
-
-            The cluster is a Verilog black box, so a true `inout` is impractical at its edge:
-            DebugTransportModuleSwd exposes SWDIO as three signals (swdio_i / swdio_o / swdio_oe)
-            and the tristate belongs here, at the platform level. `Tristate` maps to a Xilinx
-            IOBUF.
-
-            SWCLK is a REAL clock domain inside the transport, driven by the probe -- externally
-            timed, and gated (the probe stops it between transactions). It is constrained here
-            with margin (10 MHz) against an intended run speed of 100 kHz - 4 MHz, and declared
-            asynchronous to sys_clk so the ccToggle crossing is not timed against it.
-
-            No-op unless --with-swd-debug selected this transport, so JTAG builds are unaffected.
-            """
-            if not VexRiscvSMP.with_swd:
-                return
-            if not hasattr(self.cpu, "swdio_i"):
-                return
-
-            self.platform.add_extension(_swd_pmod_io)
-            pads = self.platform.request("swd")
-
-            swdio_i = Signal()
-            self.specials += Tristate(pads.swdio, self.cpu.swdio_o, self.cpu.swdio_oe, swdio_i)
-
-            self.comb += [
-                self.cpu.swd_clk.eq(pads.swclk),
-                self.cpu.swdio_i.eq(swdio_i),
-            ]
-
-            # Probe-driven, gated, asynchronous to everything else on the die.
-            self.platform.add_period_constraint(pads.swclk, 1e9/10e6)
-            self.platform.add_false_path_constraints(self.crg.cd_sys.clk, pads.swclk)
 
         # RGB Led ----------------------------------------------------------------------------------
 
