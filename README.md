@@ -91,6 +91,7 @@ The current list of boards that have been tested and are supported can be obtain
     ├── qmtech_wu_kong
     ├── schoko
     ├── sds1104xe
+    ├── sipeed_tang_mega_138k_pro
     ├── sipeed_tang_nano_20k
     ├── sipeed_tang_primer_20k
     ├── stlv7325
