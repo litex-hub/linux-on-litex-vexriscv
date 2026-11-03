@@ -20,6 +20,17 @@ from boards import *
 from soc_linux import SoCLinux
 
 #---------------------------------------------------------------------------------------------------
+# CPU SWD Debug
+#---------------------------------------------------------------------------------------------------
+
+# Boards with a Pmod wired for an SWD probe (--with-swd-debug), see litex_boards.extensions.pmod.PmodSWD
+# (SWCLK: pin 3, SWDIO: pin 7, probe GND: pin 11). Arty: Pmod JB (no series resistors).
+swd_debug_pmods = {
+    "arty"    : "pmodb",
+    "arty_a7" : "pmodb",
+}
+
+#---------------------------------------------------------------------------------------------------
 # Helpers
 #---------------------------------------------------------------------------------------------------
 def parse_kwargs(remaining):
@@ -232,6 +243,16 @@ def main():
         if not hasattr(LiteXSoC, "add_cpu_jtag_debug"):
             parser.error("--with-cpu-jtag-debug requires a newer LiteX; update LiteX first")
 
+    if args.with_swd_debug:
+        if args.board not in swd_debug_pmods:
+            parser.error(f"--with-swd-debug is only supported on: {', '.join(swd_debug_pmods)}")
+        if not hasattr(LiteXSoC, "add_cpu_swd_debug"):
+            parser.error("--with-swd-debug requires a newer LiteX; update LiteX first")
+        try:
+            from litex_boards.extensions.pmod import PmodSWD
+        except ImportError:
+            parser.error("--with-swd-debug requires a newer LiteX-Boards; update LiteX-Boards first")
+
     # Board(s) selection ---------------------------------------------------------------------------
     if args.board == "all":
         board_names = list(supported_boards.keys())
@@ -346,6 +367,12 @@ def main():
         if board_name in ["orange_crab"]:
             from litex_boards.platforms.gsd_orangecrab import feather_i2c
             board.platform.add_extension(feather_i2c)
+
+        # CPU SWD Debug (probe on a Pmod, see swd_debug_pmods).
+        if VexRiscvSMP.with_swd:
+            from litex_boards.extensions.pmod import PmodSWD
+            board.platform.add_extension(PmodSWD(swd_debug_pmods[board_name]))
+            soc.add_cpu_swd_debug()
 
         if "spisdcard" in board.soc_capabilities:
             soc.add_spi_sdcard()
