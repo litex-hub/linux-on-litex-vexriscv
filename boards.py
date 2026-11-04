@@ -9,6 +9,7 @@
 # Board Definition ---------------------------------------------------------------------------------
 
 class Board:
+    cpu_types = {"vexriscv_smp"}
     soc_kwargs = {
         "integrated_rom_size"  : 0x10000,
         "integrated_sram_size" : 0x1800,
@@ -829,6 +830,7 @@ class TitaniumTi60F225DevKit(Board):
 # Sipeed Tang Mega 138K Pro support ----------------------------------------------------------------
 
 class Sipeed_tang_mega_138k_pro(Board):
+    cpu_types = {"vexriscv_smp", "gowin_ae350"}
     def __init__(self):
         from litex_boards.targets import sipeed_tang_mega_138k_pro
         Board.__init__(self, sipeed_tang_mega_138k_pro.BaseSoC, soc_capabilities={

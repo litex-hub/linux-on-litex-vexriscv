@@ -19,6 +19,20 @@ from make import (
 )
 
 class TestBuild(unittest.TestCase):
+    def test_gowin_ae350_buildroot_profile(self):
+        with tempfile.TemporaryDirectory() as directory:
+            filename = os.path.join(directory, "defconfig")
+            generate_buildroot_defconfig(filename, cpu_type="gowin_ae350")
+            with open(filename, encoding="utf-8") as f:
+                config = f.read()
+        self.assertIn("BR2_TOOLCHAIN_BUILDROOT_MUSL=y", config)
+        self.assertIn("# BR2_RISCV_ISA_RVA is not set", config)
+        self.assertNotIn("BR2_RISCV_ISA_RVA=y", config)
+        self.assertIn("patches/gowin_ae350", config)
+        self.assertIn("board/gowin_ae350/linux.config", config)
+        self.assertIn("PLATFORM_DEFCONFIG=gowin_ae350_defconfig", config)
+        self.assertNotIn("gowin_ae350", "\n".join(get_buildroot_config_overrides()))
+
     def board_build_test(
         self, board, cpu_count=1, extra_args=None,
         expected_base=None, expected_overrides=None):

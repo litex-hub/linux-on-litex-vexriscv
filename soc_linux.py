@@ -34,7 +34,9 @@ def SoCLinux(soc_cls, **kwargs):
 
             # SoC ----------------------------------------------------------------------------------
 
-            soc_cls.__init__(self, cpu_type="vexriscv_smp", cpu_variant="linux", **kwargs)
+            kwargs.setdefault("cpu_type",    "vexriscv_smp")
+            kwargs.setdefault("cpu_variant", "linux")
+            soc_cls.__init__(self, **kwargs)
 
         # RGB Led ----------------------------------------------------------------------------------
 
