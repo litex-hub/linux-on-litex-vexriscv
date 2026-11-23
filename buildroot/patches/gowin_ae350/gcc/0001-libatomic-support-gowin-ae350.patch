@@ -1,0 +1,67 @@
+From: Florent Kermarrec <florent@enjoy-digital.fr>
+Subject: [PATCH] libatomic: Use cache-primed LR/SC on the Gowin AE350
+
+Provide the word compare-exchange primitive for RV32IM builds. The
+existing generic libatomic code builds the other operations from it;
+sub-word operations retain their masked word-CAS implementations, and
+64-bit operations retain the RV32 lock-based implementation.
+
+Both success and failure use full barriers. The strong CAS retries SC
+failures and returns the observed value on a comparison failure. A load
+and barrier before each LR avoids the AE350 cache-miss limitation.
+
+This patch is applied only by the Gowin AE350 Buildroot profile. Other
+RISC-V processors must not select this CPU-specific patch directory.
+
+Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
+
+--- /dev/null
++++ b/libatomic/config/riscv/host-config.h
+@@ -0,0 +1,47 @@
++/* Gowin AE350 cache-primed atomic operations.
++   Copyright (C) 2026 Florent Kermarrec <florent@enjoy-digital.fr>
++
++   This file is part of GCC.
++
++   GCC is free software; you can redistribute it and/or modify it under
++   the terms of the GNU General Public License as published by the Free
++   Software Foundation; either version 3, or (at your option) any later
++   version.
++
++   Under Section 7 of GPL version 3, you are granted additional
++   permissions described in the GCC Runtime Library Exception, version
++   3.1, as published by the Free Software Foundation.
++
++   You should have received a copy of the GNU General Public License and
++   a copy of the GCC Runtime Library Exception along with this program;
++   see the files COPYING3 and COPYING.RUNTIME respectively. If not, see
++   <http://www.gnu.org/licenses/>.  */
++#if __riscv_xlen == 32 && !defined(__riscv_atomic)
++static inline bool __attribute__((always_inline))
++ae350_compare_exchange (UWORD *ptr, UWORD *expected, UWORD desired,
++                        bool weak, int success, int failure)
++{
++  UWORD old, status, wanted = *expected;
++  __asm__ __volatile__ (
++    ".option push\n\t.option arch,+a\n\t"
++    "fence rw,rw\n"
++    "1: lw %0,0(%2)\n\tfence r,rw\n\t"
++    "lr.w.aqrl %0,(%2)\n\t"
++    "bne %0,%3,2f\n\t"
++    "sc.w.aqrl %1,%4,(%2)\n\t"
++    "bnez %1,1b\n"
++    "2: fence rw,rw\n\t.option pop"
++    : "=&r"(old), "=&r"(status)
++    : "r"(ptr), "r"(wanted), "r"(desired)
++    : "memory");
++  if (old == wanted)
++    return true;
++  *expected = old;
++  return false;
++}
++#define atomic_compare_exchange_w ae350_compare_exchange
++#if N == 4
++#define atomic_compare_exchange_n ae350_compare_exchange
++#endif
++#endif
++#include_next <host-config.h>

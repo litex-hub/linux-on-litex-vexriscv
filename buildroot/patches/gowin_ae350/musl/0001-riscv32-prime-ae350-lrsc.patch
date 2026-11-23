@@ -1,0 +1,33 @@
+From: Florent Kermarrec <florent@enjoy-digital.fr>
+Subject: [PATCH] riscv32: Prime the Gowin AE350 cache before LR/SC
+
+A load and read barrier before each LR/SC attempt gives forward progress
+on the Gowin AE350, including after eviction and across forked processes.
+Keep the existing acquire/release ordering and retry semantics. Enable A
+only around this sequence so that the rest of userspace can target RV32IM.
+
+This patch is applied only by the Gowin AE350 Buildroot profile.
+
+Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
+
+--- a/arch/riscv32/atomic_arch.h
++++ b/arch/riscv32/atomic_arch.h
+@@ -9,11 +9,16 @@
+ {
+ 	int old, tmp;
+ 	__asm__ __volatile__ (
+-		"\n1:	lr.w.aqrl %0, (%2)\n"
++		".option push\n"
++		".option arch,+a\n"
++		"\n1:\tlw %0, (%2)\n"
++		"\tfence r,rw\n"
++		"\tlr.w.aqrl %0, (%2)\n"
+ 		"	bne %0, %3, 1f\n"
+ 		"	sc.w.aqrl %1, %4, (%2)\n"
+ 		"	bnez %1, 1b\n"
+-		"1:"
++		"1:\n"
++		".option pop\n"
+ 		: "=&r"(old), "=&r"(tmp)
+ 		: "r"(p), "r"((long)t), "r"((long)s)
+ 		: "memory");

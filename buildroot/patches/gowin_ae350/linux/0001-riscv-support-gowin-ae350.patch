@@ -1,0 +1,141 @@
+From: Florent Kermarrec <florent@enjoy-digital.fr>
+Subject: [PATCH] riscv: Support the Gowin AE350 atomic and MMU requirements
+
+Cache-miss atomic operations on the tested Gowin AE350 do not provide
+usable forward progress. Use the existing interrupt-protected generic
+operations in this single-hart kernel, including the generic futex user
+accessors and their fault handling.
+
+The Andes 2X page-table walker does not snoop L1D. As in the Andes vendor
+kernel, SFENCE.VMA after installing a PMD or PTE also writes back L1D:
+https://github.com/andestech/linux/blob/7908d1aed3dbeea4173b92f90d67cf300d29f633/arch/riscv/errata/andes/errata.c
+
+Both changes are opt-in and restricted to a 32-bit uniprocessor kernel.
+The normal ASID allocator, TLB invalidation and timer driver are retained.
+
+Signed-off-by: Florent Kermarrec <florent@enjoy-digital.fr>
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -443,6 +443,15 @@
+ 
+ 	  If you don't know what to do here, say N.
+ 
++config RISCV_GOWIN_AE350
++	bool "Gowin AE350 support"
++	depends on 32BIT && !SMP
++	help
++	  Enable the atomic and legacy MMU workarounds for the single-hart
++	  Andes core integrated in Gowin FPGAs. Use the generic uniprocessor
++	  atomic operations, and synchronize page-table writes with its
++	  non-coherent page-table walker.
++
+ config SCHED_MC
+ 	bool "Multi-core scheduler support"
+ 	depends on SMP
+--- a/arch/riscv/include/asm/atomic.h
++++ b/arch/riscv/include/asm/atomic.h
+@@ -7,6 +7,11 @@
+ 
+ #ifndef _ASM_RISCV_ATOMIC_H
+ #define _ASM_RISCV_ATOMIC_H
++
++#ifdef CONFIG_RISCV_GOWIN_AE350
++#include <asm-generic/atomic.h>
++#include <asm-generic/atomic64.h>
++#else
+ 
+ #ifdef CONFIG_GENERIC_ATOMIC64
+ # include <asm-generic/atomic64.h>
+@@ -350,4 +355,6 @@
+ #define arch_atomic64_dec_if_positive	arch_atomic64_dec_if_positive
+ #endif
+ 
++#endif /* CONFIG_RISCV_GOWIN_AE350 */
++
+ #endif /* _ASM_RISCV_ATOMIC_H */
+--- a/arch/riscv/include/asm/bitops.h
++++ b/arch/riscv/include/asm/bitops.h
+@@ -5,6 +5,10 @@
+ 
+ #ifndef _ASM_RISCV_BITOPS_H
+ #define _ASM_RISCV_BITOPS_H
++
++#ifdef CONFIG_RISCV_GOWIN_AE350
++#include <asm-generic/bitops.h>
++#else
+ 
+ #ifndef _LINUX_BITOPS_H
+ #error "Only <linux/bitops.h> can be included directly"
+@@ -376,4 +380,6 @@
+ #include <asm-generic/bitops/le.h>
+ #include <asm-generic/bitops/ext2-atomic.h>
+ 
++#endif /* CONFIG_RISCV_GOWIN_AE350 */
++
+ #endif /* _ASM_RISCV_BITOPS_H */
+--- a/arch/riscv/include/asm/cmpxchg.h
++++ b/arch/riscv/include/asm/cmpxchg.h
+@@ -5,6 +5,13 @@
+ 
+ #ifndef _ASM_RISCV_CMPXCHG_H
+ #define _ASM_RISCV_CMPXCHG_H
++
++#ifdef CONFIG_RISCV_GOWIN_AE350
++#include <asm-generic/cmpxchg.h>
++
++#define __cmpwait_relaxed(ptr, val) \
++	do { asm volatile("nop" ::: "memory"); } while (0)
++#else
+ 
+ #include <linux/bug.h>
+ 
+@@ -281,4 +288,6 @@
+ 	__cmpwait((ptr), (unsigned long)(val), sizeof(*(ptr)))
+ #endif
+ 
++#endif /* CONFIG_RISCV_GOWIN_AE350 */
++
+ #endif /* _ASM_RISCV_CMPXCHG_H */
+--- a/arch/riscv/include/asm/futex.h
++++ b/arch/riscv/include/asm/futex.h
+@@ -6,6 +6,10 @@
+ 
+ #ifndef _ASM_RISCV_FUTEX_H
+ #define _ASM_RISCV_FUTEX_H
++
++#ifdef CONFIG_RISCV_GOWIN_AE350
++#include <asm-generic/futex.h>
++#else
+ 
+ #include <linux/futex.h>
+ #include <linux/uaccess.h>
+@@ -101,4 +105,6 @@
+ 	return ret;
+ }
+ 
++#endif /* CONFIG_RISCV_GOWIN_AE350 */
++
+ #endif /* _ASM_RISCV_FUTEX_H */
+--- a/arch/riscv/include/asm/pgtable.h
++++ b/arch/riscv/include/asm/pgtable.h
+@@ -242,6 +242,9 @@
+ static inline void set_pmd(pmd_t *pmdp, pmd_t pmd)
+ {
+ 	WRITE_ONCE(*pmdp, pmd);
++	/* Andes 2X page-table walks do not snoop L1 data-cache writes. */
++	if (IS_ENABLED(CONFIG_RISCV_GOWIN_AE350))
++		asm volatile("sfence.vma" ::: "memory");
+ }
+ 
+ static inline void pmd_clear(pmd_t *pmdp)
+@@ -545,6 +548,9 @@
+ static inline void set_pte(pte_t *ptep, pte_t pteval)
+ {
+ 	WRITE_ONCE(*ptep, pteval);
++	/* Andes 2X page-table walks do not snoop L1 data-cache writes. */
++	if (IS_ENABLED(CONFIG_RISCV_GOWIN_AE350))
++		asm volatile("sfence.vma" ::: "memory");
+ }
+ 
+ void flush_icache_pte(struct mm_struct *mm, pte_t pte);
